@@ -1,10 +1,11 @@
 
-import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress } from './types';
+import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink } from './types';
 
 export const placeholderUserProfile: UserProfile = {
   name: 'Alex Johnson',
   email: 'alex.johnson@example.com',
   avatarUrl: 'https://placehold.co/100x100.png',
+  dataAiHint: 'profile person',
   points: 1250,
   earnedBadges: [
     { id: 'badge1', name: 'Fast Learner', description: 'Completed 5 modules in a day', icon: 'Zap', color: 'text-yellow-400' },
@@ -14,17 +15,17 @@ export const placeholderUserProfile: UserProfile = {
 };
 
 const modulesFullStack: Module[] = [
-  { id: 'fs-mod1', title: 'Introduction to Web Development', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/example1', estimatedTime: '1 hour', isCompleted: true },
+  { id: 'fs-mod1', title: 'Introduction to Web Development', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/gT0Lh1eYk78', videoLinks: [{ langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/gT0Lh1eYk78', title: 'Web Development Full Course (English)'}, { langCode: 'hi', langName: 'Hindi', youtubeEmbedUrl: 'https://www.youtube.com/embed/videoseries?list=PLu0W_9lII9agiCUZYRsvtGTXdxjPybPvY', title: 'Web Development Full Course (Hindi)'}], estimatedTime: '1 hour', isCompleted: true },
   { id: 'fs-mod2', title: 'HTML & CSS Fundamentals', contentType: 'markdown', contentData: '# HTML & CSS Basics\\n\\nLearn the building blocks of web pages.', estimatedTime: '2 hours', isCompleted: true },
   { id: 'fs-mod3', title: 'JavaScript Essentials', contentType: 'pdf', contentUrl: '/sample.pdf', estimatedTime: '3 hours', isCompleted: false },
   { id: 'fs-mod4', title: 'React Deep Dive', contentType: 'quiz', contentData: JSON.stringify({ questions: [] }), estimatedTime: '2 hours', isCompleted: false },
-  { id: 'fs-mod5', title: 'Node.js & Express', contentType: 'assignment', estimatedTime: '4 hours', isCompleted: false },
-  { id: 'fs-mod6', title: 'Databases (MongoDB/PostgreSQL)', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/example2', estimatedTime: '3 hours', isCompleted: false },
+  { id: 'fs-mod5', title: 'Node.js & Express', contentType: 'video', estimatedTime: '4 hours', isCompleted: false }, // No contentUrl or videoLinks to test AI
+  { id: 'fs-mod6', title: 'Databases (MongoDB/PostgreSQL)', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/mongodb-basics', videoLinks: [{ langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/c2M-rlkkT5o', title: 'MongoDB Tutorial (English)'}], estimatedTime: '3 hours', isCompleted: false },
   { id: 'fs-mod7', title: 'Deployment & CI/CD', contentType: 'markdown', contentData: '## Deploying your Application', estimatedTime: '2 hours', isCompleted: false },
 ];
 
 const modulesDSA: Module[] = [
-  { id: 'dsa-mod1', title: 'Big O Notation', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/example3', estimatedTime: '1.5 hours', isCompleted: true },
+  { id: 'dsa-mod1', title: 'Big O Notation', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/v4cd1O4zkGw', videoLinks: [{ langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/v4cd1O4zkGw', title: 'Big O Notation Explained (English)'}], estimatedTime: '1.5 hours', isCompleted: true },
   { id: 'dsa-mod2', title: 'Arrays and Strings', contentType: 'markdown', contentData: '# Arrays & Strings\\n\\nMastering common data structures.', estimatedTime: '2.5 hours', isCompleted: false },
   { id: 'dsa-mod3', title: 'Linked Lists', contentType: 'pdf', contentUrl: '/sample.pdf', estimatedTime: '2 hours', isCompleted: false },
   { id: 'dsa-mod4', title: 'Trees and Graphs', contentType: 'quiz', contentData: JSON.stringify({ questions: [] }), estimatedTime: '3 hours', isCompleted: false },
@@ -69,7 +70,7 @@ export const placeholderCourses: Course[] = [
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'cloud servers',
     modules: [
-      { id: 'devops-mod1', title: 'Intro to DevOps', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/example4', estimatedTime: '1 hour' },
+      { id: 'devops-mod1', title: 'Intro to DevOps', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/ DevOpsIntro', videoLinks: [{langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/J_k7oH62H0o', title: 'What is DevOps? (English)' } ] ,estimatedTime: '1 hour' },
       { id: 'devops-mod2', title: 'CI/CD Pipelines with Jenkins/GitLab', contentType: 'markdown', contentData: 'Setup your first pipeline', estimatedTime: '3 hours' },
     ],
     duration: '6 weeks',
@@ -87,7 +88,7 @@ export const placeholderCourses: Course[] = [
     dataAiHint: 'communication language',
     modules: [
       { id: 'eng-mod1', title: 'Advanced Grammar', contentType: 'pdf', contentUrl: '/sample.pdf', estimatedTime: '2 hours' },
-      { id: 'eng-mod2', title: 'Conversational Practice', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/example5', estimatedTime: '1.5 hours' },
+      { id: 'eng-mod2', title: 'Conversational Practice', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/englishConversation', videoLinks: [{langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/l3UvN8E3w50', title: 'Improve Your English Conversation (English)' }, { langCode: 'hi', langName: 'Hindi', youtubeEmbedUrl: 'https://www.youtube.com/embed/5uM502Rk80I', title: 'Daily Use English Sentences (Hindi)'}], estimatedTime: '1.5 hours' },
     ],
     duration: '10 weeks',
     rating: 4.6,
@@ -103,7 +104,7 @@ export const placeholderCourses: Course[] = [
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'design tools',
     modules: [
-       { id: 'design-mod1', title: 'UI/UX Fundamentals', contentType: 'video', contentUrl: 'https://www.youtube.com/embed/exampleUX', estimatedTime: '2 hours' },
+       { id: 'design-mod1', title: 'UI/UX Fundamentals', contentType: 'video', videoLinks: [{langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/55NvZjUZU78', title: 'UI/UX Design Tutorial (English)'}], estimatedTime: '2 hours' }, // Removed contentUrl, only videoLinks
        { id: 'design-mod2', title: 'AI in Design (Midjourney, DALL-E)', contentType: 'markdown', contentData: 'Leveraging AI for design inspiration.', estimatedTime: '2.5 hours' },
     ],
     duration: '5 weeks',

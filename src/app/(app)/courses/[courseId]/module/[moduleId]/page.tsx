@@ -3,7 +3,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react';
 import { getCourseById, getModuleById } from '@/lib/placeholder-data';
-import type { Course, Module as ModuleType } from '@/lib/types';
+import type { Course, Module as ModuleType, VideoLink } from '@/lib/types';
 import { MediaPlayer } from '@/components/media-player';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -12,6 +12,7 @@ import { ArrowLeft, ArrowRight, Lightbulb, ListChecks, Loader2, AlertTriangle } 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generateQuiz, type GenerateQuizInput } from '@/ai/flows/ai-quiz-generator';
+import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { useToast } from "@/hooks/use-toast";
 
 export default function ModulePage({ params }: { params: { courseId: string; moduleId: string } }) {
@@ -23,12 +24,18 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
   const [loadingQuiz, setLoadingQuiz] = useState(false);
   const [errorQuiz, setErrorQuiz] = useState<string | null>(null);
 
+  const [aiFetchedVideos, setAiFetchedVideos] = useState<VideoLink[]>([]);
+  const [loadingAIVideos, setLoadingAIVideos] = useState(false);
+  const [errorAIVideos, setErrorAIVideos] = useState<string | null>(null);
+
   useEffect(() => {
     setCourse(getCourseById(params.courseId));
     setModule(getModuleById(params.courseId, params.moduleId));
+    setAiFetchedVideos([]); // Reset AI videos when module changes
+    setErrorAIVideos(null);
   }, [params.courseId, params.moduleId]);
 
-  if (course === null || module === null) {
+  if (course === undefined || module === undefined) { // Changed from null to undefined to match initial hook state possibilities
     return (
       <div className="container mx-auto py-10 text-center flex justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -86,6 +93,42 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
     }
   };
 
+  const handleSearchVideosWithAI = async () => {
+    if (!module) return;
+    setLoadingAIVideos(true);
+    setErrorAIVideos(null);
+    setAiFetchedVideos([]);
+    try {
+      const input: FindYoutubeVideosInput = {
+        moduleTitle: module.title,
+        moduleDescription: module.description,
+      };
+      const result = await findYoutubeVideosForModule(input);
+      setAiFetchedVideos(result.videos);
+      if (result.videos.length === 0) {
+        toast({
+            title: "AI Video Search",
+            description: "No additional videos found by AI for this module topic.",
+        });
+      } else {
+         toast({
+            title: "AI Video Search Successful",
+            description: `Found ${result.videos.length} video(s). Check the player dropdown.`,
+        });
+      }
+    } catch (err) {
+      console.error("Error searching videos with AI:", err);
+      setErrorAIVideos(err instanceof Error ? err.message : "An unknown AI error occurred.");
+      toast({
+        title: "AI Video Search Failed",
+        description: "Could not search for videos. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingAIVideos(false);
+    }
+  };
+
 
   const currentModuleIndex = course.modules.findIndex(m => m.id === module.id);
   const prevModule = currentModuleIndex > 0 ? course.modules[currentModuleIndex - 1] : null;
@@ -106,7 +149,20 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
           </div>
         </div>
 
-        <MediaPlayer module={module} />
+        <MediaPlayer 
+          module={module} 
+          aiFetchedVideos={aiFetchedVideos}
+          onSearchWithAI={module.contentType === 'video' ? handleSearchVideosWithAI : undefined}
+          isAISearching={loadingAIVideos}
+        />
+        {errorAIVideos && (
+            <Alert variant="destructive" className="mt-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>AI Video Search Error</AlertTitle>
+                <AlertDescription>{errorAIVideos}</AlertDescription>
+            </Alert>
+        )}
+
 
         <Card className="mt-6 shadow-lg">
           <CardHeader>

@@ -7,31 +7,39 @@ export interface Course {
   description: string;
   instructor: string;
   category: string;
-  icon: string; // Changed from LucideIcon | string
+  icon: string; 
   imageUrl?: string;
-  dataAiHint?: string; // Added for consistency with placeholder data
+  dataAiHint?: string; 
   modules: Module[];
-  duration?: string; // e.g., "10 hours", "4 weeks"
-  rating?: number; // e.g., 4.5
-  enrollmentCount?: number; // e.g., 1200
+  duration?: string; 
+  rating?: number; 
+  enrollmentCount?: number; 
 }
 
 export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment';
+
+export interface VideoLink {
+  langCode: string; // e.g., 'en', 'hi', 'hinglish'
+  langName: string; // e.g., 'English', 'Hindi', 'Hinglish'
+  youtubeEmbedUrl: string;
+  title: string; 
+}
 
 export interface Module {
   id: string;
   title: string;
   description?: string;
   contentType: ModuleContentType;
-  contentUrl?: string; // URL for video, PDF
+  contentUrl?: string; // Default video URL (if 'video'), PDF URL, etc.
+  videoLinks?: VideoLink[]; // Additional language-specific video links for 'video' type
   contentData?: string; // Markdown content, quiz data (JSON string)
-  estimatedTime: string; // e.g., "30 minutes", "1 hour"
+  estimatedTime: string; 
   isCompleted?: boolean;
 }
 
 export interface UserProgress {
   courseId: string;
-  completedModules: string[]; // Array of module IDs
+  completedModules: string[]; 
   totalModules: number;
   currentModuleId?: string;
   quizScores?: { [moduleId: string]: number };
@@ -45,18 +53,18 @@ export interface DailyTask {
   moduleId?: string;
   courseTitle?: string;
   moduleTitle?: string;
-  time: string; // e.g., "9:00 AM", "Afternoon"
+  time: string; 
   isCompleted: boolean;
   type: 'coursework' | 'quiz' | 'review' | 'break';
-  icon?: string; // Changed from LucideIcon
+  icon?: string; 
 }
 
 export interface Badge {
   id: string;
   name: string;
   description: string;
-  icon: string; // Changed from LucideIcon | string
-  color?: string; // Optional color for the badge icon or background
+  icon: string; 
+  color?: string; 
 }
 
 export interface UserProfile {
@@ -65,7 +73,7 @@ export interface UserProfile {
   avatarUrl?: string;
   points: number;
   earnedBadges: Badge[];
-  enrolledCourses: string[]; // Array of course IDs
+  enrolledCourses: string[]; 
 }
 
 export interface NavItem {
