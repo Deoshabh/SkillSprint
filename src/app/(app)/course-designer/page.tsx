@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Download, Wand2, PlusCircle, Save, Eye, LayoutGrid, Loader2, AlertTriangle, Youtube, ListPlus, Trash2, Edit, CheckCircle, Clock } from 'lucide-react';
+import { Upload, Download, Wand2, PlusCircle, Save, Eye, LayoutGrid, Loader2, AlertTriangle, Youtube, ListPlus, Trash2, Edit } from 'lucide-react';
 import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
 import { suggestYoutubeVideosForTopic, type SuggestYoutubeVideosForTopicInput } from '@/ai/flows/suggest-youtube-videos-for-topic-flow';
 import type { VideoLink } from '@/lib/types';
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils'; // Added missing import
 
 
 interface ManualVideoFormState {
@@ -146,15 +147,19 @@ export default function MyCourseDesignerPage() {
         const videoId = embedUrl.split("youtu.be/")[1]?.split("?")[0];
         if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
     } else if (!embedUrl.includes("/embed/")) {
-        // If it's a direct ID or some other format that doesn't include /embed/
-        // and isn't caught by watch?v= or youtu.be/, we try to extract last part as ID.
-        // This is a bit more brittle.
-        const pathParts = new URL(embedUrl).pathname.split('/');
-        const videoId = pathParts.pop() || pathParts.pop(); // try last or second to last
-        if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
-        else {
-             toast({ title: "Error", description: "Could not determine YouTube video ID. Please use a standard YouTube video link.", variant: "destructive" });
-             return;
+        try {
+            const urlObject = new URL(embedUrl);
+            const pathParts = urlObject.pathname.split('/');
+            const videoId = pathParts.pop() || pathParts.pop(); 
+            if (videoId) {
+                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else {
+                 toast({ title: "Error", description: "Could not determine YouTube video ID. Please use a standard YouTube video link.", variant: "destructive" });
+                 return;
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Invalid URL format. Please use a standard YouTube video link.", variant: "destructive" });
+            return;
         }
     }
 
