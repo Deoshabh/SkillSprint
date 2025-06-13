@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
-import { placeholderUserProfile } from '@/lib/placeholder-data'; // For mock login
+import { placeholderUserProfile } from '@/lib/placeholder-data'; 
 import { useRouter } from 'next/navigation'; 
 import { LogIn, Mail, KeyRound } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -21,16 +22,14 @@ export default function LoginPage() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Mock login logic
     console.log('Logging in with:', email, password);
-    // In a real app, you would validate credentials against a backend
-    if (email && password) { // Basic check
-      login({ ...placeholderUserProfile, email: email }); // Use provided email for mock
+    if (email && password) { 
+      login({ ...placeholderUserProfile, email: email }); 
       toast({
         title: "Login Successful",
         description: `Welcome back, ${placeholderUserProfile.name}!`,
       });
-      router.push('/'); // Redirect to dashboard after login
+      router.push('/dashboard'); 
     } else {
        toast({
         title: "Login Failed",
@@ -41,12 +40,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 p-4">
+      <Card className="w-full max-w-md shadow-2xl animate-fade-in">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-            <LogIn className="h-10 w-10 text-primary" />
-          </div>
+          <Link href="/" className="flex items-center justify-center space-x-2 mb-6">
+            <Gem className="h-8 w-8 text-primary" />
+            <span className="font-bold text-2xl font-headline">SkillSprint</span>
+          </Link>
           <CardTitle className="text-3xl font-headline">Welcome Back!</CardTitle>
           <CardDescription>Sign in to continue your learning journey.</CardDescription>
         </CardHeader>
@@ -87,7 +87,7 @@ export default function LoginPage() {
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Button variant="link" asChild className="p-0 h-auto font-semibold text-primary">
               <Link href="/signup">
                 Sign up
@@ -99,3 +99,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

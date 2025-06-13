@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent } from 'react';
@@ -7,31 +8,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
-import { placeholderUserProfile } from '@/lib/placeholder-data'; // For mock signup
+import { placeholderUserProfile } from '@/lib/placeholder-data'; 
 import { useRouter } from 'next/navigation';
-import { UserPlus, User, Mail, KeyRound } from 'lucide-react';
+import { UserPlus, User, Mail, KeyRound, Gem } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth(); // Use login for mock signup
+  const { login } = useAuth(); 
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Mock signup logic
     console.log('Signing up with:', name, email, password);
-    // In a real app, you would create a new user in your backend
-    if (name && email && password) { // Basic check
-      login({ ...placeholderUserProfile, name, email }); // Use provided details for mock
+    if (name && email && password) { 
+      login({ ...placeholderUserProfile, name, email }); 
       toast({
         title: "Signup Successful",
         description: `Welcome, ${name}! Start your learning journey.`,
       });
-      router.push('/'); // Redirect to dashboard after signup
+      router.push('/dashboard'); 
     } else {
       toast({
         title: "Signup Failed",
@@ -42,12 +41,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 p-4">
+      <Card className="w-full max-w-md shadow-2xl animate-fade-in">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-            <UserPlus className="h-10 w-10 text-primary" />
-          </div>
+          <Link href="/" className="flex items-center justify-center space-x-2 mb-6">
+            <Gem className="h-8 w-8 text-primary" />
+            <span className="font-bold text-2xl font-headline">SkillSprint</span>
+          </Link>
           <CardTitle className="text-3xl font-headline">Create Your Account</CardTitle>
           <CardDescription>Join SkillSprint and accelerate your learning.</CardDescription>
         </CardHeader>

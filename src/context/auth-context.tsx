@@ -1,7 +1,9 @@
+
 "use client";
 
 import type { UserProfile } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -14,11 +16,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true); // To handle initial auth check
+  const [loading, setLoading] = useState(true);
+  const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
-    // Placeholder for checking persistent login (e.g., from localStorage or a cookie)
-    // For now, we'll assume no user is logged in on initial load.
     const storedUser = localStorage.getItem('skillSprintUser');
     if (storedUser) {
       try {
@@ -34,13 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: UserProfile) => {
     setUser(userData);
     localStorage.setItem('skillSprintUser', JSON.stringify(userData));
-    // In a real app, you'd redirect or perform other actions
+    // Redirection is handled in login/signup pages
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('skillSprintUser');
-    // In a real app, you'd redirect to login page
+    router.push('/'); // Redirect to public homepage on logout
   };
 
   return (

@@ -1,141 +1,125 @@
-"use client"; // Make this a client component to use hooks like useAuth
 
-import { placeholderUserProfile, placeholderDailyPlan, placeholderCourses, placeholderUserProgress } from '@/lib/placeholder-data';
-import { DailyPlanItem } from '@/components/daily-plan-item';
-import { CourseCard } from '@/components/course-card';
-import { PointsDisplay } from '@/components/points-display';
-import { BadgeIcon } from '@/components/badge-icon';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowRight, BookMarked, CalendarCheck, CheckCircle, Gem } from 'lucide-react';
-import { useAuth } from '@/context/auth-context'; // Import useAuth
-import type { UserProfile as UserProfileType } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Gem, Library, Settings, BarChart3, Zap, Users, ArrowRight, Brain, Palette, Mic } from 'lucide-react';
 
-export default function HomePage() {
-  const { user: authUser, loading: authLoading } = useAuth(); // Get authenticated user
-  
-  // Use authenticated user if available, otherwise fallback to placeholder
-  const user: UserProfileType = authUser || placeholderUserProfile;
-  
-  const todayPlan = placeholderDailyPlan.slice(0, 3); 
-  const currentCourseId = user.enrolledCourses.length > 0 ? user.enrolledCourses[0] : placeholderCourses[0]?.id; // Fallback to first placeholder course
-  const currentCourseProgress = placeholderUserProgress.find(p => p.courseId === currentCourseId);
-  const currentCourse = placeholderCourses.find(c => c.id === currentCourseId);
-
-  const calculateOverallProgress = () => {
-    if (!currentCourseProgress || !currentCourse) return 0;
-    return (currentCourseProgress.completedModules.length / currentCourseProgress.totalModules) * 100;
-  };
-  const overallProgress = calculateOverallProgress();
-
-  if (authLoading) {
-    // You can return a loading skeleton here
-    return <div className="flex justify-center items-center min-h-screen">Loading dashboard...</div>;
-  }
+export default function PublicHomePage() {
+  const features = [
+    {
+      icon: Library,
+      title: "Pre-built & Custom Courses",
+      description: "Dive into expert-crafted courses or design your own unique learning paths tailored to your specific goals.",
+    },
+    {
+      icon: Settings,
+      title: "AI-Powered Course Designer",
+      description: "Leverage AI to automatically generate course syllabi, module content, and quizzes, saving you time and effort.",
+    },
+    {
+      icon: Zap,
+      title: "Personalized Daily Sprints",
+      description: "Stay on track with a personalized daily plan, guiding you through modules and tasks to maximize learning.",
+    },
+    {
+      icon: BarChart3,
+      title: "Progress Tracking & Gamification",
+      description: "Monitor your achievements, earn points, and collect badges to stay motivated on your learning adventure.",
+    },
+    {
+      icon: Brain, // Using Brain for Aptitude
+      title: "Diverse Learning Categories",
+      description: "Explore topics from Full-Stack Development, DSA, DevOps, to English Fluency, Design, and Aptitude.",
+    },
+    {
+      icon: Gem,
+      title: "Dark & Light Modes",
+      description: "Learn comfortably at any time of day with a seamless theme toggle for your preferred viewing experience.",
+    },
+  ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <section aria-labelledby="welcome-heading">
-        <Card className="bg-gradient-to-br from-primary via-accent to-primary/70 text-primary-foreground shadow-xl overflow-hidden">
-          <CardHeader className="relative z-10">
-            <div className="flex items-center space-x-3">
-              <Gem className="h-8 w-8" />
-              <CardTitle id="welcome-heading" className="text-3xl md:text-4xl font-headline">Welcome back, {user.name}!</CardTitle>
-            </div>
-            <CardDescription className="text-primary-foreground/90 text-lg mt-1">
-              Ready to accelerate your learning journey today?
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            {currentCourse && (
-               <div className="mt-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
-                 <p className="text-sm font-medium text-primary-foreground/80">Continue Learning:</p>
-                 <Link href={`/courses/${currentCourse.id}/module/${currentCourseProgress?.currentModuleId || currentCourse.modules[0].id}`}>
-                  <h3 className="text-xl font-semibold hover:underline text-white">{currentCourse.title}</h3>
-                 </Link>
-                 <div className="mt-3 flex items-center space-x-3">
-                   <Progress value={overallProgress} className="w-full h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground rounded-full" />
-                   <span className="text-sm font-semibold text-white">{overallProgress.toFixed(0)}%</span>
-                 </div>
-               </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
+          <Link href="/" className="flex items-center space-x-2">
+            <Gem className="h-7 w-7 text-primary" />
+            <span className="font-bold text-2xl font-headline">SkillSprint</span>
+          </Link>
+          <nav className="flex items-center space-x-2">
+            <Button variant="ghost" asChild>
+              <Link href="/login">Sign In</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/signup">Sign Up</Link>
+            </Button>
+          </nav>
+        </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <section aria-labelledby="daily-plan-heading" className="lg:col-span-2">
-          <Card className="h-full shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle id="daily-plan-heading" className="text-2xl font-headline flex items-center">
-                  <CalendarCheck className="h-6 w-6 mr-2 text-primary" /> Today&apos;s Sprint
-                </CardTitle>
-                <CardDescription>Your personalized plan for today.</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/planner">View Full Plan <ArrowRight className="ml-1 h-4 w-4" /></Link>
+      <main className="flex-1">
+        <section className="py-20 md:py-32 bg-gradient-to-br from-primary/[.07] via-background to-accent/[.07]">
+          <div className="container text-center px-4 md:px-6">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl font-headline">
+              Accelerate Your <span className="text-primary">Learning Journey</span>
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-muted-foreground max-w-3xl mx-auto">
+              SkillSprint is your adaptive learning co-pilot, designed to help you master new skills faster with AI-powered course generation, personalized plans, and engaging content.
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-x-6">
+              <Button size="lg" asChild className="w-full sm:w-auto text-lg py-7 px-8">
+                <Link href="/signup">Get Started Free</Link>
               </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {todayPlan.length > 0 ? (
-                todayPlan.map(task => <DailyPlanItem key={task.id} task={task} />)
-              ) : (
-                <p className="text-muted-foreground">No tasks scheduled for today. Enjoy your break or explore new courses!</p>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        <section aria-labelledby="gamification-heading" className="space-y-6">
-           <PointsDisplay points={user.points} />
-           <Card className="shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
-            <CardHeader>
-              <CardTitle id="gamification-heading" className="text-xl font-headline flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2 text-primary" /> My Badges
-              </CardTitle>
-              <CardDescription>Your earned achievements.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-3">
-              {user.earnedBadges.length > 0 ? (
-                user.earnedBadges.map(badge => <BadgeIcon key={badge.id} badge={badge} size="md" />)
-              ) : (
-                <p className="text-sm text-muted-foreground">No badges earned yet. Keep learning!</p>
-              )}
-            </CardContent>
-            <CardContent className="pt-0">
-               <Button variant="link" asChild className="p-0 h-auto text-sm">
-                <Link href="/gamification">View all badges <ArrowRight className="ml-1 h-3 w-3" /></Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
-      </div>
-
-      <section aria-labelledby="recommended-courses-heading">
-        <Card className="shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
-          <CardHeader>
-             <CardTitle id="recommended-courses-heading" className="text-2xl font-headline flex items-center">
-                <BookMarked className="h-6 w-6 mr-2 text-primary" /> Explore Courses
-              </CardTitle>
-            <CardDescription>Discover new skills and knowledge.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {placeholderCourses.slice(0, 3).map(course => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </CardContent>
-           <CardContent className="text-center pt-4 pb-6">
-             <Button variant="default" size="lg" asChild className="transform hover:scale-105 transition-transform duration-200">
-                <Link href="/courses">
-                  Browse All Courses <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-lg py-7 px-8">
+                <Link href="#features">
+                  Explore Features <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-           </CardContent>
-        </Card>
-      </section>
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="py-16 md:py-24 bg-background">
+          <div className="container px-4 md:px-6 space-y-12 md:space-y-16">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-headline">Why Choose SkillSprint?</h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                Everything you need to learn effectively and efficiently, supercharged by AI.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature, index) => (
+                <div key={index} className="rounded-xl border bg-card p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-start text-left">
+                  <feature.icon className="h-10 w-10 text-primary mb-4" />
+                  <h3 className="text-xl font-semibold mb-2 font-headline">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 md:py-24 bg-muted/30">
+            <div className="container px-4 md:px-6 text-center">
+                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-headline">
+                    Ready to Sprint Towards Your Goals?
+                </h2>
+                <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
+                    Join SkillSprint today and unlock a smarter way to learn.
+                </p>
+                <div className="mt-8">
+                    <Button size="lg" asChild className="text-lg py-7 px-10">
+                        <Link href="/signup">Start Your Free Trial Now</Link>
+                    </Button>
+                </div>
+            </div>
+        </section>
+      </main>
+
+      <footer className="py-8 border-t bg-background">
+        <div className="container text-center text-muted-foreground text-sm px-4 md:px-6">
+          &copy; {new Date().getFullYear()} SkillSprint. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 }
