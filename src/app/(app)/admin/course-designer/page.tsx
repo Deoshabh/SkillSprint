@@ -8,10 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Download, Wand2, PlusCircle, Save, Eye, Settings2, Loader2, AlertTriangle } from 'lucide-react';
+import { Upload, Download, Wand2, PlusCircle, Save, Eye, Settings2, Loader2, AlertTriangle, Youtube, ListPlus, Trash2 } from 'lucide-react';
 import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
+import { suggestYoutubeVideosForTopic, type SuggestYoutubeVideosForTopicInput } from '@/ai/flows/suggest-youtube-videos-for-topic-flow';
+import type { VideoLink } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import { useToast } from "@/hooks/use-toast";
+import { Separator } from '@/components/ui/separator';
+
+interface ManualVideoFormState {
+  url: string;
+  language: string;
+  creator: string;
+  notes: string;
+}
 
 export default function CustomCourseDesignerPage() {
   const { toast } = useToast();
@@ -19,17 +29,31 @@ export default function CustomCourseDesignerPage() {
   const [targetAudience, setTargetAudience] = useState('Beginners');
   const [learningObjectives, setLearningObjectives] = useState('');
   const [desiredModules, setDesiredModules] = useState(5);
-  
+
   const [syllabusResult, setSyllabusResult] = useState<string | null>(null);
   const [loadingSyllabus, setLoadingSyllabus] = useState(false);
   const [errorSyllabus, setErrorSyllabus] = useState<string | null>(null);
+
+  // State for AI Video Finder
+  const [videoSearchTopic, setVideoSearchTopic] = useState('');
+  const [aiSuggestedVideosList, setAiSuggestedVideosList] = useState<VideoLink[]>([]);
+  const [loadingAiVideos, setLoadingAiVideos] = useState(false);
+  const [errorAiVideos, setErrorAiVideos] = useState<string | null>(null);
+
+  // State for Manual Video Curation
+  const [manualVideoForm, setManualVideoForm] = useState<ManualVideoFormState>({ url: '', language: 'English', creator: '', notes: '' });
+  const [userPickedVideosList, setUserPickedVideosList] = useState<VideoLink[]>([]);
+
+  // State for Course Video Pool
+  const [courseVideoPool, setCourseVideoPool] = useState<VideoLink[]>([]);
+
 
   const handleGenerateSyllabus = async (e: FormEvent) => {
     e.preventDefault();
     if (!aiTopic.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a course topic.",
+        description: "Please enter a course topic for syllabus generation.",
         variant: "destructive",
       });
       return;
@@ -52,7 +76,7 @@ export default function CustomCourseDesignerPage() {
       console.error("Error generating syllabus:", err);
       setErrorSyllabus(err instanceof Error ? err.message : "An unknown error occurred.");
       toast({
-        title: "AI Generation Failed",
+        title: "AI Syllabus Generation Failed",
         description: "Could not generate the syllabus. Please try again.",
         variant: "destructive",
       });
@@ -60,6 +84,93 @@ export default function CustomCourseDesignerPage() {
       setLoadingSyllabus(false);
     }
   };
+
+  const handleSuggestVideosAI = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!videoSearchTopic.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a topic to search for videos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLoadingAiVideos(true);
+    setErrorAiVideos(null);
+    setAiSuggestedVideosList([]);
+    try {
+      const input: SuggestYoutubeVideosForTopicInput = { searchQuery: videoSearchTopic, numberOfSuggestions: 5 };
+      const result = await suggestYoutubeVideosForTopic(input);
+      setAiSuggestedVideosList(result.suggestedVideos);
+      if (result.suggestedVideos.length === 0) {
+        toast({ title: "AI Video Search", description: "No videos found for this topic." });
+      }
+    } catch (err) {
+      console.error("Error suggesting videos:", err);
+      setErrorAiVideos(err instanceof Error ? err.message : "AI video suggestion failed.");
+      toast({ title: "AI Video Suggestion Failed", description: errorAiVideos, variant: "destructive" });
+    } finally {
+      setLoadingAiVideos(false);
+    }
+  };
+
+  const handleManualVideoFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setManualVideoForm({ ...manualVideoForm, [e.target.name]: e.target.value });
+  };
+
+  const handleAddUserPick = (e: FormEvent) => {
+    e.preventDefault();
+    if (!manualVideoForm.url.trim() || !manualVideoForm.language.trim()) {
+      toast({ title: "Error", description: "Video URL and Language are required.", variant: "destructive" });
+      return;
+    }
+    // Basic URL validation (more robust validation might be needed)
+    if (!manualVideoForm.url.includes('youtube.com/') && !manualVideoForm.url.includes('youtu.be/')) {
+        toast({ title: "Error", description: "Please enter a valid YouTube video URL.", variant: "destructive" });
+        return;
+    }
+
+    let embedUrl = manualVideoForm.url;
+    if (embedUrl.includes("watch?v=")) {
+        const videoId = embedUrl.split("watch?v=")[1]?.split("&")[0];
+        if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (embedUrl.includes("youtu.be/")) {
+        const videoId = embedUrl.split("youtu.be/")[1]?.split("?")[0];
+        if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (!embedUrl.includes("/embed/")) {
+        // If it's not a watch, youtu.be, or embed link, it might be invalid or a direct embed link already
+        // For simplicity, we'll assume it might be an embed link if it doesn't match others
+        // More robust parsing could be added
+    }
+
+
+    const newUserPick: VideoLink = {
+      youtubeEmbedUrl: embedUrl,
+      title: manualVideoForm.url.substring(0,50)+'... (User Submitted)', // Simple title
+      langCode: manualVideoForm.language.substring(0,2).toLowerCase(),
+      langName: manualVideoForm.language,
+      creator: manualVideoForm.creator,
+      notes: manualVideoForm.notes,
+    };
+    setUserPickedVideosList([...userPickedVideosList, newUserPick]);
+    setManualVideoForm({ url: '', language: 'English', creator: '', notes: '' }); // Reset form
+    toast({ title: "Video Added", description: "Your video has been added to User Picks." });
+  };
+
+  const handleAddVideoToPool = (video: VideoLink) => {
+    if (courseVideoPool.find(v => v.youtubeEmbedUrl === video.youtubeEmbedUrl)) {
+      toast({ title: "Already in Pool", description: "This video is already in your course pool.", variant: "default" });
+      return;
+    }
+    setCourseVideoPool([...courseVideoPool, video]);
+    toast({ title: "Video Added to Pool", description: `"${video.title}" added to course video pool.` });
+  };
+
+  const handleRemoveVideoFromPool = (videoUrl: string) => {
+    setCourseVideoPool(courseVideoPool.filter(v => v.youtubeEmbedUrl !== videoUrl));
+    toast({ title: "Video Removed", description: "Video removed from course video pool." });
+  };
+
 
   return (
     <div className="space-y-8">
@@ -114,6 +225,27 @@ export default function CustomCourseDesignerPage() {
                     <Button variant="ghost" size="sm">Edit</Button>
                   </CardContent>
                 </Card>
+              </div>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Course Video Pool (Selected Videos)</h3>
+                {courseVideoPool.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No videos added to the pool yet. Use AI Tools to find and add videos.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {courseVideoPool.map((video, idx) => (
+                      <Card key={idx} className="p-3 flex justify-between items-center bg-muted/50">
+                        <div>
+                           <p className="text-sm font-medium">{video.title}</p>
+                           <p className="text-xs text-muted-foreground">{video.creator || 'N/A'} - {video.langName}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveVideoFromPool(video.youtubeEmbedUrl)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline"><Eye className="h-4 w-4 mr-2" /> Preview Course</Button>
@@ -193,69 +325,178 @@ export default function CustomCourseDesignerPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="ai-tools">
+        <div className="space-y-6">
           <Card className="shadow-xl">
             <CardHeader>
-              <CardTitle className="text-2xl">AI-Powered Tools</CardTitle>
+              <CardTitle className="text-2xl">AI-Powered Syllabus Generator</CardTitle>
               <CardDescription>Leverage AI to help design your course content.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <Card className="bg-background">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center"><Wand2 className="h-5 w-5 mr-2 text-primary" /> AI Syllabus Generator</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Provide a topic and details, and let AI generate a full syllabus with module breakdowns.
-                  </p>
-                  <form onSubmit={handleGenerateSyllabus} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="aiTopic">Course Topic</Label>
-                      <Input id="aiTopic" placeholder="e.g., Introduction to Python Programming" value={aiTopic} onChange={(e: ChangeEvent<HTMLInputElement>) => setAiTopic(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="targetAudience">Target Audience</Label>
-                      <Input id="targetAudience" placeholder="e.g., Beginners, Intermediate, Advanced" value={targetAudience} onChange={(e: ChangeEvent<HTMLInputElement>) => setTargetAudience(e.target.value)} />
-                    </div>
-                     <div className="space-y-2">
-                      <Label htmlFor="learningObjectives">Learning Objectives (comma-separated)</Label>
-                      <Textarea id="learningObjectives" placeholder="e.g., Understand core concepts, Build a simple app" value={learningObjectives} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setLearningObjectives(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="desiredModules">Number of Modules</Label>
-                      <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} />
-                    </div>
-                   <Button type="submit" disabled={loadingSyllabus} className="w-full md:w-auto">
-                    {loadingSyllabus ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                    Generate Syllabus
-                  </Button>
-                  </form>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Provide a topic and details, and let AI generate a full syllabus with module breakdowns.
+              </p>
+              <form onSubmit={handleGenerateSyllabus} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="aiTopic">Course Topic</Label>
+                  <Input id="aiTopic" placeholder="e.g., Introduction to Python Programming" value={aiTopic} onChange={(e: ChangeEvent<HTMLInputElement>) => setAiTopic(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="targetAudience">Target Audience</Label>
+                  <Input id="targetAudience" placeholder="e.g., Beginners, Intermediate, Advanced" value={targetAudience} onChange={(e: ChangeEvent<HTMLInputElement>) => setTargetAudience(e.target.value)} />
+                </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="learningObjectives">Learning Objectives (comma-separated)</Label>
+                  <Textarea id="learningObjectives" placeholder="e.g., Understand core concepts, Build a simple app" value={learningObjectives} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setLearningObjectives(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="desiredModules">Number of Modules</Label>
+                  <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} />
+                </div>
+                <Button type="submit" disabled={loadingSyllabus} className="w-full md:w-auto">
+                {loadingSyllabus ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                Generate Syllabus
+              </Button>
+              </form>
 
-                  {errorSyllabus && (
-                    <div className="mt-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5" />
-                        <p className="font-semibold">Error Generating Syllabus</p>
-                      </div>
-                      <p className="text-sm mt-1">{errorSyllabus}</p>
-                    </div>
-                  )}
+              {errorSyllabus && (
+                <div className="mt-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    <p className="font-semibold">Error Generating Syllabus</p>
+                  </div>
+                  <p className="text-sm mt-1">{errorSyllabus}</p>
+                </div>
+              )}
 
-                  {syllabusResult && !loadingSyllabus && (
-                    <Card className="mt-6">
-                      <CardHeader>
-                        <CardTitle>Generated Syllabus</CardTitle>
-                      </CardHeader>
-                      <CardContent className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{syllabusResult}</ReactMarkdown>
-                      </CardContent>
-                    </Card>
-                  )}
-                </CardContent>
-              </Card>
+              {syllabusResult && !loadingSyllabus && (
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle>Generated Syllabus</CardTitle>
+                  </CardHeader>
+                  <CardContent className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{syllabusResult}</ReactMarkdown>
+                  </CardContent>
+                </Card>
+              )}
             </CardContent>
           </Card>
+
+          <Card className="shadow-xl">
+            <CardHeader>
+                <CardTitle className="text-2xl flex items-center"><Youtube className="h-7 w-7 mr-2 text-red-600" /> AI Video Finder & Curation</CardTitle>
+                <CardDescription>Find YouTube videos by topic or add your own picks.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <form onSubmit={handleSuggestVideosAI} className="space-y-3">
+                    <Label htmlFor="videoSearchTopic">Video Topic/Subtopic</Label>
+                    <div className="flex gap-2">
+                        <Input 
+                            id="videoSearchTopic" 
+                            placeholder="e.g., React Hooks tutorial, Advanced CSS Grid" 
+                            value={videoSearchTopic} 
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setVideoSearchTopic(e.target.value)} 
+                            required 
+                        />
+                        <Button type="submit" disabled={loadingAiVideos}>
+                            {loadingAiVideos ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                </form>
+                {errorAiVideos && (
+                    <div className="p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-sm">
+                        <AlertTriangle className="h-4 w-4 inline mr-1" /> {errorAiVideos}
+                    </div>
+                )}
+                {aiSuggestedVideosList.length > 0 && (
+                    <div>
+                        <h4 className="font-semibold mb-2">AI-Suggested Videos ({aiSuggestedVideosList.length})</h4>
+                        <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                            {aiSuggestedVideosList.map((video, idx) => (
+                                <Card key={`ai-${idx}`} className="p-3 text-sm">
+                                    <p className="font-medium truncate" title={video.title}>{video.title}</p>
+                                    {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
+                                    <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
+                                    <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => handleAddVideoToPool(video)}>
+                                        <ListPlus className="h-4 w-4 mr-2" /> Add to Course Pool
+                                    </Button>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                <Separator />
+                <div>
+                    <h4 className="font-semibold mb-3">Manually Add Video</h4>
+                    <form onSubmit={handleAddUserPick} className="space-y-3">
+                        <div className="space-y-1">
+                            <Label htmlFor="manualVideoUrl">YouTube Video URL</Label>
+                            <Input id="manualVideoUrl" name="url" placeholder="https://www.youtube.com/watch?v=..." value={manualVideoForm.url} onChange={handleManualVideoFormChange} required />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="manualVideoLang">Language</Label>
+                                <Input id="manualVideoLang" name="language" placeholder="e.g., English, Hindi" value={manualVideoForm.language} onChange={handleManualVideoFormChange} required />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="manualVideoCreator">Creator (Optional)</Label>
+                                <Input id="manualVideoCreator" name="creator" placeholder="e.g., ChannelName" value={manualVideoForm.creator} onChange={handleManualVideoFormChange} />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="manualVideoNotes">Notes (Optional)</Label>
+                            <Textarea id="manualVideoNotes" name="notes" placeholder="Brief notes about the video..." value={manualVideoForm.notes} onChange={handleManualVideoFormChange} rows={2} />
+                        </div>
+                        <Button type="submit" className="w-full md:w-auto"><PlusCircle className="h-4 w-4 mr-2" /> Add User Pick</Button>
+                    </form>
+                </div>
+                 {userPickedVideosList.length > 0 && (
+                    <div className="mt-4">
+                        <h4 className="font-semibold mb-2">User Picks ({userPickedVideosList.length})</h4>
+                         <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                            {userPickedVideosList.map((video, idx) => (
+                                <Card key={`user-${idx}`} className="p-3 text-sm">
+                                    <p className="font-medium truncate" title={video.title}>{video.title}</p>
+                                    {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
+                                    <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
+                                    {video.notes && <p className="text-xs text-muted-foreground italic">Notes: {video.notes}</p>}
+                                    <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => handleAddVideoToPool(video)}>
+                                      <ListPlus className="h-4 w-4 mr-2" /> Add to Course Pool
+                                    </Button>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                <Separator />
+                 <div>
+                    <h3 className="text-lg font-semibold mb-2">Course Video Pool ({courseVideoPool.length})</h3>
+                    {courseVideoPool.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Add videos from AI suggestions or user picks to populate this pool.</p>
+                    ) : (
+                    <div className="max-h-72 overflow-y-auto space-y-2 pr-2">
+                        {courseVideoPool.map((video, idx) => (
+                        <Card key={`pool-${idx}`} className="p-3 flex justify-between items-center">
+                            <div>
+                                <p className="font-medium truncate" title={video.title}>{video.title}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {video.creator || 'N/A'} - {video.langName}
+                                    {video.notes && <span className="italic"> - Note: {video.notes.substring(0,30)}{video.notes.length > 30 && '...'}</span>}
+                                </p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveVideoFromPool(video.youtubeEmbedUrl)}>
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Remove</span>
+                            </Button>
+                        </Card>
+                        ))}
+                    </div>
+                    )}
+                </div>
+            </CardContent>
+          </Card>
+        </div>
         </TabsContent>
       </Tabs>
 

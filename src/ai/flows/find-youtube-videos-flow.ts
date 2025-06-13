@@ -11,24 +11,26 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import type { VideoLink } from '@/lib/types'; // Using type from lib
+// VideoLink type is imported from lib/types for consistency in application code,
+// but the Zod schema is defined and used here for Genkit flow validation.
+// import type { VideoLink } from '@/lib/types';
 
-const VideoLinkSchema = z.object({
+export const VideoLinkSchema = z.object({
   langCode: z.string().describe("Language code for the video (e.g., 'en', 'hi', 'hinglish')."),
   langName: z.string().describe("Full language name (e.g., 'English', 'Hindi', 'Hinglish')."),
   youtubeEmbedUrl: z.string().url().describe("The full YouTube embed URL (e.g., 'https://www.youtube.com/embed/VIDEO_ID')."),
   title: z.string().describe("The title of the YouTube video."),
+  creator: z.string().optional().describe('The creator or channel name of the YouTube video.'),
 });
 
 const FindYoutubeVideosInputSchema = z.object({
   moduleTitle: z.string().describe('The title of the course module.'),
   moduleDescription: z.string().optional().describe('A brief description of the course module content.'),
-  // targetLanguages could be added here if we want to specify languages dynamically
 });
 export type FindYoutubeVideosInput = z.infer<typeof FindYoutubeVideosInputSchema>;
 
 const FindYoutubeVideosOutputSchema = z.object({
-  videos: z.array(VideoLinkSchema).describe("An array of found YouTube video links, each with language information, embed URL, and title."),
+  videos: z.array(VideoLinkSchema).describe("An array of found YouTube video links, each with language information, embed URL, title, and optional creator."),
 });
 export type FindYoutubeVideosOutput = z.infer<typeof FindYoutubeVideosOutputSchema>;
 
@@ -54,6 +56,7 @@ For each video, provide:
 - langName: Full language name (e.g., 'English', 'Hindi', 'Hinglish').
 - youtubeEmbedUrl: The full YouTube embed URL (format: 'https://www.youtube.com/embed/VIDEO_ID'). Ensure this is an EMBED URL.
 - title: The actual title of the YouTube video.
+- creator: (Optional) The creator or channel name of the video.
 
 Prioritize videos in English. If possible, also provide one video in Hindi and one in Hinglish if relevant and available for the topic.
 If you cannot find a suitable video for a particular language or for the topic, you can omit it from the results or return fewer videos.
