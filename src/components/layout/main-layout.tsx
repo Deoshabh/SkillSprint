@@ -16,13 +16,14 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2 } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 
 const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Courses', href: '/courses', icon: BookOpen },
+  { title: 'Create Course', href: '/course-designer', icon: FilePlus2 },
   { title: 'Daily Planner', href: '/planner', icon: CalendarDays },
   { title: 'Progress', href: '/progress', icon: BarChart3 },
   { title: 'Achievements', href: '/gamification', icon: Trophy },
@@ -34,7 +35,7 @@ const accountNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-   { title: 'Course Designer', href: '/admin/course-designer', icon: Settings },
+   { title: 'Course Moderation', href: '/admin/course-designer', icon: Settings }, // Updated label, path can be reused
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -65,8 +66,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </>
             )}
 
-            {/* Placeholder for admin role check, for now always show admin items if user is logged in */}
-            {user && ( 
+            {/* Show admin items if user role is 'educator' or a future 'admin' role */}
+            {user && (user.role === 'educator' || user.role === 'admin') && ( 
               <>
                 <div className="my-2 px-4 group-data-[collapsible=icon]:px-2">
                   <hr className="border-sidebar-border group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-4/5" />
@@ -77,12 +78,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             )}
           </ScrollArea>
         </SidebarContent>
-        {user && (
+        {user && (user.role === 'educator' || user.role === 'admin') && (
           <SidebarFooter className="p-4 mt-auto">
-            <Button variant="outline" className="w-full group-data-[collapsible=icon]:hidden">
-              <ShieldCheck className="mr-2 h-4 w-4" />
-              Admin Panel
-            </Button>
+             <Link href="/admin/course-designer" className="w-full">
+              <Button variant="outline" className="w-full group-data-[collapsible=icon]:hidden">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Admin Panel
+              </Button>
+            </Link>
           </SidebarFooter>
         )}
       </Sidebar>

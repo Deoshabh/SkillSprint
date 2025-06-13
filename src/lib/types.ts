@@ -14,6 +14,10 @@ export interface Course {
   duration?: string;
   rating?: number;
   enrollmentCount?: number;
+  // User-created course specific fields
+  authorId?: string; // ID of the user who created it
+  visibility?: 'private' | 'shared' | 'public';
+  status?: 'draft' | 'pending_review' | 'published' | 'rejected';
 }
 
 export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment';
@@ -77,13 +81,12 @@ export interface UserProfile {
   points: number;
   earnedBadges: Badge[];
   enrolledCourses: string[];
-  // New fields for profile setup
-  role?: 'learner' | 'educator';
+  role?: 'learner' | 'educator' | 'admin'; // Added 'admin' role
   learningPreferences?: {
-    tracks: string[]; // Array of category strings, e.g., ["Full-Stack", "DSA"]
-    language: string; // e.g., 'English', 'Hindi', 'Spanish'
+    tracks: string[];
+    language: string; 
   };
-  profileSetupComplete?: boolean; // True if user has completed the initial setup
+  profileSetupComplete?: boolean;
 }
 
 export interface NavItem {
