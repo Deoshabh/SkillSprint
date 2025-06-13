@@ -14,21 +14,20 @@ export interface Course {
   duration?: string;
   rating?: number;
   enrollmentCount?: number;
-  // User-created course specific fields
-  authorId?: string; // ID of the user who created it
+  authorId?: string; 
   visibility?: 'private' | 'shared' | 'public';
   status?: 'draft' | 'pending_review' | 'published' | 'rejected';
 }
 
-export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment';
+export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment' | 'text';
 
 export interface VideoLink {
-  langCode: string; // e.g., 'en', 'hi', 'hinglish'
-  langName: string; // e.g., 'English', 'Hindi', 'Hinglish'
+  langCode: string; 
+  langName: string; 
   youtubeEmbedUrl: string;
   title: string;
-  creator?: string; // Optional: Creator/Channel name
-  notes?: string; // Optional: User-added notes
+  creator?: string; 
+  notes?: string; 
 }
 
 export interface Module {
@@ -36,11 +35,13 @@ export interface Module {
   title: string;
   description?: string;
   contentType: ModuleContentType;
-  contentUrl?: string; // Default video URL (if 'video'), PDF URL, etc.
-  videoLinks?: VideoLink[]; // Additional language-specific video links for 'video' type
-  contentData?: string; // Markdown content, quiz data (JSON string)
+  contentUrl?: string; 
+  videoLinks?: VideoLink[]; 
+  contentData?: string; 
   estimatedTime: string;
   isCompleted?: boolean;
+  subtopics?: string[];
+  practiceTask?: string;
 }
 
 export interface UserProgress {
@@ -74,11 +75,11 @@ export interface Badge {
 }
 
 export interface UserProfile {
-  id: string; // Added user ID
+  id: string; 
   name: string;
   email: string;
   avatarUrl?: string;
-  dataAiHint?: string; // for avatar
+  dataAiHint?: string; 
   points: number;
   earnedBadges: Badge[];
   enrolledCourses: string[];

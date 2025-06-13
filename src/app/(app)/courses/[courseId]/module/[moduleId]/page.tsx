@@ -8,12 +8,13 @@ import { MediaPlayer } from '@/components/media-player';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Lightbulb, ListChecks, Loader2, AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, ArrowRight, Lightbulb, ListChecks, Loader2, AlertTriangle, BookOpen, CheckSquare } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generateQuiz, type GenerateQuizInput } from '@/ai/flows/ai-quiz-generator';
 import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from '@/components/ui/badge';
 
 export default function ModulePage({ params }: { params: { courseId: string; moduleId: string } }) {
   const { toast } = useToast();
@@ -31,11 +32,13 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
   useEffect(() => {
     setCourse(getCourseById(params.courseId));
     setModule(getModuleById(params.courseId, params.moduleId));
-    setAiFetchedVideos([]); // Reset AI videos when module changes
+    setAiFetchedVideos([]); 
     setErrorAIVideos(null);
+    setQuizQuestionsResult(null); // Reset quiz when module changes
+    setErrorQuiz(null);
   }, [params.courseId, params.moduleId]);
 
-  if (course === undefined || module === undefined) { // Changed from null to undefined to match initial hook state possibilities
+  if (course === undefined || module === undefined) { 
     return (
       <div className="container mx-auto py-10 text-center flex justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -59,7 +62,8 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
 
   const handleGenerateQuiz = async (e: FormEvent) => {
     e.preventDefault();
-    if (!module.contentData && !module.description && !module.title) {
+    const contentForQuiz = module.contentData || module.description || module.title + (module.subtopics?.join(", ") || "");
+    if (!contentForQuiz) {
       toast({
         title: "Error",
         description: "Not enough content in this module to generate a quiz.",
@@ -73,9 +77,8 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
     setQuizQuestionsResult(null);
 
     try {
-      const moduleContentForQuiz = module.contentData || module.description || module.title;
       const input: GenerateQuizInput = {
-        courseModuleContent: moduleContentForQuiz,
+        courseModuleContent: contentForQuiz,
         numberOfQuestions: 5,
       };
       const result = await generateQuiz(input);
@@ -97,11 +100,12 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
     if (!module) return;
     setLoadingAIVideos(true);
     setErrorAIVideos(null);
-    setAiFetchedVideos([]);
+    // Keep existing AI videos or clear them? For now, let's clear and fetch fresh.
+    setAiFetchedVideos([]); 
     try {
       const input: FindYoutubeVideosInput = {
         moduleTitle: module.title,
-        moduleDescription: module.description,
+        moduleDescription: module.description || module.subtopics?.join(', '),
       };
       const result = await findYoutubeVideosForModule(input);
       setAiFetchedVideos(result.videos);
@@ -113,7 +117,7 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
       } else {
          toast({
             title: "AI Video Search Successful",
-            description: `Found ${result.videos.length} video(s). Check the player dropdown.`,
+            description: `Found ${result.videos.length} new video(s). Check the player dropdown.`,
         });
       }
     } catch (err) {
@@ -128,7 +132,6 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
       setLoadingAIVideos(false);
     }
   };
-
 
   const currentModuleIndex = course.modules.findIndex(m => m.id === module.id);
   const prevModule = currentModuleIndex > 0 ? course.modules[currentModuleIndex - 1] : null;
@@ -161,6 +164,38 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
                 <AlertTitle>AI Video Search Error</AlertTitle>
                 <AlertDescription>{errorAIVideos}</AlertDescription>
             </Alert>
+        )}
+
+        {module.subtopics && module.subtopics.length > 0 && (
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="text-xl font-headline flex items-center">
+                <ListChecks className="h-5 w-5 mr-2 text-primary" />
+                Key Subtopics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc pl-5 space-y-1">
+                {module.subtopics.map((subtopic, index) => (
+                  <li key={index} className="text-sm text-muted-foreground">{subtopic}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {module.practiceTask && (
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="text-xl font-headline flex items-center">
+                <CheckSquare className="h-5 w-5 mr-2 text-accent" />
+                Practice Task
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-foreground">{module.practiceTask}</p>
+            </CardContent>
+          </Card>
         )}
 
 
@@ -238,11 +273,12 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
                   <AccordionTrigger 
                     className={`text-sm py-2 text-left ${m.id === module.id ? 'font-bold text-primary' : 'hover:text-primary/80'}`}
                   >
-                    {index + 1}. {m.title}
+                   <span className="truncate w-full pr-1"> {index + 1}. {m.title}</span>
                   </AccordionTrigger>
                   <AccordionContent className="pl-4 text-xs">
-                    <p className="text-muted-foreground mb-1">{m.description || 'No description available.'}</p>
-                    <Link href={`/courses/${course.id}/module/${m.id}`} className="text-primary hover:underline font-medium">
+                    <p className="text-muted-foreground mb-1 line-clamp-2">{m.description || m.subtopics?.join(', ') || 'No description available.'}</p>
+                     <p className="text-muted-foreground mb-2 text-xs">Est. Time: {m.estimatedTime}</p>
+                    <Link href={`/courses/${course.id}/module/${m.id}`} className="text-primary hover:underline font-medium text-xs">
                       Go to module
                     </Link>
                   </AccordionContent>
@@ -255,3 +291,4 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
     </div>
   );
 }
+
