@@ -26,10 +26,10 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
         // Check if it's a YouTube embed URL
         if (module.contentUrl.includes('youtube.com/embed/')) {
           videos.push({
-            langCode: 'en',
-            langName: 'English (Default)',
+            langCode: 'en', // Assuming default is English if not specified
+            langName: 'English (Module Default)',
             youtubeEmbedUrl: module.contentUrl,
-            title: `${module.title} (Default)`,
+            title: `${module.title} (Module Default)`,
           });
         }
       }
@@ -53,23 +53,29 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
 
   useEffect(() => {
     if (module.contentType === 'video' && allAvailableVideos.length > 0) {
-      const defaultEnglishVideo = allAvailableVideos.find(v => v.langCode === 'en');
-      const firstVideoUrl = defaultEnglishVideo?.youtubeEmbedUrl || allAvailableVideos[0]?.youtubeEmbedUrl;
-      if (firstVideoUrl) {
-        setCurrentVideoUrl(firstVideoUrl);
-        setSelectedVideoKey(firstVideoUrl);
+      // Try to maintain current selection if it's still in the list, otherwise pick default
+      const isCurrentSelectionValid = allAvailableVideos.some(v => v.youtubeEmbedUrl === selectedVideoKey);
+      if (isCurrentSelectionValid && currentVideoUrl) {
+        // No change needed if current selection is still valid
       } else {
-        setCurrentVideoUrl(null);
-        setSelectedVideoKey('');
+        const defaultEnglishVideo = allAvailableVideos.find(v => v.langCode === 'en' || v.langName.toLowerCase().includes('english'));
+        const firstVideoUrl = defaultEnglishVideo?.youtubeEmbedUrl || allAvailableVideos[0]?.youtubeEmbedUrl;
+        if (firstVideoUrl) {
+          setCurrentVideoUrl(firstVideoUrl);
+          setSelectedVideoKey(firstVideoUrl);
+        } else {
+          setCurrentVideoUrl(null);
+          setSelectedVideoKey('');
+        }
       }
     } else if (module.contentType !== 'video') {
-        setCurrentVideoUrl(null); // Reset for non-video content
+        setCurrentVideoUrl(null); 
         setSelectedVideoKey('');
-    } else {
+    } else { // Video content type but no videos
         setCurrentVideoUrl(null);
         setSelectedVideoKey('');
     }
-  }, [allAvailableVideos, module.contentType]);
+  }, [allAvailableVideos, module.contentType, selectedVideoKey, currentVideoUrl]);
 
   const handleVideoSelectionChange = (url: string) => {
     setCurrentVideoUrl(url);
@@ -79,59 +85,32 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
   const renderContent = () => {
     switch (module.contentType) {
       case 'video':
-        if (allAvailableVideos.length === 0 && !isAISearching) {
+        if (isAISearching) {
+            return (
+              <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg aspect-video">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">AI is searching for more videos...</p>
+              </div>
+            );
+        }
+        if (allAvailableVideos.length === 0 ) {
           return (
-            <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center">
+            <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center aspect-video">
               <Video className="h-16 w-16 text-muted-foreground mb-2" />
               <p className="text-muted-foreground mb-4">No video available for this module yet.</p>
               {onSearchWithAI && (
-                <Button onClick={onSearchWithAI}>
-                  <Search className="h-4 w-4 mr-2" /> Search for Videos with AI
+                <Button onClick={onSearchWithAI} disabled={isAISearching}>
+                  <Search className="h-4 w-4 mr-2" /> 
+                  {isAISearching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Search with AI'}
                 </Button>
               )}
             </div>
           );
         }
-        if (isAISearching) {
-            return (
-              <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
-                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">Searching for videos with AI...</p>
-              </div>
-            );
-        }
-        if (!currentVideoUrl && allAvailableVideos.length > 0) {
-             // This case should be handled by useEffect setting an initial video
-            return <p>Loading video...</p>;
-        }
-         if (!currentVideoUrl && allAvailableVideos.length === 0) {
-            // This state implies AI search hasn't been triggered or yielded no results yet.
-            // The button to trigger AI search is shown above.
-            return <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center">
-              <Video className="h-16 w-16 text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">Still no video. Try AI search if available.</p>
-            </div>;
-        }
-
+        
         return (
           <div className="space-y-4">
-            {allAvailableVideos.length > 1 && (
-              <div className="max-w-xs">
-                <Select value={selectedVideoKey} onValueChange={handleVideoSelectionChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a video/language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allAvailableVideos.map((video) => (
-                      <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl}>
-                        {video.title} ({video.langName})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-             {currentVideoUrl ? (
+            {allAvailableVideos.length > 0 && currentVideoUrl ? (
                 <div className="aspect-video w-full">
                     <iframe
                     src={currentVideoUrl}
@@ -143,16 +122,36 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
                     ></iframe>
                 </div>
             ) : (
-                 <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center">
+                 <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center aspect-video">
                     <Video className="h-16 w-16 text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">Video could not be loaded.</p>
+                    <p className="text-muted-foreground">Video could not be loaded or none selected.</p>
                  </div>
             )}
-             {allAvailableVideos.length === 0 && onSearchWithAI && !isAISearching && (
-                 <Button onClick={onSearchWithAI} className="mt-4">
-                  <Search className="h-4 w-4 mr-2" /> Search for Videos with AI
-                </Button>
-            )}
+            <div className="flex flex-col sm:flex-row gap-2 items-center">
+                {allAvailableVideos.length > 0 && (
+                <div className="w-full sm:flex-grow">
+                    <Select value={selectedVideoKey} onValueChange={handleVideoSelectionChange} disabled={allAvailableVideos.length <= 1 && !onSearchWithAI}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a video version" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {allAvailableVideos.map((video) => (
+                        <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl}>
+                            {video.title} ({video.langName})
+                            {video.creator && <span className="text-xs text-muted-foreground ml-1"> - by {video.creator}</span>}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
+                )}
+                {onSearchWithAI && (
+                    <Button onClick={onSearchWithAI} variant="outline" className="w-full sm:w-auto flex-shrink-0" disabled={isAISearching}>
+                        <Search className="h-4 w-4 mr-2" />
+                        {isAISearching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Find More Videos'}
+                    </Button>
+                )}
+            </div>
           </div>
         );
       case 'markdown':
