@@ -16,16 +16,21 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Home, BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 
-const navItems: NavItem[] = [
+const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Courses', href: '/courses', icon: BookOpen },
   { title: 'Daily Planner', href: '/planner', icon: CalendarDays },
   { title: 'Progress', href: '/progress', icon: BarChart3 },
-  { title: 'Gamification', href: '/gamification', icon: Trophy },
+  { title: 'Achievements', href: '/gamification', icon: Trophy },
+];
+
+const accountNavItems: NavItem[] = [
+  { title: 'Profile', href: '/profile', icon: UserCircle2 },
+  // { title: 'Settings', href: '/settings', icon: Settings }, // Example for future
 ];
 
 const adminNavItems: NavItem[] = [
@@ -33,7 +38,7 @@ const adminNavItems: NavItem[] = [
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth(); // Assuming admin role check might be added to user object later
+  const { user } = useAuth();
 
   return (
     <SidebarProvider defaultOpen>
@@ -48,14 +53,25 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </SidebarHeader>
         <SidebarContent>
           <ScrollArea className="h-full">
-            <SidebarNav items={navItems} />
+            <SidebarNav items={mainNavItems} />
+            
+            {user && (
+              <>
+                <div className="my-2 px-4 group-data-[collapsible=icon]:px-2">
+                  <hr className="border-sidebar-border group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-4/5" />
+                </div>
+                <p className="px-4 py-1 text-xs font-medium text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden">Account</p>
+                <SidebarNav items={accountNavItems} />
+              </>
+            )}
+
             {/* Placeholder for admin role check, for now always show admin items if user is logged in */}
             {user && ( 
               <>
-                <div className="my-4 px-4 group-data-[collapsible=icon]:px-2">
+                <div className="my-2 px-4 group-data-[collapsible=icon]:px-2">
                   <hr className="border-sidebar-border group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-4/5" />
                 </div>
-                 <p className="px-4 py-2 text-xs font-medium text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden">Admin Tools</p>
+                 <p className="px-4 py-1 text-xs font-medium text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden">Admin Tools</p>
                 <SidebarNav items={adminNavItems} />
               </>
             )}

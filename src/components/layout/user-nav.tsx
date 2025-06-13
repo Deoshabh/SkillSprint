@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { placeholderUserProfile } from '@/lib/placeholder-data';
-import { CreditCard, LogOut, Settings, User, LogIn, UserPlus } from 'lucide-react';
+import { CreditCard, LogOut, Settings, User, LogIn, UserPlus, UserCircle2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
@@ -29,7 +30,7 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={profile.avatarUrl} alt={profile.name} data-ai-hint="profile person" />
+              <AvatarImage src={profile.avatarUrl} alt={profile.name} data-ai-hint={profile.dataAiHint || "profile person"} />
               <AvatarFallback>{profile.name.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           </Button>
@@ -47,10 +48,11 @@ export function UserNav() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                  <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <UserCircle2 className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <CreditCard className="mr-2 h-4 w-4" />
