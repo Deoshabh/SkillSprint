@@ -40,7 +40,7 @@ export default function PublicHomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
+        <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex items-center space-x-2">
             <Gem className="h-7 w-7 text-primary" />
             <span className="font-bold text-2xl font-headline">SkillSprint</span>
@@ -58,7 +58,7 @@ export default function PublicHomePage() {
 
       <main className="flex-1">
         <section className="py-20 md:py-32 bg-gradient-to-br from-primary/[.07] via-background to-accent/[.07]">
-          <div className="container text-center px-4 md:px-6">
+          <div className="container mx-auto text-center px-4 md:px-6">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl font-headline">
               Accelerate Your <span className="text-primary">Learning Journey</span>
             </h1>
@@ -79,7 +79,7 @@ export default function PublicHomePage() {
         </section>
 
         <section id="features" className="py-16 md:py-24 bg-background">
-          <div className="container px-4 md:px-6 space-y-12 md:space-y-16">
+          <div className="container mx-auto px-4 md:px-6 space-y-12 md:space-y-16">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-headline">Why Choose SkillSprint?</h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -99,7 +99,7 @@ export default function PublicHomePage() {
         </section>
 
         <section className="py-16 md:py-24 bg-muted/30">
-            <div className="container px-4 md:px-6 text-center">
+            <div className="container mx-auto px-4 md:px-6 text-center">
                  <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-headline">
                     Ready to Sprint Towards Your Goals?
                 </h2>
@@ -116,7 +116,7 @@ export default function PublicHomePage() {
       </main>
 
       <footer className="py-8 border-t bg-background">
-        <div className="container text-center text-muted-foreground text-sm px-4 md:px-6">
+        <div className="container mx-auto text-center text-muted-foreground text-sm px-4 md:px-6">
           &copy; {new Date().getFullYear()} SkillSprint. All rights reserved.
         </div>
       </footer>
