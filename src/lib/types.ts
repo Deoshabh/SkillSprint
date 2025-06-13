@@ -73,9 +73,17 @@ export interface UserProfile {
   name: string;
   email: string;
   avatarUrl?: string;
+  dataAiHint?: string; // for avatar
   points: number;
   earnedBadges: Badge[];
   enrolledCourses: string[];
+  // New fields for profile setup
+  role?: 'learner' | 'educator';
+  learningPreferences?: {
+    tracks: string[]; // Array of category strings, e.g., ["Full-Stack", "DSA"]
+    language: string; // e.g., 'English', 'Hindi', 'Spanish'
+  };
+  profileSetupComplete?: boolean; // True if user has completed the initial setup
 }
 
 export interface NavItem {

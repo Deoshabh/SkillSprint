@@ -12,6 +12,12 @@ export const placeholderUserProfile: UserProfile = {
     { id: 'badge2', name: 'Course Completer', description: 'Finished a full course', icon: 'Award', color: 'text-green-400' },
   ],
   enrolledCourses: ['full-stack-dev', 'dsa-mastery'],
+  role: undefined, // Or 'learner' as a default if not yet set
+  learningPreferences: {
+    tracks: [],
+    language: '', // Or a default like 'English'
+  },
+  profileSetupComplete: false, // Key change for first-time login
 };
 
 const modulesFullStack: Module[] = [

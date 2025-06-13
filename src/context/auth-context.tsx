@@ -9,6 +9,7 @@ interface AuthContextType {
   user: UserProfile | null;
   login: (userData: UserProfile) => void;
   logout: () => void;
+  updateUserProfile: (profileData: Partial<UserProfile>) => void; // New function
   loading: boolean;
 }
 
@@ -17,13 +18,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter(); 
 
   useEffect(() => {
     const storedUser = localStorage.getItem('skillSprintUser');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       } catch (e) {
         console.error("Failed to parse stored user data", e);
         localStorage.removeItem('skillSprintUser');
@@ -35,17 +37,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: UserProfile) => {
     setUser(userData);
     localStorage.setItem('skillSprintUser', JSON.stringify(userData));
-    // Redirection is handled in login/signup pages
+    // Redirection logic is now handled in login/signup pages based on profileSetupComplete
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('skillSprintUser');
-    router.push('/'); // Redirect to public homepage on logout
+    router.push('/'); 
+  };
+
+  const updateUserProfile = (profileData: Partial<UserProfile>) => {
+    if (user) {
+      const updatedUser = { 
+        ...user, 
+        ...profileData, 
+        profileSetupComplete: true // Always mark as complete when this function is called
+      };
+      setUser(updatedUser);
+      localStorage.setItem('skillSprintUser', JSON.stringify(updatedUser));
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUserProfile, loading }}>
       {children}
     </AuthContext.Provider>
   );
