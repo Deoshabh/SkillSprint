@@ -8,9 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
-import { placeholderUserProfile } from '@/lib/placeholder-data'; 
-import { useRouter } from 'next/navigation'; 
-import { LogIn, Mail, KeyRound } from 'lucide-react';
+import { placeholderUserProfile } from '@/lib/placeholder-data';
+import { useRouter } from 'next/navigation';
+import { LogIn, Mail, KeyRound, Gem } from 'lucide-react'; // Added Gem here
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
@@ -23,13 +23,13 @@ export default function LoginPage() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     console.log('Logging in with:', email, password);
-    if (email && password) { 
-      login({ ...placeholderUserProfile, email: email }); 
+    if (email && password) {
+      login({ ...placeholderUserProfile, email: email });
       toast({
         title: "Login Successful",
         description: `Welcome back, ${placeholderUserProfile.name}!`,
       });
-      router.push('/dashboard'); 
+      router.push('/dashboard');
     } else {
        toast({
         title: "Login Failed",
@@ -99,4 +99,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
