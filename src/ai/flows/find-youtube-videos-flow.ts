@@ -10,14 +10,11 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-// VideoLink type is imported from lib/types for consistency in application code,
-// but the Zod schema is defined and used here for Genkit flow validation.
-// import type { VideoLink } from '@/lib/types';
 
-const VideoLinkSchema = z.object({
+const VideoLinkSchemaForOutput = z.object({
   langCode: z.string().describe("Language code for the video (e.g., 'en', 'hi', 'hinglish')."),
   langName: z.string().describe("Full language name (e.g., 'English', 'Hindi', 'Hinglish')."),
-  youtubeEmbedUrl: z.string().url().describe("The full YouTube embed URL (e.g., 'https://www.youtube.com/embed/VIDEO_ID')."),
+  youtubeEmbedUrl: z.string().describe("The full YouTube embed URL (e.g., 'https://www.youtube.com/embed/VIDEO_ID')."), // Removed .url() for output schema
   title: z.string().describe("The title of the YouTube video."),
   creator: z.string().optional().describe('The creator or channel name of the YouTube video.'),
 });
@@ -29,7 +26,7 @@ const FindYoutubeVideosInputSchema = z.object({
 export type FindYoutubeVideosInput = z.infer<typeof FindYoutubeVideosInputSchema>;
 
 const FindYoutubeVideosOutputSchema = z.object({
-  videos: z.array(VideoLinkSchema).describe("An array of found YouTube video links, each with language information, embed URL, title, and optional creator."),
+  videos: z.array(VideoLinkSchemaForOutput).describe("An array of found YouTube video links, each with language information, embed URL, title, and optional creator."),
 });
 export type FindYoutubeVideosOutput = z.infer<typeof FindYoutubeVideosOutputSchema>;
 
@@ -41,7 +38,7 @@ export async function findYoutubeVideosForModule(input: FindYoutubeVideosInput):
 const prompt = ai.definePrompt({
   name: 'findYoutubeVideosPrompt',
   input: { schema: FindYoutubeVideosInputSchema },
-  output: { schema: FindYoutubeVideosOutputSchema },
+  output: { schema: FindYoutubeVideosOutputSchema }, // Uses VideoLinkSchemaForOutput
   prompt: `You are a helpful assistant that finds relevant YouTube videos for educational module content.
 Given the module title and optional description, find 2-3 YouTube videos that would be suitable.
 
@@ -93,4 +90,3 @@ const findYoutubeVideosFlow = ai.defineFlow(
     return { videos: validatedVideos };
   }
 );
-

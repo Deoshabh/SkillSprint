@@ -11,11 +11,11 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-// Define VideoLinkSchema directly in this file
-const VideoLinkSchema = z.object({
+// Define VideoLinkSchema directly in this file for output, without .url() for youtubeEmbedUrl
+const VideoLinkSchemaForOutput = z.object({
   langCode: z.string().describe("Language code for the video (e.g., 'en', 'hi', 'hinglish')."),
   langName: z.string().describe("Full language name (e.g., 'English', 'Hindi', 'Hinglish')."),
-  youtubeEmbedUrl: z.string().url().describe("The full YouTube embed URL (e.g., 'https://www.youtube.com/embed/VIDEO_ID')."),
+  youtubeEmbedUrl: z.string().describe("The full YouTube embed URL (e.g., 'https://www.youtube.com/embed/VIDEO_ID')."), // Removed .url()
   title: z.string().describe("The title of the YouTube video."),
   creator: z.string().optional().describe('The creator or channel name of the YouTube video.'),
 });
@@ -27,9 +27,8 @@ const SuggestYoutubeVideosForTopicInputSchema = z.object({
 });
 export type SuggestYoutubeVideosForTopicInput = z.infer<typeof SuggestYoutubeVideosForTopicInputSchema>;
 
-// Output schema will use the same VideoLinkSchema from the other flow
 const SuggestYoutubeVideosForTopicOutputSchema = z.object({
-  suggestedVideos: z.array(VideoLinkSchema).describe("An array of suggested YouTube video links, each with language information, embed URL, title, and optional creator."),
+  suggestedVideos: z.array(VideoLinkSchemaForOutput).describe("An array of suggested YouTube video links, each with language information, embed URL, title, and optional creator."),
 });
 export type SuggestYoutubeVideosForTopicOutput = z.infer<typeof SuggestYoutubeVideosForTopicOutputSchema>;
 
@@ -41,7 +40,7 @@ export async function suggestYoutubeVideosForTopic(input: SuggestYoutubeVideosFo
 const prompt = ai.definePrompt({
   name: 'suggestYoutubeVideosForTopicPrompt',
   input: {schema: SuggestYoutubeVideosForTopicInputSchema},
-  output: {schema: SuggestYoutubeVideosForTopicOutputSchema},
+  output: {schema: SuggestYoutubeVideosForTopicOutputSchema}, // Uses VideoLinkSchemaForOutput
   prompt: `You are an expert content curator. Your task is to suggest YouTube videos for a given topic.
 Please find {{{numberOfSuggestions}}} relevant YouTube videos for the following topic: "{{{searchQuery}}}".
 
@@ -93,4 +92,3 @@ const suggestYoutubeVideosFlow = ai.defineFlow(
     return { suggestedVideos: validatedVideos };
   }
 );
-

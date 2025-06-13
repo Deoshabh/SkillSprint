@@ -16,6 +16,8 @@ import ReactMarkdown from 'react-markdown';
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from '@/components/ui/badge';
+
 
 interface ManualVideoFormState {
   url: string;
@@ -49,7 +51,7 @@ export default function MyCourseDesignerPage() {
   // Course Settings State
   const [courseTitle, setCourseTitle] = useState('');
   const [courseCategory, setCourseCategory] = useState('');
-  const [courseDescription, setCourseDescription] = useState('');
+  const [courseDescriptionText, setCourseDescriptionText] = useState(''); // Renamed to avoid conflict with component
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [courseVisibility, setCourseVisibility] = useState<CourseVisibility>("private");
   const [courseStatus, setCourseStatus] = useState<string>("Draft"); // e.g., Draft, Pending Review, Published
@@ -113,8 +115,9 @@ export default function MyCourseDesignerPage() {
       }
     } catch (err) {
       console.error("Error suggesting videos:", err);
-      setErrorAiVideos(err instanceof Error ? err.message : "AI video suggestion failed.");
-      toast({ title: "AI Video Suggestion Failed", description: errorAiVideos, variant: "destructive" });
+      const errorMessage = err instanceof Error ? err.message : "AI video suggestion failed.";
+      setErrorAiVideos(errorMessage);
+      toast({ title: "AI Video Suggestion Failed", description: errorMessage, variant: "destructive" });
     } finally {
       setLoadingAiVideos(false);
     }
@@ -142,7 +145,19 @@ export default function MyCourseDesignerPage() {
     } else if (embedUrl.includes("youtu.be/")) {
         const videoId = embedUrl.split("youtu.be/")[1]?.split("?")[0];
         if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (!embedUrl.includes("/embed/")) {
+        // If it's a direct ID or some other format that doesn't include /embed/
+        // and isn't caught by watch?v= or youtu.be/, we try to extract last part as ID.
+        // This is a bit more brittle.
+        const pathParts = new URL(embedUrl).pathname.split('/');
+        const videoId = pathParts.pop() || pathParts.pop(); // try last or second to last
+        if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        else {
+             toast({ title: "Error", description: "Could not determine YouTube video ID. Please use a standard YouTube video link.", variant: "destructive" });
+             return;
+        }
     }
+
 
     const newUserPick: VideoLink = {
       youtubeEmbedUrl: embedUrl,
@@ -153,7 +168,7 @@ export default function MyCourseDesignerPage() {
       notes: manualVideoForm.notes,
     };
     setUserPickedVideosList([...userPickedVideosList, newUserPick]);
-    setManualVideoForm({ url: '', language: 'English', creator: '', notes: '' });
+    setManualVideoForm({ url: '', language: 'English', creator: '', notes: '' }); // Reset form
     toast({ title: "Video Added", description: "Your video has been added to User Picks." });
   };
 
@@ -173,7 +188,7 @@ export default function MyCourseDesignerPage() {
 
   const handleSaveCourseSettings = () => {
     // Placeholder for actual save logic
-    console.log({ courseTitle, courseCategory, courseDescription, coverImageUrl, courseVisibility, courseStatus });
+    console.log({ courseTitle, courseCategory, courseDescriptionText, coverImageUrl, courseVisibility, courseStatus });
     toast({ title: "Settings Saved", description: "Course settings have been saved (simulated)." });
     setCourseStatus("Draft - Saved"); // Example status update
   };
@@ -194,7 +209,7 @@ export default function MyCourseDesignerPage() {
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6">
           <TabsTrigger value="builder">Module Builder</TabsTrigger>
           <TabsTrigger value="settings">Course Settings</TabsTrigger>
-          <TabsTrigger value="ai-tools">AI Tools</TabsTrigger>
+          <TabsTrigger value="ai-tools">AI Tools & Video</TabsTrigger>
           <TabsTrigger value="import-export">Import/Export</TabsTrigger>
         </TabsList>
 
@@ -208,7 +223,7 @@ export default function MyCourseDesignerPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="min-h-[300px] border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center bg-muted/30">
-                <p className="text-muted-foreground mb-4 text-center">Drag & drop modules here, or click to add content blocks like lessons, videos, PDFs, quizzes, and assignments.</p>
+                <p className="text-muted-foreground mb-4 text-center">Drag & drop modules here, or click to add content blocks like lessons, videos from your pool, PDFs, quizzes, and assignments.</p>
                 <Button variant="outline">
                   <PlusCircle className="h-4 w-4 mr-2" /> Add Module Element
                 </Button>
@@ -236,19 +251,20 @@ export default function MyCourseDesignerPage() {
               </div>
               <Separator />
               <div>
-                <h3 className="text-lg font-semibold mb-2">Course Video Pool (Selected Videos for this Course)</h3>
+                <h3 className="text-lg font-semibold mb-2">Course Video Pool ({courseVideoPool.length} videos)</h3>
                 {courseVideoPool.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No videos added to this course yet. Use AI Tools or add manually to curate videos.</p>
+                  <p className="text-sm text-muted-foreground">No videos added to this course yet. Use the "AI Tools & Video" tab to curate videos.</p>
                 ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-2 border rounded-md p-3 bg-muted/20">
                     {courseVideoPool.map((video, idx) => (
-                      <Card key={idx} className="p-3 flex justify-between items-center bg-muted/50">
-                        <div>
-                           <p className="text-sm font-medium">{video.title}</p>
-                           <p className="text-xs text-muted-foreground">{video.creator || 'N/A'} - {video.langName}</p>
+                      <Card key={idx} className="p-3 flex justify-between items-center bg-background shadow-sm">
+                        <div className="flex-grow">
+                           <p className="text-sm font-medium truncate" title={video.title}>{video.title}</p>
+                           <p className="text-xs text-muted-foreground">Creator: {video.creator || 'N/A'} - Lang: {video.langName}</p>
+                           {video.notes && <p className="text-xs text-muted-foreground italic truncate" title={video.notes}>Notes: {video.notes}</p>}
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => handleRemoveVideoFromPool(video.youtubeEmbedUrl)}>
-                            <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveVideoFromPool(video.youtubeEmbedUrl)} className="ml-2 flex-shrink-0">
+                            <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </Card>
                     ))}
@@ -281,8 +297,8 @@ export default function MyCourseDesignerPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="courseDescription">Course Description</Label>
-                <Textarea id="courseDescription" placeholder="Provide a detailed overview of your course..." rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
+                <Label htmlFor="courseDescriptionText">Course Description</Label>
+                <Textarea id="courseDescriptionText" placeholder="Provide a detailed overview of your course..." rows={4} value={courseDescriptionText} onChange={(e) => setCourseDescriptionText(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="coverImage">Cover Image URL</Label>
@@ -309,18 +325,20 @@ export default function MyCourseDesignerPage() {
               </div>
                <div className="space-y-2">
                 <Label className="text-base font-medium">Course Status</Label>
-                <Input value={courseStatus} disabled className="bg-muted/50" />
+                 <Badge variant={courseStatus.includes("Published") ? "default" : courseStatus.includes("Pending") ? "outline" : "secondary"} 
+                       className={cn(
+                        courseStatus.includes("Published") && "bg-green-600 text-white",
+                        courseStatus.includes("Pending") && "border-orange-500 text-orange-500",
+                        !courseStatus.includes("Published") && !courseStatus.includes("Pending") && "bg-muted text-muted-foreground"
+                       )}
+                >
+                    {courseStatus}
+                 </Badge>
               </div>
               <div className="flex justify-between items-center pt-4">
                 <Button onClick={handleSaveCourseSettings}><Save className="h-4 w-4 mr-2" /> Save Settings</Button>
                  {courseVisibility === 'public' && courseStatus.includes("Draft") && (
                     <Button variant="outline">Submit for Review</Button>
-                 )}
-                 {courseStatus === 'Published' && (
-                    <Badge variant="secondary" className="text-green-600 border-green-600"><CheckCircle className="h-4 w-4 mr-1"/> Published</Badge>
-                 )}
-                  {courseStatus === 'Pending Review' && (
-                    <Badge variant="outline" className="text-orange-600 border-orange-600"><Clock className="h-4 w-4 mr-1"/> Pending Review</Badge>
                  )}
               </div>
             </CardContent>
@@ -328,7 +346,7 @@ export default function MyCourseDesignerPage() {
         </TabsContent>
 
         <TabsContent value="ai-tools">
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="shadow-xl">
             <CardHeader>
               <CardTitle className="text-2xl">AI-Powered Syllabus Generator</CardTitle>
@@ -383,12 +401,12 @@ export default function MyCourseDesignerPage() {
 
           <Card className="shadow-xl">
             <CardHeader>
-                <CardTitle className="text-2xl flex items-center"><Youtube className="h-7 w-7 mr-2 text-red-600" /> AI Video Finder & Curation</CardTitle>
+                <CardTitle className="text-2xl flex items-center"><Youtube className="h-7 w-7 mr-2 text-red-600" /> Video Curation</CardTitle>
                 <CardDescription>Find YouTube videos by topic or add your own picks to your course video pool.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <form onSubmit={handleSuggestVideosAI} className="space-y-3">
-                    <Label htmlFor="videoSearchTopic">Video Topic/Subtopic</Label>
+                    <Label htmlFor="videoSearchTopic">AI Video Search Topic</Label>
                     <div className="flex gap-2">
                         <Input 
                             id="videoSearchTopic" 
@@ -409,10 +427,10 @@ export default function MyCourseDesignerPage() {
                 )}
                 {aiSuggestedVideosList.length > 0 && (
                     <div>
-                        <h4 className="font-semibold mb-2">AI-Suggested Videos ({aiSuggestedVideosList.length})</h4>
-                        <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                        <h4 className="font-semibold mb-2 text-md">AI-Suggested Videos ({aiSuggestedVideosList.length})</h4>
+                        <div className="max-h-60 overflow-y-auto space-y-2 pr-2 border rounded-md p-2 bg-muted/20">
                             {aiSuggestedVideosList.map((video, idx) => (
-                                <Card key={`ai-${idx}`} className="p-3 text-sm">
+                                <Card key={`ai-${idx}`} className="p-3 text-sm bg-background shadow-sm">
                                     <p className="font-medium truncate" title={video.title}>{video.title}</p>
                                     {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
                                     <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
@@ -426,7 +444,7 @@ export default function MyCourseDesignerPage() {
                 )}
                 <Separator />
                 <div>
-                    <h4 className="font-semibold mb-3">Manually Add Video</h4>
+                    <h4 className="font-semibold mb-3 text-md">Manually Add Video</h4>
                     <form onSubmit={handleAddUserPick} className="space-y-3">
                         <div className="space-y-1">
                             <Label htmlFor="manualVideoUrl">YouTube Video URL</Label>
@@ -451,14 +469,14 @@ export default function MyCourseDesignerPage() {
                 </div>
                  {userPickedVideosList.length > 0 && (
                     <div className="mt-4">
-                        <h4 className="font-semibold mb-2">User Picks ({userPickedVideosList.length})</h4>
-                         <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                        <h4 className="font-semibold mb-2 text-md">User Picks ({userPickedVideosList.length})</h4>
+                         <div className="max-h-60 overflow-y-auto space-y-2 pr-2 border rounded-md p-2 bg-muted/20">
                             {userPickedVideosList.map((video, idx) => (
-                                <Card key={`user-${idx}`} className="p-3 text-sm">
+                                <Card key={`user-${idx}`} className="p-3 text-sm bg-background shadow-sm">
                                     <p className="font-medium truncate" title={video.title}>{video.title}</p>
                                     {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
                                     <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
-                                    {video.notes && <p className="text-xs text-muted-foreground italic">Notes: {video.notes}</p>}
+                                    {video.notes && <p className="text-xs text-muted-foreground italic truncate" title={video.notes}>Notes: {video.notes}</p>}
                                     <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => handleAddVideoToPool(video)}>
                                       <ListPlus className="h-4 w-4 mr-2" /> Add to Course Pool
                                     </Button>
