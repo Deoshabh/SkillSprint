@@ -1,12 +1,65 @@
+"use client";
+
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Download, Wand2, PlusCircle, Save, Eye, Settings2 } from 'lucide-react';
+import { Upload, Download, Wand2, PlusCircle, Save, Eye, Settings2, Loader2, AlertTriangle } from 'lucide-react';
+import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
+import ReactMarkdown from 'react-markdown';
+import { useToast } from "@/hooks/use-toast";
 
 export default function CustomCourseDesignerPage() {
+  const { toast } = useToast();
+  const [aiTopic, setAiTopic] = useState('');
+  const [targetAudience, setTargetAudience] = useState('Beginners');
+  const [learningObjectives, setLearningObjectives] = useState('');
+  const [desiredModules, setDesiredModules] = useState(5);
+  
+  const [syllabusResult, setSyllabusResult] = useState<string | null>(null);
+  const [loadingSyllabus, setLoadingSyllabus] = useState(false);
+  const [errorSyllabus, setErrorSyllabus] = useState<string | null>(null);
+
+  const handleGenerateSyllabus = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!aiTopic.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a course topic.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingSyllabus(true);
+    setErrorSyllabus(null);
+    setSyllabusResult(null);
+
+    try {
+      const input: AutoGenerateCourseSyllabusInput = {
+        courseTopic: aiTopic,
+        targetAudience,
+        learningObjectives,
+        desiredNumberOfModules: desiredModules,
+      };
+      const result = await autoGenerateCourseSyllabus(input);
+      setSyllabusResult(result.courseSyllabus);
+    } catch (err) {
+      console.error("Error generating syllabus:", err);
+      setErrorSyllabus(err instanceof Error ? err.message : "An unknown error occurred.");
+      toast({
+        title: "AI Generation Failed",
+        description: "Could not generate the syllabus. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSyllabus(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <header className="space-y-2">
@@ -41,7 +94,6 @@ export default function CustomCourseDesignerPage() {
                   <PlusCircle className="h-4 w-4 mr-2" /> Add Module
                 </Button>
               </div>
-              {/* Placeholder for module list */}
               <div className="space-y-4">
                 <Card className="bg-background">
                   <CardContent className="p-4 flex justify-between items-center">
@@ -95,7 +147,6 @@ export default function CustomCourseDesignerPage() {
                 <Label htmlFor="coverImage">Cover Image URL</Label>
                 <Input id="coverImage" type="url" placeholder="https://example.com/image.png" />
               </div>
-               {/* Placeholder for version control, sharing options */}
               <p className="text-sm text-muted-foreground pt-4">Version control, sharing, and publishing options will appear here.</p>
               <Button><Save className="h-4 w-4 mr-2" /> Save Settings</Button>
             </CardContent>
@@ -151,28 +202,62 @@ export default function CustomCourseDesignerPage() {
             <CardContent className="space-y-6">
               <Card className="bg-background">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center"><Wand2 className="h-5 w-5 mr-2 text-primary" /> AI Auto-Designer</CardTitle>
+                  <CardTitle className="text-lg flex items-center"><Wand2 className="h-5 w-5 mr-2 text-primary" /> AI Syllabus Generator</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Provide a topic and let AI generate a full syllabus, module breakdowns, quizzes, mock tests, and practice tasks.
+                    Provide a topic and details, and let AI generate a full syllabus with module breakdowns.
                   </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="aiTopic">Course Topic</Label>
-                    <Input id="aiTopic" placeholder="e.g., Introduction to Python Programming" />
-                  </div>
-                   <Button onClick={() => alert('AI Auto-Design Initiated (Placeholder)')} className="w-full md:w-auto">
-                    Generate with AI
+                  <form onSubmit={handleGenerateSyllabus} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="aiTopic">Course Topic</Label>
+                      <Input id="aiTopic" placeholder="e.g., Introduction to Python Programming" value={aiTopic} onChange={(e: ChangeEvent<HTMLInputElement>) => setAiTopic(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="targetAudience">Target Audience</Label>
+                      <Input id="targetAudience" placeholder="e.g., Beginners, Intermediate, Advanced" value={targetAudience} onChange={(e: ChangeEvent<HTMLInputElement>) => setTargetAudience(e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                      <Label htmlFor="learningObjectives">Learning Objectives (comma-separated)</Label>
+                      <Textarea id="learningObjectives" placeholder="e.g., Understand core concepts, Build a simple app" value={learningObjectives} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setLearningObjectives(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="desiredModules">Number of Modules</Label>
+                      <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} />
+                    </div>
+                   <Button type="submit" disabled={loadingSyllabus} className="w-full md:w-auto">
+                    {loadingSyllabus ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                    Generate Syllabus
                   </Button>
+                  </form>
+
+                  {errorSyllabus && (
+                    <div className="mt-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5" />
+                        <p className="font-semibold">Error Generating Syllabus</p>
+                      </div>
+                      <p className="text-sm mt-1">{errorSyllabus}</p>
+                    </div>
+                  )}
+
+                  {syllabusResult && !loadingSyllabus && (
+                    <Card className="mt-6">
+                      <CardHeader>
+                        <CardTitle>Generated Syllabus</CardTitle>
+                      </CardHeader>
+                      <CardContent className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>{syllabusResult}</ReactMarkdown>
+                      </CardContent>
+                    </Card>
+                  )}
                 </CardContent>
               </Card>
-               {/* More AI tools placeholders could go here */}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Admin Controls Placeholder */}
       <Card className="shadow-lg mt-8">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Admin Custom Course Controls</CardTitle>

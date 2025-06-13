@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Users, Star, ArrowRight, Code, Sigma, Zap, Mic, Palette, Brain, type LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface CourseCardProps {
   course: Course;
@@ -21,9 +22,13 @@ const iconMap: { [key: string]: LucideIcon } = {
 };
 
 export function CourseCard({ course }: CourseCardProps) {
-  const IconComponent = course.icon ? iconMap[course.icon] : null;
+  const IconComponent = course.icon && iconMap[course.icon] ? iconMap[course.icon] : null;
+  
   return (
-    <Card className="flex flex-col h-full overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className={cn(
+      "flex flex-col h-full overflow-hidden rounded-lg shadow-lg transition-all duration-300 ease-in-out",
+      "hover:shadow-xl hover:scale-[1.02] dark:hover:shadow-primary/20"
+    )}>
       <CardHeader className="p-0">
         {course.imageUrl && (
           <div className="relative h-48 w-full">
@@ -33,6 +38,8 @@ export function CourseCard({ course }: CourseCardProps) {
               fill
               style={{ objectFit: 'cover' }}
               className="rounded-t-lg"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority={false} // Set to true for above-the-fold images if needed
               data-ai-hint={course.dataAiHint || "education learning"}
             />
              <div className="absolute top-2 right-2">
@@ -72,7 +79,7 @@ export function CourseCard({ course }: CourseCardProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter className="p-6 border-t">
+      <CardFooter className="p-6 border-t dark:border-border/50">
         <Button asChild className="w-full" variant="default">
           <Link href={`/courses/${course.id}`}>
             View Course <ArrowRight className="ml-2 h-4 w-4" />

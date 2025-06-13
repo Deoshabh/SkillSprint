@@ -1,3 +1,5 @@
+"use client"; // Make this a client component to use hooks like useAuth
+
 import { placeholderUserProfile, placeholderDailyPlan, placeholderCourses, placeholderUserProgress } from '@/lib/placeholder-data';
 import { DailyPlanItem } from '@/components/daily-plan-item';
 import { CourseCard } from '@/components/course-card';
@@ -7,13 +9,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowRight, BookMarked, CalendarCheck, CheckCircle } from 'lucide-react';
+import { ArrowRight, BookMarked, CalendarCheck, CheckCircle, Gem } from 'lucide-react';
+import { useAuth } from '@/context/auth-context'; // Import useAuth
+import type { UserProfile as UserProfileType } from '@/lib/types';
 
 export default function HomePage() {
-  const user = placeholderUserProfile;
-  const todayPlan = placeholderDailyPlan.slice(0, 3); // Show first 3 tasks
-  const currentCourseProgress = placeholderUserProgress.find(p => p.courseId === user.enrolledCourses[0]);
-  const currentCourse = placeholderCourses.find(c => c.id === user.enrolledCourses[0]);
+  const { user: authUser, loading: authLoading } = useAuth(); // Get authenticated user
+  
+  // Use authenticated user if available, otherwise fallback to placeholder
+  const user: UserProfileType = authUser || placeholderUserProfile;
+  
+  const todayPlan = placeholderDailyPlan.slice(0, 3); 
+  const currentCourseId = user.enrolledCourses.length > 0 ? user.enrolledCourses[0] : placeholderCourses[0]?.id; // Fallback to first placeholder course
+  const currentCourseProgress = placeholderUserProgress.find(p => p.courseId === currentCourseId);
+  const currentCourse = placeholderCourses.find(c => c.id === currentCourseId);
 
   const calculateOverallProgress = () => {
     if (!currentCourseProgress || !currentCourse) return 0;
@@ -21,26 +30,34 @@ export default function HomePage() {
   };
   const overallProgress = calculateOverallProgress();
 
+  if (authLoading) {
+    // You can return a loading skeleton here
+    return <div className="flex justify-center items-center min-h-screen">Loading dashboard...</div>;
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       <section aria-labelledby="welcome-heading">
-        <Card className="bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xl">
-          <CardHeader>
-            <CardTitle id="welcome-heading" className="text-3xl font-headline">Welcome back, {user.name}!</CardTitle>
-            <CardDescription className="text-primary-foreground/80 text-lg">
+        <Card className="bg-gradient-to-br from-primary via-accent to-primary/70 text-primary-foreground shadow-xl overflow-hidden">
+          <CardHeader className="relative z-10">
+            <div className="flex items-center space-x-3">
+              <Gem className="h-8 w-8" />
+              <CardTitle id="welcome-heading" className="text-3xl md:text-4xl font-headline">Welcome back, {user.name}!</CardTitle>
+            </div>
+            <CardDescription className="text-primary-foreground/90 text-lg mt-1">
               Ready to accelerate your learning journey today?
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative z-10">
             {currentCourse && (
-               <div className="mt-2">
-                 <p className="text-sm font-medium">Continue Learning:</p>
+               <div className="mt-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+                 <p className="text-sm font-medium text-primary-foreground/80">Continue Learning:</p>
                  <Link href={`/courses/${currentCourse.id}/module/${currentCourseProgress?.currentModuleId || currentCourse.modules[0].id}`}>
-                  <h3 className="text-xl font-semibold hover:underline">{currentCourse.title}</h3>
+                  <h3 className="text-xl font-semibold hover:underline text-white">{currentCourse.title}</h3>
                  </Link>
-                 <div className="mt-2 flex items-center space-x-2">
-                   <Progress value={overallProgress} className="w-full h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-                   <span className="text-sm font-medium">{overallProgress.toFixed(0)}%</span>
+                 <div className="mt-3 flex items-center space-x-3">
+                   <Progress value={overallProgress} className="w-full h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground rounded-full" />
+                   <span className="text-sm font-semibold text-white">{overallProgress.toFixed(0)}%</span>
                  </div>
                </div>
             )}
@@ -50,7 +67,7 @@ export default function HomePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section aria-labelledby="daily-plan-heading" className="lg:col-span-2">
-          <Card className="h-full shadow-lg">
+          <Card className="h-full shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle id="daily-plan-heading" className="text-2xl font-headline flex items-center">
@@ -74,7 +91,7 @@ export default function HomePage() {
 
         <section aria-labelledby="gamification-heading" className="space-y-6">
            <PointsDisplay points={user.points} />
-           <Card className="shadow-lg">
+           <Card className="shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
             <CardHeader>
               <CardTitle id="gamification-heading" className="text-xl font-headline flex items-center">
                 <CheckCircle className="h-5 w-5 mr-2 text-primary" /> My Badges
@@ -89,7 +106,7 @@ export default function HomePage() {
               )}
             </CardContent>
             <CardContent className="pt-0">
-               <Button variant="link" asChild className="p-0 h-auto">
+               <Button variant="link" asChild className="p-0 h-auto text-sm">
                 <Link href="/gamification">View all badges <ArrowRight className="ml-1 h-3 w-3" /></Link>
               </Button>
             </CardContent>
@@ -98,7 +115,7 @@ export default function HomePage() {
       </div>
 
       <section aria-labelledby="recommended-courses-heading">
-        <Card className="shadow-lg">
+        <Card className="shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
           <CardHeader>
              <CardTitle id="recommended-courses-heading" className="text-2xl font-headline flex items-center">
                 <BookMarked className="h-6 w-6 mr-2 text-primary" /> Explore Courses
@@ -110,8 +127,8 @@ export default function HomePage() {
               <CourseCard key={course.id} course={course} />
             ))}
           </CardContent>
-           <CardContent className="text-center">
-             <Button variant="default" size="lg" asChild>
+           <CardContent className="text-center pt-4 pb-6">
+             <Button variant="default" size="lg" asChild className="transform hover:scale-105 transition-transform duration-200">
                 <Link href="/courses">
                   Browse All Courses <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
