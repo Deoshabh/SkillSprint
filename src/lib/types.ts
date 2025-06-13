@@ -74,6 +74,7 @@ export interface Badge {
 }
 
 export interface UserProfile {
+  id: string; // Added user ID
   name: string;
   email: string;
   avatarUrl?: string;
@@ -81,7 +82,7 @@ export interface UserProfile {
   points: number;
   earnedBadges: Badge[];
   enrolledCourses: string[];
-  role?: 'learner' | 'educator' | 'admin'; // Added 'admin' role
+  role?: 'learner' | 'educator' | 'admin';
   learningPreferences?: {
     tracks: string[];
     language: string; 

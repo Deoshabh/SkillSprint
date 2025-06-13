@@ -2,6 +2,7 @@
 import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink } from './types';
 
 export const placeholderUserProfile: UserProfile = {
+  id: 'user-alex-johnson-123', // Added unique ID
   name: 'Alex Johnson',
   email: 'alex.johnson@example.com',
   avatarUrl: 'https://placehold.co/100x100.png',
@@ -12,12 +13,12 @@ export const placeholderUserProfile: UserProfile = {
     { id: 'badge2', name: 'Course Completer', description: 'Finished a full course', icon: 'Award', color: 'text-green-400' },
   ],
   enrolledCourses: ['full-stack-dev', 'dsa-mastery'],
-  role: undefined, // Or 'learner' as a default if not yet set
+  role: 'educator', // Set role for testing course creation visibility
   learningPreferences: {
-    tracks: [],
-    language: '', // Or a default like 'English'
+    tracks: ['Full-Stack', 'DSA'],
+    language: 'English',
   },
-  profileSetupComplete: false, // Key change for first-time login
+  profileSetupComplete: true, // Assuming setup is complete for this existing user
 };
 
 const modulesFullStack: Module[] = [
@@ -51,6 +52,7 @@ export const placeholderCourses: Course[] = [
     duration: '12 weeks',
     rating: 4.8,
     enrollmentCount: 1500,
+    authorId: 'another-user-id-456', // Not Alex
   },
   {
     id: 'dsa-mastery',
@@ -65,6 +67,7 @@ export const placeholderCourses: Course[] = [
     duration: '8 weeks',
     rating: 4.9,
     enrollmentCount: 2200,
+    authorId: placeholderUserProfile.id, // Created by Alex
   },
   {
     id: 'devops-essentials',
@@ -99,6 +102,7 @@ export const placeholderCourses: Course[] = [
     duration: '10 weeks',
     rating: 4.6,
     enrollmentCount: 1800,
+    authorId: placeholderUserProfile.id, // Created by Alex
   },
   {
     id: 'design-ai-tools',
@@ -110,7 +114,7 @@ export const placeholderCourses: Course[] = [
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'design tools',
     modules: [
-       { id: 'design-mod1', title: 'UI/UX Fundamentals', contentType: 'video', videoLinks: [{langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/55NvZjUZU78', title: 'UI/UX Design Tutorial (English)'}], estimatedTime: '2 hours' }, // Removed contentUrl, only videoLinks
+       { id: 'design-mod1', title: 'UI/UX Fundamentals', contentType: 'video', videoLinks: [{langCode: 'en', langName: 'English', youtubeEmbedUrl: 'https://www.youtube.com/embed/55NvZjUZU78', title: 'UI/UX Design Tutorial (English)'}], estimatedTime: '2 hours' },
        { id: 'design-mod2', title: 'AI in Design (Midjourney, DALL-E)', contentType: 'markdown', contentData: 'Leveraging AI for design inspiration.', estimatedTime: '2.5 hours' },
     ],
     duration: '5 weeks',

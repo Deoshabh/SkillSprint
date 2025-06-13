@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, UserCircle2, Edit3, Mail, Briefcase, BookOpen, Languages, ShieldCheck } from 'lucide-react';
+import { Loader2, UserCircle2, Edit3, Mail, Briefcase, BookOpen, Languages, ShieldCheck, LayoutGrid, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
+import { placeholderCourses } from '@/lib/placeholder-data';
+import type { Course } from '@/lib/types';
 
 export default function UserProfilePage() {
   const { user, loading } = useAuth();
@@ -36,6 +38,8 @@ export default function UserProfilePage() {
       </Card>
     );
   }
+
+  const myCreatedCourses = placeholderCourses.filter(course => course.authorId === user.id);
 
   return (
     <div className="space-y-8">
@@ -127,12 +131,38 @@ export default function UserProfilePage() {
                     <span className="text-orange-500 font-medium">Profile Setup Incomplete</span>
                   }
                 </p>
-                {/* Add more account status details if needed, e.g., subscription tier */}
               </CardContent>
             </Card>
           </div>
 
-          {/* Placeholder for other sections like My Courses, Badges, etc. */}
+          <Card className="bg-background/50">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <LayoutGrid className="h-5 w-5 mr-2 text-primary" /> My Created Courses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {myCreatedCourses.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {myCreatedCourses.map((course: Course) => (
+                    <Badge key={course.id} variant="secondary" className="cursor-pointer hover:bg-primary/20">
+                       <Link href={`/courses/${course.id}`}>{course.title}</Link>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p className="mb-3">You haven&apos;t created any courses yet.</p>
+                  <Button variant="outline" asChild size="sm">
+                    <Link href="/course-designer">
+                      <PlusCircle className="h-4 w-4 mr-2" /> Create Your First Course
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
         </CardContent>
       </Card>
     </div>
