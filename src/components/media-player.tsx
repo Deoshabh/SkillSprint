@@ -12,9 +12,16 @@ interface MediaPlayerProps {
   aiFetchedVideos?: VideoLink[];
   onSearchWithAI?: () => void;
   isAISearching?: boolean;
+  userPreferredLanguage?: string;
 }
 
-export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAISearching = false }: MediaPlayerProps) {
+export function MediaPlayer({ 
+  module, 
+  aiFetchedVideos = [], 
+  onSearchWithAI, 
+  isAISearching = false,
+  userPreferredLanguage 
+}: MediaPlayerProps) {
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const [selectedVideoKey, setSelectedVideoKey] = useState<string>('');
   const [currentVideoIsPlaylist, setCurrentVideoIsPlaylist] = useState<boolean>(false);
@@ -24,10 +31,9 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
     let videos: VideoLink[] = [];
     if (module.contentType === 'video') {
       if (module.contentUrl) {
-        // Check if it's a YouTube embed URL
         if (module.contentUrl.includes('youtube.com/embed/')) {
           videos.push({
-            langCode: 'en', // Assuming default is English if not specified
+            langCode: 'en', 
             langName: 'English (Module Default)',
             youtubeEmbedUrl: module.contentUrl,
             title: `${module.title} (Module Default)`,
@@ -41,16 +47,15 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
       if (aiFetchedVideos) {
         videos = videos.concat(aiFetchedVideos);
       }
-      // Deduplicate based on URL
-      const uniqueVideos = new Map<string, VideoLink>();
+      
+      const uniqueVideosMap = new Map<string, VideoLink>();
       videos.forEach(video => {
-        if (!uniqueVideos.has(video.youtubeEmbedUrl)) {
-          // Ensure isPlaylist is correctly inferred if not provided
+        if (!uniqueVideosMap.has(video.youtubeEmbedUrl)) {
           const inferredIsPlaylist = video.isPlaylist !== undefined ? video.isPlaylist : video.youtubeEmbedUrl.includes('videoseries?list=');
-          uniqueVideos.set(video.youtubeEmbedUrl, {...video, isPlaylist: inferredIsPlaylist});
+          uniqueVideosMap.set(video.youtubeEmbedUrl, {...video, isPlaylist: inferredIsPlaylist});
         }
       });
-      return Array.from(uniqueVideos.values());
+      return Array.from(uniqueVideosMap.values());
     }
     return [];
   }, [module, aiFetchedVideos]);
@@ -60,18 +65,28 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
       const currentSelectedVideo = allAvailableVideos.find(v => v.youtubeEmbedUrl === selectedVideoKey);
       
       if (currentSelectedVideo) {
-        // Current selection is still valid, update its playlist status
         setCurrentVideoUrl(currentSelectedVideo.youtubeEmbedUrl);
         setCurrentVideoIsPlaylist(!!currentSelectedVideo.isPlaylist);
       } else {
-        // Pick a new default if current selection is invalid or no selection
-        const defaultEnglishVideo = allAvailableVideos.find(v => v.langCode === 'en' || v.langName.toLowerCase().includes('english'));
-        const firstVideo = defaultEnglishVideo || allAvailableVideos[0];
+        // Prioritize user's preferred language, then English, then first available
+        let videoToSelect: VideoLink | undefined = undefined;
+        if (userPreferredLanguage) {
+          videoToSelect = allAvailableVideos.find(v => 
+            v.langName.toLowerCase().includes(userPreferredLanguage.toLowerCase()) || 
+            v.langCode.toLowerCase() === userPreferredLanguage.substring(0,2).toLowerCase()
+          );
+        }
+        if (!videoToSelect) {
+          videoToSelect = allAvailableVideos.find(v => v.langCode === 'en' || v.langName.toLowerCase().includes('english'));
+        }
+        if (!videoToSelect) {
+          videoToSelect = allAvailableVideos[0];
+        }
         
-        if (firstVideo) {
-          setCurrentVideoUrl(firstVideo.youtubeEmbedUrl);
-          setSelectedVideoKey(firstVideo.youtubeEmbedUrl);
-          setCurrentVideoIsPlaylist(!!firstVideo.isPlaylist);
+        if (videoToSelect) {
+          setCurrentVideoUrl(videoToSelect.youtubeEmbedUrl);
+          setSelectedVideoKey(videoToSelect.youtubeEmbedUrl);
+          setCurrentVideoIsPlaylist(!!videoToSelect.isPlaylist);
         } else {
           setCurrentVideoUrl(null);
           setSelectedVideoKey('');
@@ -82,12 +97,12 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
         setCurrentVideoUrl(null); 
         setSelectedVideoKey('');
         setCurrentVideoIsPlaylist(false);
-    } else { // Video content type but no videos
+    } else { 
         setCurrentVideoUrl(null);
         setSelectedVideoKey('');
         setCurrentVideoIsPlaylist(false);
     }
-  }, [allAvailableVideos, module.contentType, selectedVideoKey]);
+  }, [allAvailableVideos, module.contentType, selectedVideoKey, userPreferredLanguage]);
 
   const handleVideoSelectionChange = (url: string) => {
     const selected = allAvailableVideos.find(v => v.youtubeEmbedUrl === url);
@@ -101,7 +116,7 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
   const renderContent = () => {
     switch (module.contentType) {
       case 'video':
-        if (isAISearching && allAvailableVideos.length === 0) { // Only show full loader if no videos are present
+        if (isAISearching && allAvailableVideos.length === 0) { 
             return (
               <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg aspect-video">
                 <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

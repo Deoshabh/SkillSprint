@@ -23,6 +23,11 @@ const VideoLinkSchemaForOutput = z.object({
 const FindYoutubeVideosInputSchema = z.object({
   moduleTitle: z.string().describe('The title of the course module.'),
   moduleDescription: z.string().optional().describe('A brief description of the course module content.'),
+  existingVideos: z.array(z.object({ // Pass existing videos to potentially find more from same creators
+    creator: z.string().optional(),
+    topic: z.string().optional(), // Could be module title or specific sub-topic
+  })).optional().describe('List of existing videos in the module to help find related content or more from same creators.'),
+  preferredLanguage: z.string().optional().describe('User preferred language (e.g., "English", "Hindi") to prioritize results.')
 });
 export type FindYoutubeVideosInput = z.infer<typeof FindYoutubeVideosInputSchema>;
 
@@ -40,23 +45,36 @@ const prompt = ai.definePrompt({
   name: 'findYoutubeVideosPrompt',
   input: { schema: FindYoutubeVideosInputSchema },
   output: { schema: FindYoutubeVideosOutputSchema },
-  prompt: `You are a helpful assistant that finds relevant YouTube videos for educational module content.
+  prompt: `You are a helpful assistant that finds relevant YouTube videos, prioritizing playlists and content from known creators if applicable, for educational module content.
 Given the module title and optional description, find 2-3 YouTube videos that would be suitable.
 
 Module Title: {{{moduleTitle}}}
 {{#if moduleDescription}}
 Module Description: {{{moduleDescription}}}
 {{/if}}
+{{#if preferredLanguage}}
+Prioritize videos in the user's preferred language: {{{preferredLanguage}}}. Then, provide options in English, and if relevant, Hindi and Hinglish.
+{{else}}
+Prioritize videos in English. If possible, also provide one video in Hindi and one in Hinglish if relevant and available for the topic.
+{{/if}}
 
-For each video, provide:
+{{#if existingVideos.length}}
+Consider the existing videos and their creators. If you find high-quality, relevant content or playlists from these creators on the module topic, please include them:
+{{#each existingVideos}}
+- Creator: {{this.creator}} (Topic focus: {{this.topic}})
+{{/each}}
+{{/if}}
+
+Look for well-structured playlists on the topic. Also, try to find recent or popular, up-to-date videos.
+
+For each video or playlist, provide:
 - langCode: Language code (e.g., 'en' for English, 'hi' for Hindi, 'hinglish' for Hinglish).
 - langName: Full language name (e.g., 'English', 'Hindi', 'Hinglish').
 - youtubeEmbedUrl: The full YouTube embed URL (format: 'https://www.youtube.com/embed/VIDEO_ID' for single videos, or 'https://www.youtube.com/embed/videoseries?list=PLAYLIST_ID' for playlists). Ensure this is an EMBED URL.
-- title: The actual title of the YouTube video.
-- creator: (Optional) The creator or channel name of the video.
+- title: The actual title of the YouTube video or playlist.
+- creator: (Optional) The creator or channel name of the video/playlist.
 - isPlaylist: (Optional) Set to true if the URL represents a YouTube playlist or video series, false or omit otherwise.
 
-Prioritize videos in English. If possible, also provide one video in Hindi and one in Hinglish if relevant and available for the topic.
 If you cannot find a suitable video for a particular language or for the topic, you can omit it from the results or return fewer videos.
 Return the results as an array of video objects.
 `,
@@ -96,7 +114,10 @@ const findYoutubeVideosFlow = ai.defineFlow(
           url = `https://www.youtube.com/embed/videoseries?list=${listId}`;
           if (isPlaylist === undefined) isPlaylist = true;
         }
-      } else if (!url.includes("/embed/")) {
+      } else if (url.includes("/embed/") && url.includes("list=")) { // More robust check for embed playlists
+          if (isPlaylist === undefined) isPlaylist = true;
+      }
+      else if (!url.includes("/embed/")) {
          const videoId = url.split("/").pop()?.split("?")[0];
          if (videoId && !url.includes("videoseries")) { // Check it's not already identified as a series
             url = `https://www.youtube.com/embed/${videoId}`;

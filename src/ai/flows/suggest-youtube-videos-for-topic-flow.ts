@@ -25,6 +25,8 @@ const VideoLinkSchemaForOutput = z.object({
 const SuggestYoutubeVideosForTopicInputSchema = z.object({
   searchQuery: z.string().describe('The topic or query to search videos for.'),
   numberOfSuggestions: z.number().int().positive().default(3).describe('The desired number of video suggestions (e.g., 3-5).'),
+  preferredLanguage: z.string().optional().describe('User preferred language (e.g., "English", "Hindi") to prioritize results.'),
+  knownCreator: z.string().optional().describe('If a specific creator is preferred for this topic, mention their channel name.'),
 });
 export type SuggestYoutubeVideosForTopicInput = z.infer<typeof SuggestYoutubeVideosForTopicInputSchema>;
 
@@ -47,18 +49,19 @@ Please find {{{numberOfSuggestions}}} relevant YouTube videos for the following 
 
 When suggesting videos, try to prioritize:
 1.  **Relevance**: How closely the video matches the topic.
-2.  **Popularity**: (Simulated) Videos that are generally well-regarded or have high view counts if known.
-3.  **Recency**: (Simulated) Prefer more up-to-date videos if the topic is time-sensitive, otherwise a mix is fine.
+2.  **Playlists**: If good quality, comprehensive playlists exist for the topic, prefer them.
+3.  **Creator**: {{#if knownCreator}}If possible, find content from the creator: {{{knownCreator}}}.{{else}}Consider videos from reputable or popular creators.{{/if}}
+4.  **Recency**: Prefer recent or popular, up-to-date videos if the topic is time-sensitive, otherwise a mix is fine.
+5.  **Language**: {{#if preferredLanguage}}Prioritize videos in the user's preferred language: {{{preferredLanguage}}}. Then, provide options in English, and if relevant, Hindi and Hinglish.{{else}}Focus on providing English videos first. If possible and relevant, include one Hindi and one Hinglish video.{{/if}}
 
-For each video, provide:
+For each video or playlist, provide:
 - langCode: Language code (e.g., 'en' for English, 'hi' for Hinglish).
 - langName: Full language name (e.g., 'English', 'Hindi', 'Hinglish').
 - youtubeEmbedUrl: The full YouTube embed URL (format: 'https://www.youtube.com/embed/VIDEO_ID' for single videos, or 'https://www.youtube.com/embed/videoseries?list=PLAYLIST_ID' for playlists). Ensure this is an EMBED URL.
-- title: The actual title of the YouTube video.
-- creator: (Optional) The creator or channel name of the video.
+- title: The actual title of the YouTube video or playlist.
+- creator: (Optional) The creator or channel name of the video/playlist.
 - isPlaylist: (Optional) Set to true if the URL represents a YouTube playlist or video series, false or omit otherwise.
 
-Focus on providing English videos first. If possible and relevant, include one Hindi and one Hinglish video.
 If you cannot find enough suitable videos, return as many as you can find.
 Return the results as an array named 'suggestedVideos'.
 `,
@@ -98,6 +101,8 @@ const suggestYoutubeVideosFlow = ai.defineFlow(
           url = `https://www.youtube.com/embed/videoseries?list=${listId}`;
           if (isPlaylist === undefined) isPlaylist = true;
         }
+      } else if (url.includes("/embed/") && url.includes("list=")) { // More robust check for embed playlists
+          if (isPlaylist === undefined) isPlaylist = true;
       } else if (!url.includes("/embed/")) {
          const videoId = url.split("/").pop()?.split("?")[0];
          if (videoId && !url.includes("videoseries")) {

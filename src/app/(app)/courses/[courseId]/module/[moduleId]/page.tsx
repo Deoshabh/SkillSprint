@@ -15,9 +15,11 @@ import { generateQuiz, type GenerateQuizInput } from '@/ai/flows/ai-quiz-generat
 import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/auth-context'; // Import useAuth
 
 export default function ModulePage({ params }: { params: { courseId: string; moduleId: string } }) {
   const { toast } = useToast();
+  const { user } = useAuth(); // Get user from auth context
   const [course, setCourse] = useState<Course | null | undefined>(null);
   const [module, setModule] = useState<ModuleType | null | undefined>(null);
   
@@ -106,6 +108,8 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
       const input: FindYoutubeVideosInput = {
         moduleTitle: module.title,
         moduleDescription: module.description || module.subtopics?.join(', '),
+        preferredLanguage: user?.learningPreferences?.language,
+        existingVideos: module.videoLinks?.map(v => ({ creator: v.creator, topic: module.title })) || [],
       };
       const result = await findYoutubeVideosForModule(input);
       setAiFetchedVideos(result.videos);
@@ -157,6 +161,7 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
           aiFetchedVideos={aiFetchedVideos}
           onSearchWithAI={module.contentType === 'video' ? handleSearchVideosWithAI : undefined}
           isAISearching={loadingAIVideos}
+          userPreferredLanguage={user?.learningPreferences?.language}
         />
         {errorAIVideos && (
             <Alert variant="destructive" className="mt-4">
