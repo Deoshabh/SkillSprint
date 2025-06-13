@@ -6,7 +6,6 @@
  * - findYoutubeVideosForModule - A function to find YouTube videos.
  * - FindYoutubeVideosInput - The input type for the findYoutubeVideosForModule function.
  * - FindYoutubeVideosOutput - The return type for the findYoutubeVideosForModule function.
- * - VideoLinkSchema - Zod schema for a video link.
  */
 
 import { ai } from '@/ai/genkit';
@@ -15,7 +14,7 @@ import { z } from 'genkit';
 // but the Zod schema is defined and used here for Genkit flow validation.
 // import type { VideoLink } from '@/lib/types';
 
-export const VideoLinkSchema = z.object({
+const VideoLinkSchema = z.object({
   langCode: z.string().describe("Language code for the video (e.g., 'en', 'hi', 'hinglish')."),
   langName: z.string().describe("Full language name (e.g., 'English', 'Hindi', 'Hinglish')."),
   youtubeEmbedUrl: z.string().url().describe("The full YouTube embed URL (e.g., 'https://www.youtube.com/embed/VIDEO_ID')."),
@@ -94,3 +93,4 @@ const findYoutubeVideosFlow = ai.defineFlow(
     return { videos: validatedVideos };
   }
 );
+

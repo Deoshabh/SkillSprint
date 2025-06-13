@@ -10,7 +10,16 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { VideoLinkSchema } from './find-youtube-videos-flow'; // Re-use schema for consistency
+
+// Define VideoLinkSchema directly in this file
+const VideoLinkSchema = z.object({
+  langCode: z.string().describe("Language code for the video (e.g., 'en', 'hi', 'hinglish')."),
+  langName: z.string().describe("Full language name (e.g., 'English', 'Hindi', 'Hinglish')."),
+  youtubeEmbedUrl: z.string().url().describe("The full YouTube embed URL (e.g., 'https://www.youtube.com/embed/VIDEO_ID')."),
+  title: z.string().describe("The title of the YouTube video."),
+  creator: z.string().optional().describe('The creator or channel name of the YouTube video.'),
+});
+
 
 const SuggestYoutubeVideosForTopicInputSchema = z.object({
   searchQuery: z.string().describe('The topic or query to search videos for.'),
@@ -84,3 +93,4 @@ const suggestYoutubeVideosFlow = ai.defineFlow(
     return { suggestedVideos: validatedVideos };
   }
 );
+
