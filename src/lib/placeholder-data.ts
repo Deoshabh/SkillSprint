@@ -4,7 +4,11 @@ import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, Video
 // Helper function to create YouTube embed URL from various link formats
 const getEmbedUrl = (url: string): string => {
   if (!url) return '';
-  if (url.includes('youtube.com/embed/')) return url;
+  if (url.includes('youtube.com/embed/')) return url; // Already an embed URL
+  if (url.includes('youtube.com/playlist?list=')) {
+    const listId = url.split('playlist?list=')[1]?.split('&')[0];
+    return listId ? `https://www.youtube.com/embed/videoseries?list=${listId}` : url;
+  }
   if (url.includes('youtube.com/watch?v=')) {
     const videoId = url.split('watch?v=')[1]?.split('&')[0];
     return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
@@ -12,10 +16,6 @@ const getEmbedUrl = (url: string): string => {
   if (url.includes('youtu.be/')) {
     const videoId = url.split('youtu.be/')[1]?.split('?')[0];
     return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
-  }
-  if (url.includes('youtube.com/playlist?list=')) {
-    const listId = url.split('playlist?list=')[1]?.split('&')[0];
-    return listId ? `https://www.youtube.com/embed/videoseries?list=${listId}` : url;
   }
   return url; // Fallback if no specific pattern matches
 };
@@ -28,8 +28,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['HTML structure', 'CSS selectors', 'box model'],
     practiceTask: 'Build a responsive portfolio homepage',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLu0W_9lII9agiCUZYRsvtGTXdxkzPyItg'), title: 'HTML5 & CSS3 (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=UB1O30fR-EE'), title: 'HTML5 & CSS3 (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLu0W_9lII9agiCUZYRsvtGTXdxkzPyItg'), title: 'HTML5 & CSS3 (Hinglish)', isPlaylist: true, creator: 'CodeWithHarry' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=UB1O30fR-EE'), title: 'HTML5 & CSS3 (English)', creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -37,8 +37,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Flexbox properties', 'Grid layout', 'responsive media queries'],
     practiceTask: 'Clone a blog layout using Flexbox & Grid',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RGOj5yH7evk'), title: 'Advanced CSS (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=EFafSYg-PkI'), title: 'Advanced CSS (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RGOj5yH7evk'), title: 'Advanced CSS (Hinglish)', creator: 'Shradha Khapra' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=EFafSYg-PkI'), title: 'Advanced CSS (English)', creator: 'Kevin Powell' },
     ],
   },
   {
@@ -46,8 +46,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Variables', 'functions', 'arrays', 'ES6 syntax'],
     practiceTask: 'Create a JS to-do list or calculator',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLu0W_9lII9agyB6rvIBaAmKX6cFpvLRSU'), title: 'JavaScript Basics (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=upDLs1sn7g4'), title: 'JavaScript Basics (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLu0W_9lII9agyB6rvIBaAmKX6cFpvLRSU'), title: 'JavaScript Basics (Hinglish)', isPlaylist: true, creator: 'CodeWithHarry' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=upDLs1sn7g4'), title: 'JavaScript Basics (English)', creator: 'Programming with Mosh' },
     ],
   },
   {
@@ -55,8 +55,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['DOM manipulation', 'events', 'fetch API', 'Promises/async-await'],
     practiceTask: 'Build a weather app using fetch() API',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=kgwb6VhfpUs'), title: 'JavaScript Advanced (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=PoRJizFvM7s'), title: 'JavaScript Advanced (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=kgwb6VhfpUs'), title: 'JavaScript Advanced (Hinglish)', creator: 'Chai aur Code' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=PoRJizFvM7s'), title: 'JavaScript Advanced (English)', creator: 'Web Dev Simplified' },
     ],
   },
   {
@@ -64,8 +64,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Components', 'JSX', 'state', 'props', 'useState/useEffect'],
     practiceTask: 'Develop a React to-do or note-taking app',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Ka8iSS7Sl3E'), title: 'React Fundamentals (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=w7ejDZ8SWv8'), title: 'React Fundamentals (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Ka8iSS7Sl3E'), title: 'React Fundamentals (Hinglish)', creator: 'Thapa Technical' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=w7ejDZ8SWv8'), title: 'React Fundamentals (English)', creator: 'Net Ninja' },
     ],
   },
   {
@@ -73,8 +73,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['React Router', 'Context API', 'advanced hooks'],
     practiceTask: 'Add React Router & Context to your app',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=O6P86uwfdR0'), title: 'React Hooks & Routing (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Law7wfdg_ls'), title: 'React Hooks & Routing (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=O6P86uwfdR0'), title: 'React Hooks & Routing (Hinglish)', creator: '6 Pack Programmer' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Law7wfdg_ls'), title: 'React Hooks & Routing (English)', creator: 'PedroTech' },
     ],
   },
   {
@@ -82,8 +82,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Express routing', 'middleware', 'REST API basics'],
     practiceTask: 'Implement CRUD REST API with Express',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RLtyhwFtXQA'), title: 'Node.js & Express.js (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Oe421EPjeBE'), title: 'Node.js & Express.js (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RLtyhwFtXQA'), title: 'Node.js & Express.js (Hinglish)', creator: 'CodeWithHarry' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Oe421EPjeBE'), title: 'Node.js & Express.js (English)', creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -91,8 +91,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['MongoDB setup', 'Mongoose', 'JWT auth'],
     practiceTask: 'Add JWT-based auth and DB persistence',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=XBMLGnYwKhg'), title: 'Backend: DB & Auth (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ENrzD9HAZK4'), title: 'Backend: DB & Auth (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=XBMLGnYwKhg'), title: 'Backend: DB & Auth (Hinglish)', creator: 'Chai aur Code' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ENrzD9HAZK4'), title: 'Backend: DB & Auth (English)', creator: 'Traversy Media' },
     ],
   },
   {
@@ -100,8 +100,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Table creation', 'SELECT/JOIN queries'],
     practiceTask: 'Design a SQL schema & write JOIN queries',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=7S_tz1z_5bA'), title: 'SQL Fundamentals (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=HXV3zeQKqGY'), title: 'SQL Fundamentals (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=7S_tz1z_5bA'), title: 'SQL Fundamentals (Hinglish)', creator: 'Apna College' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=HXV3zeQKqGY'), title: 'SQL Fundamentals (English)', creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -109,8 +109,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Redis caching', 'GraphQL query/mutation basics'],
     practiceTask: 'Integrate Redis caching or GraphQL endpoint',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Y0lDGjwRYKw'), title: 'NoSQL & GraphQL/Redis (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ed8SzALpx1Q'), title: 'NoSQL & GraphQL/Redis (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Y0lDGjwRYKw'), title: 'NoSQL & GraphQL/Redis (Hinglish)', creator: 'Code Eater' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ed8SzALpx1Q'), title: 'GraphQL (English)', creator: 'Ben Awad' },
     ],
   },
   {
@@ -118,8 +118,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Integrate React, Node, MongoDB, deployment'],
     practiceTask: 'Deploy a MERN app end-to-end',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=7CqJlxBYj-M'), title: 'Full-Stack MERN Project (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ngc9gnGgUdA'), title: 'Full-Stack MERN Project (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=7CqJlxBYj-M'), title: 'Full-Stack MERN Project (Hinglish)', creator: 'Chai aur Code' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ngc9gnGgUdA'), title: 'Full-Stack MERN Project (English)', creator: 'Traversy Media' },
     ],
   },
   {
@@ -127,8 +127,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Tailwind CSS utilities', 'Next.js pages/API routes'],
     practiceTask: 'Convert project to Next.js / use Tailwind CSS',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=UBOj6rqRUME'), title: 'Tailwind/Next.js (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=mTz0GXj8NN0'), title: 'Tailwind/Next.js (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=UBOj6rqRUME'), title: 'Tailwind/Next.js (Hinglish)', creator: 'CodeWithHarry' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=mTz0GXj8NN0'), title: 'Tailwind CSS (English)', creator: 'Net Ninja' },
     ],
   },
   {
@@ -136,8 +136,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Two-pointer', 'sliding window', 'string ops'],
     practiceTask: 'Solve 10 array & string LeetCode problems',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=8hly31xKli0'), title: 'DSA: Arrays & Strings (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RBSGKlAvoiM'), title: 'DSA: Arrays & Strings (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=8hly31xKli0'), title: 'DSA: Arrays & Strings (Hinglish)', creator: 'Apna College' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RBSGKlAvoiM'), title: 'DSA: Arrays & Strings (English)', creator: 'NeetCode' },
     ],
   },
   {
@@ -145,8 +145,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Stack/queue ops', 'linked list insertion/deletion'],
     practiceTask: 'Solve 10 stack/queue/linked list problems',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=njTh_OwMljA'), title: 'DSA: Stacks, Queues, Linked Lists (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=wjI1WNcIntg'), title: 'DSA: Stacks, Queues, Linked Lists (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=njTh_OwMljA'), title: 'DSA: Stacks, Queues, Linked Lists (Hinglish)', creator: 'Chai aur Code' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=wjI1WNcIntg'), title: 'DSA: Linked Lists (English)', creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -154,8 +154,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Tree traversal (DFS/BFS)', 'BST operations'],
     practiceTask: 'Solve 10 tree & graph LeetCode problems',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=oSWTXtMglKE'), title: 'DSA: Trees & Graphs (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=09_LlHjoEiY'), title: 'DSA: Trees & Graphs (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=oSWTXtMglKE'), title: 'DSA: Trees & Graphs (Hinglish)', creator: 'Apna College' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=09_LlHjoEiY'), title: 'DSA: Trees (English)', creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -163,8 +163,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['1D/2D DP', 'memoization/tabulation patterns'],
     practiceTask: 'Solve 5 dynamic programming problems',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=oBt53YbR9Kk'), title: 'DSA: Dynamic Programming (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=oBt53YbR9Kk'), title: 'DSA: Dynamic Programming (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=oBt53YbR9Kk'), title: 'DSA: Dynamic Programming (Hinglish)', creator: 'Aditya Verma' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=oBt53YbR9Kk'), title: 'DSA: Dynamic Programming (English)', creator: 'Aditya Verma (also popular in English)' },
     ],
   },
   {
@@ -172,8 +172,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Timed problem solving', 'mock interview format'],
     practiceTask: 'Complete 20 timed LeetCode interview problems',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=jDhml3Fqj-0'), title: 'Coding Interview Practice (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLWKjhJtqVAbkArDMazoARtNz1aMwNWmvC'), title: 'Coding Interview Practice (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=jDhml3Fqj-0'), title: 'Coding Interview Practice (Hinglish)', creator: 'Love Babbar' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLWKjhJtqVAbkArDMazoARtNz1aMwNWmvC'), title: 'Coding Interview Practice (English)', isPlaylist: true, creator: 'Clément Mihailescu' },
     ],
   },
   {
@@ -181,8 +181,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Load balancing', 'caching', 'CDNs', 'CAP theorem'],
     practiceTask: 'Draw & explain architecture for a sample system',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=qs83ILxS92o'), title: 'System Design Fundamentals (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo'), title: 'System Design Fundamentals (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=qs83ILxS92o'), title: 'System Design Fundamentals (Hinglish)', creator: 'Gaurav Sen' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo'), title: 'System Design Fundamentals (English)', isPlaylist: true, creator: 'Gaurav Sen' },
     ],
   },
   {
@@ -190,8 +190,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Microservices', 'message queues', 'database scaling'],
     practiceTask: 'Design two system case studies with diagrams',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo'), title: 'System Design Patterns (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo'), title: 'System Design Patterns (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo'), title: 'System Design Patterns (Hinglish)', isPlaylist: true, creator: 'Gaurav Sen' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo'), title: 'System Design Patterns (English)', isPlaylist: true, creator: 'Gaurav Sen' },
     ],
   },
   {
@@ -199,8 +199,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Mock system design interviews', 'feedback'],
     practiceTask: 'Conduct 2 mock system design interviews & debrief',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=3D0l2bIa8y4'), title: 'System Design Mocks (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=6H26G0d-oys'), title: 'System Design Mocks (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=3D0l2bIa8y4'), title: 'System Design Mocks (Hinglish)', creator: 'Exponent' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=6H26G0d-oys'), title: 'System Design Mocks (English)', creator: 'ByteByteGo' },
     ],
   },
   {
@@ -208,8 +208,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Git workflows', 'Jenkins/GitHub Actions'],
     practiceTask: 'Configure CI/CD for a project & automate tests',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Ic6BEYBz6SY'), title: 'DevOps & CI/CD (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=SZ09eoFhx1k'), title: 'DevOps & CI/CD (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Ic6BEYBz6SY'), title: 'DevOps & CI/CD (Hinglish)', creator: 'Technical Guftgu' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=SZ09eoFhx1k'), title: 'DevOps & CI/CD (English)', creator: 'Nana Janashia (TechWorld with Nana)' },
     ],
   },
   {
@@ -217,8 +217,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Dockerfiles', 'containers', 'Kubernetes basics'],
     practiceTask: 'Dockerize full-stack app & deploy on local K8s',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=HcwK0Y0wnIM'), title: 'Docker & Kubernetes (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=on18UmlXx0s'), title: 'Docker & Kubernetes (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=HcwK0Y0wnIM'), title: 'Docker & Kubernetes (Hinglish)', creator: 'Hitesh Choudhary' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=on18UmlXx0s'), title: 'Kubernetes (English)', creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -226,8 +226,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['EC2', 'S3', 'RDS', 'Lambda', 'IAM'],
     practiceTask: 'Deploy full-stack app on AWS (S3 + EC2 + Lambda)',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ulprqHHWlng'), title: 'AWS & Cloud Basics (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Ia-UEYYR44s'), title: 'AWS & Cloud Basics (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=ulprqHHWlng'), title: 'AWS & Cloud Basics (Hinglish)', creator: 'Apna College' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Ia-UEYYR44s'), title: 'AWS EC2 (English)', creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -235,8 +235,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['STAR method', 'resume polish', 'behavioral Q&A'],
     practiceTask: 'Prepare & record 5 STAR method behavioral answers',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=2nI4i2pTlPQ'), title: 'Soft Skills & Interview Prep (Hinglish)' },
-      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Q6QXyq9Iqyk'), title: 'Soft Skills & Interview Prep (English)' },
+      { langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=2nI4i2pTlPQ'), title: 'Soft Skills & Interview Prep (Hinglish)', creator: 'Aman Dhattarwal' },
+      { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Q6QXyq9Iqyk'), title: 'Behavioral Interviews (English)', creator: 'Linda Raynier' },
     ],
   },
 ];
@@ -246,7 +246,7 @@ const englishCommModules: Module[] = [
     id: 'ec-mod1', title: 'Self-Introduction & Daily Conversation', contentType: 'video', estimatedTime: '1 Week',
     subtopics: ['Introductions, greetings, basic Q&A'], practiceTask: 'Record self-intro; get feedback',
     videoLinks: [
-      { langCode: 'hi', langName: 'Hinglish', creator: 'Learnex', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PL1XYZ_hindi_intro'), title: 'Self-Introduction (Hinglish)' },
+      { langCode: 'hi', langName: 'Hinglish', creator: 'Learnex', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PL1XYZ_hindi_intro'), title: 'Self-Introduction (Hinglish)', isPlaylist: true },
       { langCode: 'en', langName: 'English', creator: 'Learn English Lab', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=english_intro_eng'), title: 'Self-Introduction (English)' },
     ],
   },
@@ -560,7 +560,7 @@ export const placeholderCourses: Course[] = [
     duration: '12 Weeks',
     rating: 4.7,
     enrollmentCount: 1800,
-    authorId: 'skillify-platform-admin',
+    authorId: 'user-alex-johnson-123', // Example: Alex created this course
   },
   {
     id: 'skillify-dait-01',
@@ -590,7 +590,7 @@ export const placeholderCourses: Course[] = [
     duration: '8 Weeks',
     rating: 4.6,
     enrollmentCount: 2100,
-    authorId: 'skillify-platform-admin',
+    authorId: 'user-alex-johnson-123', // Example: Alex also created this
   },
 ];
 
@@ -605,10 +605,10 @@ export const placeholderUserProfile: UserProfile = {
     { id: 'badge1', name: 'Fast Learner', description: 'Completed 5 modules in a day', icon: 'Zap', color: 'text-yellow-400' },
     { id: 'badge2', name: 'Course Completer', description: 'Finished a full course', icon: 'Award', color: 'text-green-400' },
   ],
-  enrolledCourses: ['skillify-fsdd-01', 'skillify-ec-01'], // Updated with new course IDs
+  enrolledCourses: ['skillify-fsdd-01', 'skillify-dait-01'], 
   role: 'educator',
   learningPreferences: {
-    tracks: ['Full-Stack, DSA & DevOps', 'English Communication'],
+    tracks: ['Full-Stack, DSA & DevOps', 'Design & AI Tools'],
     language: 'English',
   },
   profileSetupComplete: true,
@@ -616,12 +616,12 @@ export const placeholderUserProfile: UserProfile = {
 
 export const placeholderDailyPlan: DailyTask[] = [
   { id: 'task1', title: 'HTML5 & CSS3 - Module 1', courseId: 'skillify-fsdd-01', moduleId: 'fsdd-mod1', courseTitle: 'Full-Stack, DSA & DevOps', moduleTitle: 'HTML5 & CSS3', time: '9:00 AM - 11:00 AM', isCompleted: false, type: 'coursework', icon: 'Briefcase' },
-  { id: 'task2', title: 'Review Self-Introduction', courseId: 'skillify-ec-01', moduleId: 'ec-mod1', courseTitle: 'English Communication', moduleTitle: 'Self-Introduction & Daily Conversation', time: '11:30 AM - 12:30 PM', isCompleted: false, type: 'review', icon: 'Clock' },
+  { id: 'task2', title: 'UI/UX Design with Figma', courseId: 'skillify-dait-01', moduleId: 'dai-mod1', courseTitle: 'Design & AI Tools', moduleTitle: 'UI/UX Design with Figma', time: '11:30 AM - 12:30 PM', isCompleted: false, type: 'review', icon: 'Clock' },
 ];
 
 export const placeholderUserProgress: UserProgress[] = [
-  { courseId: 'skillify-fsdd-01', completedModules: [], totalModules: fullStackDsaDevOpsModules.length, currentModuleId: 'fsdd-mod1' },
-  { courseId: 'skillify-ec-01', completedModules: [], totalModules: englishCommModules.length, currentModuleId: 'ec-mod1' },
+  { courseId: 'skillify-fsdd-01', completedModules: ['fsdd-mod1'], totalModules: fullStackDsaDevOpsModules.length, currentModuleId: 'fsdd-mod2' },
+  { courseId: 'skillify-dait-01', completedModules: [], totalModules: designAiModules.length, currentModuleId: 'dai-mod1' },
 ];
 
 export const placeholderBadges: Badge[] = [

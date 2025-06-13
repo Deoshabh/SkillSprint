@@ -28,6 +28,7 @@ export interface VideoLink {
   title: string;
   creator?: string; 
   notes?: string; 
+  isPlaylist?: boolean;
 }
 
 export interface Module {

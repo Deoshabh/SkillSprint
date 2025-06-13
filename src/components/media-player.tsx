@@ -2,7 +2,7 @@
 "use client";
 import type { Module, VideoLink } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, FileText, Video, Search, Loader2 } from 'lucide-react';
+import { AlertTriangle, FileText, Video, Search, Loader2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React, { useState, useEffect, useMemo } from 'react';
@@ -17,6 +17,7 @@ interface MediaPlayerProps {
 export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAISearching = false }: MediaPlayerProps) {
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const [selectedVideoKey, setSelectedVideoKey] = useState<string>('');
+  const [currentVideoIsPlaylist, setCurrentVideoIsPlaylist] = useState<boolean>(false);
 
 
   const allAvailableVideos = useMemo(() => {
@@ -30,6 +31,7 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
             langName: 'English (Module Default)',
             youtubeEmbedUrl: module.contentUrl,
             title: `${module.title} (Module Default)`,
+            isPlaylist: module.contentUrl.includes('videoseries?list='),
           });
         }
       }
@@ -43,7 +45,9 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
       const uniqueVideos = new Map<string, VideoLink>();
       videos.forEach(video => {
         if (!uniqueVideos.has(video.youtubeEmbedUrl)) {
-          uniqueVideos.set(video.youtubeEmbedUrl, video);
+          // Ensure isPlaylist is correctly inferred if not provided
+          const inferredIsPlaylist = video.isPlaylist !== undefined ? video.isPlaylist : video.youtubeEmbedUrl.includes('videoseries?list=');
+          uniqueVideos.set(video.youtubeEmbedUrl, {...video, isPlaylist: inferredIsPlaylist});
         }
       });
       return Array.from(uniqueVideos.values());
@@ -53,43 +57,55 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
 
   useEffect(() => {
     if (module.contentType === 'video' && allAvailableVideos.length > 0) {
-      // Try to maintain current selection if it's still in the list, otherwise pick default
-      const isCurrentSelectionValid = allAvailableVideos.some(v => v.youtubeEmbedUrl === selectedVideoKey);
-      if (isCurrentSelectionValid && currentVideoUrl) {
-        // No change needed if current selection is still valid
+      const currentSelectedVideo = allAvailableVideos.find(v => v.youtubeEmbedUrl === selectedVideoKey);
+      
+      if (currentSelectedVideo) {
+        // Current selection is still valid, update its playlist status
+        setCurrentVideoUrl(currentSelectedVideo.youtubeEmbedUrl);
+        setCurrentVideoIsPlaylist(!!currentSelectedVideo.isPlaylist);
       } else {
+        // Pick a new default if current selection is invalid or no selection
         const defaultEnglishVideo = allAvailableVideos.find(v => v.langCode === 'en' || v.langName.toLowerCase().includes('english'));
-        const firstVideoUrl = defaultEnglishVideo?.youtubeEmbedUrl || allAvailableVideos[0]?.youtubeEmbedUrl;
-        if (firstVideoUrl) {
-          setCurrentVideoUrl(firstVideoUrl);
-          setSelectedVideoKey(firstVideoUrl);
+        const firstVideo = defaultEnglishVideo || allAvailableVideos[0];
+        
+        if (firstVideo) {
+          setCurrentVideoUrl(firstVideo.youtubeEmbedUrl);
+          setSelectedVideoKey(firstVideo.youtubeEmbedUrl);
+          setCurrentVideoIsPlaylist(!!firstVideo.isPlaylist);
         } else {
           setCurrentVideoUrl(null);
           setSelectedVideoKey('');
+          setCurrentVideoIsPlaylist(false);
         }
       }
     } else if (module.contentType !== 'video') {
         setCurrentVideoUrl(null); 
         setSelectedVideoKey('');
+        setCurrentVideoIsPlaylist(false);
     } else { // Video content type but no videos
         setCurrentVideoUrl(null);
         setSelectedVideoKey('');
+        setCurrentVideoIsPlaylist(false);
     }
-  }, [allAvailableVideos, module.contentType, selectedVideoKey, currentVideoUrl]);
+  }, [allAvailableVideos, module.contentType, selectedVideoKey]);
 
   const handleVideoSelectionChange = (url: string) => {
-    setCurrentVideoUrl(url);
-    setSelectedVideoKey(url);
+    const selected = allAvailableVideos.find(v => v.youtubeEmbedUrl === url);
+    if (selected) {
+      setCurrentVideoUrl(selected.youtubeEmbedUrl);
+      setSelectedVideoKey(selected.youtubeEmbedUrl);
+      setCurrentVideoIsPlaylist(!!selected.isPlaylist);
+    }
   };
 
   const renderContent = () => {
     switch (module.contentType) {
       case 'video':
-        if (isAISearching) {
+        if (isAISearching && allAvailableVideos.length === 0) { // Only show full loader if no videos are present
             return (
               <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg aspect-video">
                 <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">AI is searching for more videos...</p>
+                <p className="text-muted-foreground">AI is searching for videos...</p>
               </div>
             );
         }
@@ -110,7 +126,7 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
         
         return (
           <div className="space-y-4">
-            {allAvailableVideos.length > 0 && currentVideoUrl ? (
+            {currentVideoUrl ? (
                 <div className="aspect-video w-full">
                     <iframe
                     src={currentVideoUrl}
@@ -127,17 +143,23 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
                     <p className="text-muted-foreground">Video could not be loaded or none selected.</p>
                  </div>
             )}
+            {currentVideoIsPlaylist && (
+              <div className="flex items-center p-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md border border-blue-200 dark:border-blue-700">
+                <Info className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>This is a playlist. Use the YouTube player controls to navigate videos.</span>
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row gap-2 items-center">
                 {allAvailableVideos.length > 0 && (
                 <div className="w-full sm:flex-grow">
-                    <Select value={selectedVideoKey} onValueChange={handleVideoSelectionChange} disabled={allAvailableVideos.length <= 1 && !onSearchWithAI}>
+                    <Select value={selectedVideoKey} onValueChange={handleVideoSelectionChange} disabled={allAvailableVideos.length === 0}>
                     <SelectTrigger>
                         <SelectValue placeholder="Select a video version" />
                     </SelectTrigger>
                     <SelectContent>
                         {allAvailableVideos.map((video) => (
                         <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl}>
-                            {video.title} ({video.langName})
+                            {video.title} ({video.langName}){video.isPlaylist ? " (Playlist)" : ""}
                             {video.creator && <span className="text-xs text-muted-foreground ml-1"> - by {video.creator}</span>}
                         </SelectItem>
                         ))}
@@ -147,8 +169,8 @@ export function MediaPlayer({ module, aiFetchedVideos = [], onSearchWithAI, isAI
                 )}
                 {onSearchWithAI && (
                     <Button onClick={onSearchWithAI} variant="outline" className="w-full sm:w-auto flex-shrink-0" disabled={isAISearching}>
-                        <Search className="h-4 w-4 mr-2" />
-                        {isAISearching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Find More Videos'}
+                        {isAISearching && !currentVideoUrl ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                        {isAISearching && !currentVideoUrl ? 'Searching...' : 'Find More Videos'}
                     </Button>
                 )}
             </div>
