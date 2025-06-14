@@ -57,22 +57,56 @@ const doubtSolverFlow = ai.defineFlow(
     }
     messages.push({ role: 'user', parts: [{ text: query }] });
 
-    const { output } = await ai.generate({
-      prompt: query, // The prompt to the model is the latest user query.
-      history: messages.slice(0, -1), // History is all messages except the current query.
+    const genResponse = await ai.generate({
+      prompt: query, 
+      history: messages.slice(0, -1), 
       config: {
         // Optional: Add temperature, topK, topP if needed
         // temperature: 0.7,
+        // safetySettings can be added here if issues persist, e.g.:
+        // safetySettings: [
+        //   { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' }
+        // ],
       },
-      system: doubtSolverSystemInstruction, // Provide system instructions
+      system: doubtSolverSystemInstruction,
     });
     
-    if (!output?.text) {
-        // Handle cases where output or output.text is undefined
-        console.error("AI did not return a text response.");
+    const aiText = genResponse.text; // Use the .text accessor on GenerateResponseData
+
+    if (!aiText) {
+        console.error("AI did not return a usable text response from doubtSolverFlow. genResponse.text was empty.");
+        const candidate = genResponse.candidates[0];
+        if (candidate) {
+          console.error("  Candidate Finish Reason:", candidate.finishReason);
+          if (candidate.finishMessage) {
+            console.error("  Candidate Finish Message:", candidate.finishMessage);
+          }
+          if (candidate.message && candidate.message.parts && candidate.message.parts.length > 0) {
+            const partSummaries = candidate.message.parts.map(p => {
+              if (p.text) return ({ type: 'text', length: p.text.length, startsWith: p.text.substring(0, 50) + (p.text.length > 50 ? '...' : '') });
+              if (p.toolRequest) return ({ type: 'toolRequest', name: p.toolRequest.name });
+              return ({ type: 'unknownPart' });
+            });
+            console.error("  Candidate Message Parts structure:", JSON.stringify(partSummaries));
+          } else {
+            console.error("  Candidate had no message parts or no text content in parts.");
+          }
+          // Log safety-related information if present in candidate.custom
+          if (candidate.custom?.safetyRatings) {
+             console.error("  Candidate Safety Ratings:", JSON.stringify(candidate.custom.safetyRatings));
+          }
+           if (candidate.custom?.blocked !== undefined) { // Check if blocked field exists
+             console.error("  Candidate Blocked Status:", candidate.custom.blocked);
+          }
+        } else {
+          console.error("  No candidate found in AI response.");
+          // Avoid logging the entire genResponse if it could be huge or sensitive.
+          // Log key aspects like number of candidates if that's useful.
+          console.error("  Full AI Response Data (candidates count):", genResponse.candidates?.length ?? 0);
+        }
         return { response: "I'm sorry, I couldn't generate a response at this moment. Please try again." };
     }
 
-    return { response: output.text };
+    return { response: aiText };
   }
 );
