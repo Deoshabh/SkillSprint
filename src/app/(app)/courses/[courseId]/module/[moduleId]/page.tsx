@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, type FormEvent } from 'react';
+import React, { useState, useEffect, type FormEvent, use } from 'react'; // Import use
 import { getCourseById, getModuleById } from '@/lib/placeholder-data';
 import type { Course, Module as ModuleType, VideoLink } from '@/lib/types';
 import { MediaPlayer } from '@/components/media-player';
@@ -15,11 +15,13 @@ import { generateQuiz, type GenerateQuizInput } from '@/ai/flows/ai-quiz-generat
 import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/context/auth-context'; // Import useAuth
+import { useAuth } from '@/context/auth-context';
 
-export default function ModulePage({ params }: { params: { courseId: string; moduleId: string } }) {
+export default function ModulePage({ params: paramsPromise }: { params: Promise<{ courseId: string; moduleId: string }> }) {
+  const params = use(paramsPromise); // Unwrap the params promise
+
   const { toast } = useToast();
-  const { user } = useAuth(); // Get user from auth context
+  const { user } = useAuth(); 
   const [course, setCourse] = useState<Course | null | undefined>(null);
   const [module, setModule] = useState<ModuleType | null | undefined>(null);
   
@@ -32,13 +34,14 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
   const [errorAIVideos, setErrorAIVideos] = useState<string | null>(null);
 
   useEffect(() => {
+    // params.courseId and params.moduleId are now from the resolved object
     setCourse(getCourseById(params.courseId));
     setModule(getModuleById(params.courseId, params.moduleId));
     setAiFetchedVideos([]); 
     setErrorAIVideos(null);
-    setQuizQuestionsResult(null); // Reset quiz when module changes
+    setQuizQuestionsResult(null); 
     setErrorQuiz(null);
-  }, [params.courseId, params.moduleId]);
+  }, [params.courseId, params.moduleId]); // Dependencies are properties of the resolved object
 
   if (course === undefined || module === undefined) { 
     return (
@@ -102,7 +105,6 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
     if (!module) return;
     setLoadingAIVideos(true);
     setErrorAIVideos(null);
-    // Keep existing AI videos or clear them? For now, let's clear and fetch fresh.
     setAiFetchedVideos([]); 
     try {
       const input: FindYoutubeVideosInput = {
@@ -296,4 +298,3 @@ export default function ModulePage({ params }: { params: { courseId: string; mod
     </div>
   );
 }
-
