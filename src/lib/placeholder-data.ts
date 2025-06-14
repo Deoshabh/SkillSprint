@@ -1,5 +1,5 @@
 
-import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink } from './types';
+import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink, UserModuleVideos } from './types';
 
 // Helper function to create YouTube embed URL from various link formats
 const getEmbedUrl = (url: string): string => {
@@ -612,9 +612,14 @@ export const placeholderUserProfile: UserProfile = {
     language: 'English',
   },
   customVideoLinks: [
-    { langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), title: 'My Favorite Study Music (User Pick)', isPlaylist: false, creator: 'User' },
-    { langCode: 'any', langName: 'Any Language', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLx0sYbCqOb8TBPRdmBHs5Iftvv9TPboYG'), title: 'Web Dev Favorites (User Playlist)', isPlaylist: true, creator: 'User' }
+    { id: 'userlib-1', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), title: 'My Favorite Study Music (User Pick)', isPlaylist: false, creator: 'User' },
+    { id: 'userlib-2', langCode: 'any', langName: 'Any Language', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLx0sYbCqOb8TBPRdmBHs5Iftvv9TPboYG'), title: 'Web Dev Favorites (User Playlist)', isPlaylist: true, creator: 'User' }
   ],
+  userModuleVideos: {
+    'skillify-fsdd-01-fsdd-mod1': [
+      { id: 'usermod-1', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=some_other_html_video'), title: 'Alex\'s HTML Deep Dive', isPlaylist: false, creator: 'Alex' }
+    ]
+  },
   profileSetupComplete: true,
 };
 

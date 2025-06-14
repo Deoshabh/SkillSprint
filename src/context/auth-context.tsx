@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { UserProfile, VideoLink } from '@/lib/types'; // Added VideoLink
+import type { UserProfile, VideoLink, UserModuleVideos } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -25,6 +25,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUser) {
       try {
         const parsedUser: UserProfile = JSON.parse(storedUser);
+        // Ensure new fields have defaults if not present in older stored data
+        if (!parsedUser.customVideoLinks) {
+          parsedUser.customVideoLinks = [];
+        }
+        if (!parsedUser.userModuleVideos) {
+          parsedUser.userModuleVideos = {};
+        }
         setUser(parsedUser);
       } catch (e) {
         console.error("Failed to parse stored user data", e);
@@ -35,9 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (userData: UserProfile) => {
-    const userToStore = {
+    const userToStore: UserProfile = {
       ...userData,
-      customVideoLinks: userData.customVideoLinks || [] // Ensure it's initialized
+      customVideoLinks: userData.customVideoLinks || [],
+      userModuleVideos: userData.userModuleVideos || {},
     };
     setUser(userToStore);
     localStorage.setItem('skillSprintUser', JSON.stringify(userToStore));
@@ -54,10 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updatedUser: UserProfile = { 
         ...user, 
         ...profileData,
-        // If profileData includes customVideoLinks, it will override.
-        // Otherwise, user.customVideoLinks (which could be undefined if not set before) is kept.
-        // Ensure customVideoLinks is an array if it's being set or updated.
         customVideoLinks: profileData.customVideoLinks !== undefined ? profileData.customVideoLinks : user.customVideoLinks || [],
+        userModuleVideos: profileData.userModuleVideos !== undefined ? profileData.userModuleVideos : user.userModuleVideos || {},
         profileSetupComplete: profileData.profileSetupComplete !== undefined ? profileData.profileSetupComplete : user.profileSetupComplete,
       };
       setUser(updatedUser);

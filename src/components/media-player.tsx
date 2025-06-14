@@ -2,7 +2,7 @@
 "use client";
 import type { Module, VideoLink } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, FileText, Video, Search, Loader2, Info, ChevronDown, ListVideo } from 'lucide-react';
+import { AlertTriangle, FileText, Video, Search, Loader2, Info, ChevronDown, ListVideo, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React, { useState, useEffect, useMemo } from 'react';
@@ -12,48 +12,55 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 interface MediaPlayerProps {
   module: Module;
   aiFetchedVideos?: VideoLink[];
-  userSessionVideos?: VideoLink[]; 
+  userAddedModuleVideos?: VideoLink[]; 
   onSearchWithAI?: () => void;
   isAISearching?: boolean;
   userPreferredLanguage?: string;
+  onRemoveUserVideo?: (videoId: string) => void; // Callback to remove a user-added video
 }
 
 export function MediaPlayer({ 
   module, 
   aiFetchedVideos = [], 
-  userSessionVideos = [], 
+  userAddedModuleVideos = [], 
   onSearchWithAI, 
   isAISearching = false,
-  userPreferredLanguage 
+  userPreferredLanguage,
+  onRemoveUserVideo
 }: MediaPlayerProps) {
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const [selectedVideoKey, setSelectedVideoKey] = useState<string>('');
   const [currentVideoIsPlaylist, setCurrentVideoIsPlaylist] = useState<boolean>(false);
   const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
+  const [currentVideoIsUserAdded, setCurrentVideoIsUserAdded] = useState<boolean>(false);
+  const [currentVideoId, setCurrentVideoId] = useState<string | undefined>(undefined);
 
 
   const allAvailableVideos = useMemo(() => {
     let videos: VideoLink[] = [];
     if (module.contentType === 'video') {
-      if (module.contentUrl) {
-        if (module.contentUrl.includes('youtube.com/embed/')) {
-          videos.push({
-            langCode: 'module', 
-            langName: 'Module Default',
-            youtubeEmbedUrl: module.contentUrl,
-            title: `${module.title} (Module Default)`,
-            isPlaylist: module.contentUrl.includes('videoseries?list='),
-          });
-        }
+      // 1. Module's default contentUrl if it's a video
+      if (module.contentUrl && module.contentUrl.includes('youtube.com/embed/')) {
+        videos.push({
+          id: `module-default-${module.id}`,
+          langCode: 'module', 
+          langName: 'Module Default',
+          youtubeEmbedUrl: module.contentUrl,
+          title: `${module.title} (Module Default)`,
+          isPlaylist: module.contentUrl.includes('videoseries?list='),
+        });
       }
+      // 2. Module's predefined videoLinks
       if (module.videoLinks) {
-        videos = videos.concat(module.videoLinks.map(v => ({...v, title: v.title || "Module Video"})));
+        videos = videos.concat(module.videoLinks.map(v => ({...v, id: v.id || `module-link-${Math.random().toString(36).substring(2,9)}`, title: v.title || "Module Video"})));
       }
+      // 3. AI fetched videos
       if (aiFetchedVideos) {
-        videos = videos.concat(aiFetchedVideos.map(v => ({...v, title: v.title || "AI Suggested Video"})));
+        videos = videos.concat(aiFetchedVideos.map(v => ({...v, id: v.id || `ai-${Math.random().toString(36).substring(2,9)}`, title: v.title || "AI Suggested Video"})));
       }
-      if (userSessionVideos) { 
-        videos = videos.concat(userSessionVideos.map(v => ({...v, title: v.title || "User Added Video" })));
+      // 4. User added module videos (persistent)
+      if (userAddedModuleVideos) { 
+        videos = videos.concat(userAddedModuleVideos.map(v => ({...v, id: v.id || `user-module-${Math.random().toString(36).substring(2,9)}`, title: v.title || "My Added Video" })));
       }
       
       const uniqueVideosMap = new Map<string, VideoLink>();
@@ -66,7 +73,7 @@ export function MediaPlayer({
       return Array.from(uniqueVideosMap.values());
     }
     return [];
-  }, [module, aiFetchedVideos, userSessionVideos]); 
+  }, [module, aiFetchedVideos, userAddedModuleVideos]); 
 
   useEffect(() => {
     if (module.contentType === 'video' && allAvailableVideos.length > 0) {
@@ -76,9 +83,16 @@ export function MediaPlayer({
         setCurrentVideoUrl(currentSelectedVideo.youtubeEmbedUrl);
         setCurrentVideoIsPlaylist(!!currentSelectedVideo.isPlaylist);
         setCurrentVideoTitle(currentSelectedVideo.title);
+        setCurrentVideoIsUserAdded(userAddedModuleVideos.some(uv => uv.youtubeEmbedUrl === currentSelectedVideo.youtubeEmbedUrl));
+        setCurrentVideoId(currentSelectedVideo.id);
+
       } else {
         let videoToSelect: VideoLink | undefined = undefined;
-        if (userPreferredLanguage) {
+        // Priority: 1. User Added, 2. Preferred Lang, 3. English, 4. Module Default, 5. First Available
+        if (userAddedModuleVideos.length > 0) {
+            videoToSelect = userAddedModuleVideos[0]; // Or some logic to pick the "best" user added one
+        }
+        if (!videoToSelect && userPreferredLanguage) {
           videoToSelect = allAvailableVideos.find(v => 
             v.langName.toLowerCase().includes(userPreferredLanguage.toLowerCase()) || 
             v.langCode.toLowerCase() === userPreferredLanguage.substring(0,2).toLowerCase()
@@ -88,7 +102,7 @@ export function MediaPlayer({
           videoToSelect = allAvailableVideos.find(v => v.langCode === 'en' || v.langName.toLowerCase().includes('english'));
         }
         if (!videoToSelect && module.contentUrl && module.contentUrl.includes('youtube.com/embed/')) { 
-            videoToSelect = allAvailableVideos.find(v => v.langCode === 'module');
+            videoToSelect = allAvailableVideos.find(v => v.id === `module-default-${module.id}`);
         }
         if (!videoToSelect) { 
           videoToSelect = allAvailableVideos[0];
@@ -99,11 +113,15 @@ export function MediaPlayer({
           setSelectedVideoKey(videoToSelect.youtubeEmbedUrl);
           setCurrentVideoIsPlaylist(!!videoToSelect.isPlaylist);
           setCurrentVideoTitle(videoToSelect.title);
+          setCurrentVideoIsUserAdded(userAddedModuleVideos.some(uv => uv.youtubeEmbedUrl === videoToSelect!.youtubeEmbedUrl));
+          setCurrentVideoId(videoToSelect.id);
         } else {
           setCurrentVideoUrl(null);
           setSelectedVideoKey('');
           setCurrentVideoIsPlaylist(false);
           setCurrentVideoTitle('');
+          setCurrentVideoIsUserAdded(false);
+          setCurrentVideoId(undefined);
         }
       }
     } else if (module.contentType !== 'video') {
@@ -111,13 +129,17 @@ export function MediaPlayer({
         setSelectedVideoKey('');
         setCurrentVideoIsPlaylist(false);
         setCurrentVideoTitle('');
+        setCurrentVideoIsUserAdded(false);
+        setCurrentVideoId(undefined);
     } else { 
         setCurrentVideoUrl(null);
         setSelectedVideoKey('');
         setCurrentVideoIsPlaylist(false);
         setCurrentVideoTitle('');
+        setCurrentVideoIsUserAdded(false);
+        setCurrentVideoId(undefined);
     }
-  }, [allAvailableVideos, module.contentType, module.contentUrl, module.title, selectedVideoKey, userPreferredLanguage]);
+  }, [allAvailableVideos, module.contentType, module.id, module.contentUrl, module.title, selectedVideoKey, userPreferredLanguage, userAddedModuleVideos]);
 
   const handleVideoSelectionChange = (url: string) => {
     const selected = allAvailableVideos.find(v => v.youtubeEmbedUrl === url);
@@ -126,6 +148,15 @@ export function MediaPlayer({
       setSelectedVideoKey(selected.youtubeEmbedUrl);
       setCurrentVideoIsPlaylist(!!selected.isPlaylist);
       setCurrentVideoTitle(selected.title);
+      setCurrentVideoIsUserAdded(userAddedModuleVideos.some(uv => uv.youtubeEmbedUrl === selected.youtubeEmbedUrl));
+      setCurrentVideoId(selected.id);
+    }
+  };
+
+  const handleRemoveCurrentVideo = () => {
+    if (currentVideoIsUserAdded && currentVideoId && onRemoveUserVideo) {
+      onRemoveUserVideo(currentVideoId);
+      // After removal, the useEffect will re-evaluate the video to display
     }
   };
 
@@ -177,7 +208,7 @@ export function MediaPlayer({
             {currentVideoIsPlaylist && (
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="playlist-info">
-                  <AccordionTrigger className="text-sm py-2 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground/90 rounded-md px-3 border border-primary/30 hover:no-underline hover:bg-primary/20">
+                   <AccordionTrigger className="text-sm py-2 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground/90 rounded-md px-3 border border-primary/30 hover:no-underline hover:bg-primary/20">
                     <div className="flex items-center">
                       <ListVideo className="h-5 w-5 mr-2 flex-shrink-0" />
                       <span className="font-medium">This is a YouTube Playlist: How to Navigate</span>
@@ -200,8 +231,10 @@ export function MediaPlayer({
                     <SelectContent>
                         {allAvailableVideos.map((video) => (
                         <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl} className="text-sm">
-                            <span className="truncate" title={video.title}>{video.title || 'Untitled Video'} ({video.langName}) {video.isPlaylist ? " (Playlist)" : ""}
-                            {video.creator && <span className="text-xs text-muted-foreground ml-1">- by {video.creator}</span>}
+                            <span className="truncate" title={video.title}>
+                                {userAddedModuleVideos.some(uv => uv.youtubeEmbedUrl === video.youtubeEmbedUrl) && '👤 '}
+                                {video.title || 'Untitled Video'} ({video.langName}) {video.isPlaylist ? " (Playlist)" : ""}
+                                {video.creator && <span className="text-xs text-muted-foreground ml-1">- by {video.creator}</span>}
                             </span>
                         </SelectItem>
                         ))}
@@ -213,6 +246,11 @@ export function MediaPlayer({
                     <Button onClick={onSearchWithAI} variant="outline" className="w-full sm:w-auto flex-shrink-0" disabled={isAISearching}>
                         {isAISearching && !currentVideoUrl ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
                         {isAISearching && !currentVideoUrl ? 'Searching...' : 'Find More Videos'}
+                    </Button>
+                )}
+                 {currentVideoIsUserAdded && onRemoveUserVideo && currentVideoId && (
+                    <Button onClick={handleRemoveCurrentVideo} variant="destructive" size="icon" className="flex-shrink-0" title="Remove this video from module">
+                        <Trash2 className="h-4 w-4" />
                     </Button>
                 )}
             </div>
