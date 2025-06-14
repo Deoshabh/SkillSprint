@@ -101,6 +101,8 @@ export interface UserModuleVideos {
   [moduleKey: string]: VideoLink[];
 }
 
+export type UserRole = 'learner' | 'educator' | 'admin';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -110,7 +112,7 @@ export interface UserProfile {
   points: number;
   earnedBadges: Badge[];
   enrolledCourses: string[];
-  role?: 'learner' | 'educator' | 'admin';
+  role?: UserRole;
   learningPreferences?: {
     tracks: string[];
     language: string;

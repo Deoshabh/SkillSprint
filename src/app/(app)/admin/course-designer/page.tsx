@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label'; // Import Label
+import { Label } from '@/components/ui/label'; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCoursesForReview, getPublishedCourses, getRejectedCourses, updateCourseStatus, type Course } from '@/lib/placeholder-data';
-import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; // Import the centralized limit
-import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings } from 'lucide-react';
+import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; 
+import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings, Users, Wand2, MessageSquareQuote } from 'lucide-react'; // Added Users, Wand2, MessageSquareQuote
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from 'date-fns';
@@ -27,7 +27,6 @@ export default function AdminCourseManagementPage() {
 
   const fetchAllCoursesByStatus = useCallback(async () => {
     setIsLoading(true);
-    // Simulate API calls
     await new Promise(resolve => setTimeout(resolve, 500));
     setPendingCourses(getCoursesForReview());
     setPublishedCourses(getPublishedCourses());
@@ -46,7 +45,7 @@ export default function AdminCourseManagementPage() {
         title: "Status Updated",
         description: `Course ${courseId} status changed to ${newStatus?.replace("_", " ")}.`,
       });
-      fetchAllCoursesByStatus(); // Re-fetch all lists to reflect changes across tabs
+      fetchAllCoursesByStatus(); 
     } else {
       toast({
         title: "Update Failed",
@@ -182,16 +181,16 @@ export default function AdminCourseManagementPage() {
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
           <ShieldCheck className="h-10 w-10 mr-3 text-primary" />
-          Course Management
+          Admin Dashboard
         </h1>
         <p className="text-xl text-muted-foreground">
-          Review, approve, and manage all courses on the platform.
+          Manage courses, users, and platform settings.
         </p>
       </header>
 
       <Card className="shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">Manage Courses</CardTitle>
+          <CardTitle className="text-2xl">Course Moderation</CardTitle>
           <Button variant="outline" onClick={fetchAllCoursesByStatus} disabled={isLoading}>
             {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Refresh Lists
@@ -234,28 +233,26 @@ export default function AdminCourseManagementPage() {
                     <Label className="text-sm font-medium text-muted-foreground">Max Custom Videos per Module (for Users)</Label>
                     <p className="text-2xl font-semibold text-foreground">{USER_MODULE_VIDEO_LIMIT}</p>
                 </div>
-                {/* Future settings can be added here */}
-                {/* <div className="border p-3 rounded-md bg-muted/20">
-                    <Label className="text-xs font-medium text-muted-foreground">Max Courses Per User</Label>
-                    <p className="text-lg font-semibold">10 (Example)</p>
-                </div> */}
             </div>
         </CardContent>
       </Card>
 
       <Card className="mt-8 shadow-md">
         <CardHeader>
-            <CardTitle className="text-xl">Admin Capabilities Overview</CardTitle>
+            <CardTitle className="text-xl flex items-center">
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                Admin Capabilities Overview
+            </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>
         </CardHeader>
         <CardContent>
             <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong></li>
-                <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong></li>
-                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong></li>
-                <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (e.g., AI Content Scout). (Implemented)</strong></li>
-                <li><strong className="text-foreground">Set platform-wide limits (e.g., max custom videos per module for users). (Initial: Limit visible to admin, enforcement in place)</strong></li>
-                <li>Manage user roles and permissions. (Planned)</li>
+                <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
+                <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
+                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
+                <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (AI Content Scout). (Implemented)</strong> <Link href="/admin/content-scout" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
+                <li><strong className="text-foreground">Set platform-wide limits (e.g., max custom videos per module for users). (Initial: Limit visible, enforcement in place)</strong></li>
+                <li><strong className="text-foreground">Manage user roles and permissions. (Initial Simulation Implemented: Can change current admin's role)</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li>View platform analytics and reports. (Planned)</li>
                 <li>Broadcast messaging to user segments. (Planned)</li>
             </ul>

@@ -16,10 +16,10 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2 } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { FloatingChatbot } from '@/components/chatbot/floating-chatbot'; // Added chatbot import
+import { FloatingChatbot } from '@/components/chatbot/floating-chatbot'; 
 
 const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -37,8 +37,9 @@ const accountNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-   { title: 'Course Management', href: '/admin/course-designer', icon: ShieldCheck }, 
+   { title: 'Course Moderation', href: '/admin/course-designer', icon: ShieldCheck }, 
    { title: 'AI Content Scout', href: '/admin/content-scout', icon: Wand2 },
+   { title: 'User Management', href: '/admin/user-management', icon: Users },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -69,7 +70,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </>
             )}
 
-            {/* Show admin items if user role is 'educator' or a future 'admin' role */}
             {user && (user.role === 'educator' || user.role === 'admin') && ( 
               <>
                 <div className="my-2 px-4 group-data-[collapsible=icon]:px-2">
@@ -81,7 +81,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             )}
           </ScrollArea>
         </SidebarContent>
-        {user && (user.role === 'educator' || user.role === 'admin') && (
+        {/* Removed redundant Admin Panel button from footer as it's in the nav now */}
+        {/* {user && (user.role === 'educator' || user.role === 'admin') && (
           <SidebarFooter className="p-4 mt-auto">
              <Link href="/admin/course-designer" className="w-full">
               <Button variant="outline" className="w-full group-data-[collapsible=icon]:hidden">
@@ -90,7 +91,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </Button>
             </Link>
           </SidebarFooter>
-        )}
+        )} */}
       </Sidebar>
       <SidebarRail />
       <SidebarInset>
@@ -104,7 +105,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           {children}
         </main>
-        {user && <FloatingChatbot />} {/* Added Chatbot here, conditionally rendered if user is logged in */}
+        {user && <FloatingChatbot />} 
       </SidebarInset>
     </SidebarProvider>
   );
