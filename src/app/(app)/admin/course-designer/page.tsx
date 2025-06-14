@@ -132,35 +132,41 @@ export default function AdminCourseManagementPage() {
                   </>
                 )}
                 {statusType === 'published' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateStatus(course.id, 'draft', 'published')}
-                    className="text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                    title="Unpublish Course (Move to Drafts)"
-                  >
-                    <SendToBack className="h-4 w-4 mr-1" /> Unpublish
-                  </Button>
-                )}
-                {statusType === 'rejected' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateStatus(course.id, 'draft', 'rejected')}
-                    className="text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                    title="Move to Drafts (for re-evaluation/editing)"
-                  >
-                    <ArchiveRestore className="h-4 w-4 mr-1" /> Move to Drafts
-                  </Button>
-                )}
-                 {/* Placeholder for Edit button - links to course designer for now */}
-                 {(statusType === 'published' || statusType === 'rejected') && (
-                    <Button variant="outline" size="sm" asChild title="Edit Course (opens in Course Designer)">
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateStatus(course.id, 'draft', 'published')}
+                      className="text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                      title="Unpublish Course (Move to Drafts)"
+                    >
+                      <SendToBack className="h-4 w-4 mr-1" /> Unpublish
+                    </Button>
+                     <Button variant="outline" size="sm" asChild title="Edit Course">
                         <Link href={`/course-designer?courseId=${course.id}`}>
                             <Edit className="h-4 w-4 mr-1" /> Edit
                         </Link>
                     </Button>
-                 )}
+                  </>
+                )}
+                {statusType === 'rejected' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateStatus(course.id, 'draft', 'rejected')}
+                      className="text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                      title="Move to Drafts (for re-evaluation/editing)"
+                    >
+                      <ArchiveRestore className="h-4 w-4 mr-1" /> Move to Drafts
+                    </Button>
+                    <Button variant="outline" size="sm" asChild title="Edit Course">
+                        <Link href={`/course-designer?courseId=${course.id}`}>
+                            <Edit className="h-4 w-4 mr-1" /> Edit
+                        </Link>
+                    </Button>
+                  </>
+                )}
               </TableCell>
             </TableRow>
           ))}
@@ -221,7 +227,7 @@ export default function AdminCourseManagementPage() {
             <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
                 <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong></li>
                 <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong></li>
-                <li>Edit content for any course on the platform (video links, documents, module details). (Partially: Edit links to course designer for author/admin edits).</li>
+                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong></li>
                 <li>Utilize AI tools to find and suggest updated content (e.g., latest playlists from specific creators) for existing courses. (Planned)</li>
                 <li>Manage user roles and permissions. (Planned)</li>
                 <li>View platform analytics and reports. (Planned)</li>

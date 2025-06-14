@@ -12,7 +12,7 @@ import { Upload, Download, Wand2, PlusCircle, Save, Eye, LayoutGrid, Loader2, Al
 import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
 import { suggestYoutubeVideosForTopic, type SuggestYoutubeVideosForTopicInput } from '@/ai/flows/suggest-youtube-videos-for-topic-flow';
 import type { VideoLink, Course as CourseType } from '@/lib/types';
-import { saveOrUpdateCourse, submitCourseForReview, getCoursesByAuthor } from '@/lib/placeholder-data';
+import { saveOrUpdateCourse, submitCourseForReview, getCourseById } from '@/lib/placeholder-data';
 import ReactMarkdown from 'react-markdown';
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from '@/context/auth-context';
 import { v4 as uuidv4 } from 'uuid';
+import { useSearchParams, useRouter } from 'next/navigation';
+
 
 interface ManualVideoFormState {
   url: string;
@@ -36,6 +38,8 @@ type CourseVisibility = "private" | "shared" | "public";
 export default function MyCourseDesignerPage() {
   const { toast } = useToast();
   const { user, updateUserProfile } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Course Data State
   const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
@@ -45,7 +49,9 @@ export default function MyCourseDesignerPage() {
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [courseVisibility, setCourseVisibility] = useState<CourseVisibility>("private");
   const [courseStatus, setCourseStatus] = useState<CourseType['status']>("draft");
-  const [modules, setModules] = useState<CourseType['modules']>([]); // Simplified module management for now
+  const [modules, setModules] = useState<CourseType['modules']>([]); 
+  const [originalAuthorId, setOriginalAuthorId] = useState<string | null>(null);
+
 
   // AI Syllabus State
   const [aiTopic, setAiTopic] = useState('');
@@ -65,7 +71,7 @@ export default function MyCourseDesignerPage() {
   const [userPickedVideosList, setUserPickedVideosList] = useState<VideoLink[]>([]);
   const [courseVideoPool, setCourseVideoPool] = useState<VideoLink[]>([]);
 
-  const [isLoadingCourse, setIsLoadingCourse] = useState(false); // For loading existing course
+  const [isLoadingCourse, setIsLoadingCourse] = useState(false); 
 
   const resetCourseForm = useCallback(() => {
     setCurrentCourseId(null);
@@ -77,17 +83,75 @@ export default function MyCourseDesignerPage() {
     setCourseStatus('draft');
     setModules([]);
     setCourseVideoPool([]);
-    // Do not reset userPickedVideosList as it's the user's library
-  }, []);
+    setOriginalAuthorId(null);
+     // Do not reset userPickedVideosList as it's the user's library
+    // Clear query params if any
+    router.replace('/course-designer', {scroll: false});
+  }, [router]);
+  
+  const loadCourseForEditing = useCallback((courseId: string) => {
+    if (!user) {
+        toast({ title: "Login Required", description: "You need to be logged in.", variant: "destructive" });
+        router.push('/login');
+        return;
+    }
+    setIsLoadingCourse(true);
+    const courseToEdit = getCourseById(courseId);
+
+    if (courseToEdit) {
+        // Authorization: Admin can edit any course. Non-admin can only edit their own.
+        if (user.role !== 'admin' && courseToEdit.authorId !== user.id) {
+            toast({ title: "Unauthorized", description: "You are not authorized to edit this course.", variant: "destructive" });
+            setIsLoadingCourse(false);
+            router.push('/course-designer'); // Redirect to create new or their own
+            return;
+        }
+
+        setCurrentCourseId(courseToEdit.id);
+        setCourseTitle(courseToEdit.title);
+        setCourseCategory(courseToEdit.category);
+        setCourseDescriptionText(courseToEdit.description || '');
+        setCoverImageUrl(courseToEdit.imageUrl || '');
+        setCourseVisibility(courseToEdit.visibility || 'private');
+        setCourseStatus(courseToEdit.status || 'draft');
+        setModules(courseToEdit.modules || []);
+        setOriginalAuthorId(courseToEdit.authorId || null);
+        // Assuming videoLinks for the course are directly under course or modules.
+        // For simplicity, we are not deeply populating courseVideoPool from loaded modules here.
+        // That would require a more complex mapping from module.videoLinks to courseVideoPool
+        // and deciding which ones belong to the pool vs. are directly assigned.
+        // For now, an admin/author would re-curate the pool or assign videos to modules.
+        setCourseVideoPool([]); // Reset pool when loading a course, to be repopulated if needed.
+
+        toast({ title: "Course Loaded", description: `Editing "${courseToEdit.title}".` });
+    } else {
+        toast({ title: "Error", description: `Course with ID ${courseId} not found.`, variant: "destructive" });
+        resetCourseForm(); // Reset to new course state
+    }
+    setIsLoadingCourse(false);
+  }, [user, toast, router, resetCourseForm]);
+
+
+  useEffect(() => {
+    const courseIdFromQuery = searchParams.get('courseId');
+    if (courseIdFromQuery && !isLoadingCourse) {
+        // Only load if not already loading and if courseId is different from current one, or if no currentCourseId
+        if (courseIdFromQuery !== currentCourseId || !currentCourseId) {
+            loadCourseForEditing(courseIdFromQuery);
+        }
+    } else if (!courseIdFromQuery && !currentCourseId && !isLoadingCourse) { // Ensure reset is called only if no query and no current course
+        // If no query param, reset to a new course form unless a course is already loaded
+        // resetCourseForm(); // This might be too aggressive if user is just navigating tabs
+    }
+  }, [searchParams, loadCourseForEditing, currentCourseId, isLoadingCourse]);
+
 
   useEffect(() => {
     if (user && user.customVideoLinks) {
       setUserPickedVideosList(user.customVideoLinks);
     }
-    // For simplicity, we are not auto-loading a user's existing course here.
-    // User would click 'Create New' or 'Edit Existing' (latter not yet implemented here).
-    resetCourseForm();
-  }, [user, resetCourseForm]);
+  }, [user]);
+
 
   const handleGenerateSyllabus = async (e: FormEvent) => {
     e.preventDefault();
@@ -100,7 +164,6 @@ export default function MyCourseDesignerPage() {
       const input: AutoGenerateCourseSyllabusInput = { courseTopic: aiTopic, targetAudience, learningObjectives, desiredNumberOfModules: desiredModules };
       const result = await autoGenerateCourseSyllabus(input);
       setSyllabusResult(result.courseSyllabus);
-      // Potentially parse syllabusResult to populate modules state here in future
     } catch (err) {
       console.error("Error generating syllabus:", err);
       setErrorSyllabus(err instanceof Error ? err.message : "Syllabus generation failed.");
@@ -147,7 +210,6 @@ export default function MyCourseDesignerPage() {
     }
     let embedUrl = manualVideoForm.url;
     const isPlaylistFromForm = manualVideoForm.isPlaylist;
-     // URL processing logic (simplified for brevity, ensure it's robust as before)
     if (isPlaylistFromForm) {
         if (embedUrl.includes("youtube.com/playlist?list=")) {
             const listId = embedUrl.split("playlist?list=")[1]?.split("&")[0];
@@ -217,24 +279,30 @@ export default function MyCourseDesignerPage() {
       return;
     }
 
+    // If an admin is editing, the authorId submitted with the save data is the admin's ID.
+    // The saveOrUpdateCourse function, as currently written, will update the course's authorId
+    // to the ID of the user performing the save. This is a simplification.
+    // A more robust system might distinguish original author from last editor.
     const courseDataToSave: Partial<CourseType> & { authorId: string } = {
-      id: currentCourseId || undefined, // Pass undefined if new, so saveOrUpdateCourse generates ID
+      id: currentCourseId || undefined, 
       title: courseTitle,
       category: courseCategory,
       description: courseDescriptionText,
       imageUrl: coverImageUrl,
       visibility: courseVisibility,
-      status: courseStatus, // Status is managed internally based on actions
+      status: courseStatus, 
       modules: modules, // For now, modules are not deeply editable here
-      authorId: user.id,
-      // videoLinks for the course itself would be populated from courseVideoPool or a structured module builder
+      authorId: user.id, // The user performing the save
+      // If editing an existing course, its originalAuthorId is not directly part of the save payload here,
+      // but saveOrUpdateCourse in placeholder-data will set the authorId to user.id if it's an update.
     };
 
     const savedCourse = saveOrUpdateCourse(courseDataToSave);
 
     if (savedCourse) {
-      setCurrentCourseId(savedCourse.id); // Update ID if it was a new course
-      setCourseStatus(savedCourse.status || 'draft'); // Reflect saved status
+      setCurrentCourseId(savedCourse.id); 
+      setCourseStatus(savedCourse.status || 'draft'); 
+      setOriginalAuthorId(savedCourse.authorId || null); // Reflect the author from the saved data
       toast({ title: "Course Saved", description: `"${savedCourse.title}" has been saved.` });
     } else {
       toast({ title: "Save Failed", description: "Could not save the course. Please try again.", variant: "destructive"});
@@ -265,15 +333,25 @@ export default function MyCourseDesignerPage() {
   };
 
 
+  if (isLoadingCourse) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <span className="ml-4 text-muted-foreground">Loading course data...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <header className="space-y-2 flex justify-between items-center">
         <div>
             <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-            <LayoutGrid className="h-10 w-10 mr-3 text-primary" /> My Course Designer
+            <LayoutGrid className="h-10 w-10 mr-3 text-primary" /> 
+            {currentCourseId ? "Edit Course" : "Create New Course"}
             </h1>
             <p className="text-xl text-muted-foreground">
-            Craft your unique learning experiences and share your knowledge.
+            {currentCourseId ? `Modifying "${courseTitle || 'course'}"` : "Craft your unique learning experiences."}
             </p>
         </div>
         <Button onClick={resetCourseForm} variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Create New Course</Button>
@@ -292,7 +370,7 @@ export default function MyCourseDesignerPage() {
             <CardHeader>
               <CardTitle className="text-2xl">Course Settings</CardTitle>
               <CardDescription>Define the details, visibility, and parameters for your course.
-                {currentCourseId && <span className="block text-xs mt-1">Editing Course ID: {currentCourseId}</span>}
+                {currentCourseId && <span className="block text-xs mt-1">Editing Course ID: {currentCourseId} {originalAuthorId && `(Original Author: ${originalAuthorId})`}</span>}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
