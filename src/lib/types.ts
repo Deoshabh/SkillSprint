@@ -1,6 +1,22 @@
 
 import type { LucideIcon } from 'lucide-react';
 
+export interface TextNote {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Sketch {
+  id: string;
+  title: string;
+  dataUrl: string; // Base64 encoded image data
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -98,6 +114,8 @@ export interface UserProfile {
   };
   customVideoLinks?: VideoLink[];
   userModuleVideos?: UserModuleVideos;
+  textNotes?: TextNote[];
+  sketches?: Sketch[];
   profileSetupComplete?: boolean;
 }
 

@@ -12,6 +12,8 @@ interface DrawingCanvasProps {
   height?: number;
   initialPenColor?: string;
   initialPenSize?: number;
+  initialDataUrl?: string | null; // To load an existing sketch
+  onCanvasChange?: (dataUrl: string) => void; // Optional: To notify parent of changes for auto-save or real-time features
 }
 
 const DEFAULT_WIDTH = 600;
@@ -22,6 +24,8 @@ export function DrawingCanvas({
   height = DEFAULT_HEIGHT,
   initialPenColor = '#000000',
   initialPenSize = 5,
+  initialDataUrl = null,
+  onCanvasChange,
 }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -33,12 +37,61 @@ export function DrawingCanvas({
 
   const availableColors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFFFFF'];
 
-  const getContext = () => {
+  const getContext = useCallback(() => {
     const canvas = canvasRef.current;
     return canvas?.getContext('2d');
-  };
+  }, []);
 
-  const saveHistory = useCallback(() => {
+  const clearAndDrawImage = useCallback((dataUrl: string) => {
+    const canvas = canvasRef.current;
+    const ctx = getContext();
+    if (canvas && ctx) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.fillStyle = 'hsl(var(--card))'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        const currentCanvasData = canvas.toDataURL();
+        setHistory([currentCanvasData]); // Reset history with the loaded image
+        setHistoryStep(0);
+        if (onCanvasChange) onCanvasChange(currentCanvasData);
+      };
+      img.onerror = () => {
+        // Fallback if image loading fails (e.g. corrupted dataUrl)
+        ctx.fillStyle = 'hsl(var(--card))';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const currentCanvasData = canvas.toDataURL();
+        setHistory([currentCanvasData]);
+        setHistoryStep(0);
+         if (onCanvasChange) onCanvasChange(currentCanvasData);
+      }
+      img.src = dataUrl;
+    }
+  }, [getContext, onCanvasChange]);
+  
+  const initializeCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = getContext();
+    if (canvas && ctx) {
+      ctx.fillStyle = 'hsl(var(--card))'; 
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const initialCanvasState = canvas.toDataURL();
+      setHistory([initialCanvasState]);
+      setHistoryStep(0);
+      if (onCanvasChange) onCanvasChange(initialCanvasState);
+    }
+  }, [getContext, onCanvasChange]);
+
+  useEffect(() => {
+    if (initialDataUrl) {
+      clearAndDrawImage(initialDataUrl);
+    } else {
+      initializeCanvas();
+    }
+  }, [initialDataUrl, initializeCanvas, clearAndDrawImage]);
+
+
+  const saveHistoryEntry = useCallback(() => {
     const canvas = canvasRef.current;
     if (canvas) {
       const dataUrl = canvas.toDataURL();
@@ -48,8 +101,9 @@ export function DrawingCanvas({
         return newHistory;
       });
       setHistoryStep(prevStep => prevStep + 1);
+      if (onCanvasChange) onCanvasChange(dataUrl);
     }
-  }, [historyStep]);
+  }, [historyStep, onCanvasChange]);
   
   const loadFromHistory = useCallback((step: number) => {
     const canvas = canvasRef.current;
@@ -58,22 +112,12 @@ export function DrawingCanvas({
       const img = new Image();
       img.src = history[step];
       img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Important to clear before drawing history state
         ctx.drawImage(img, 0, 0);
+         if (onCanvasChange && history[step]) onCanvasChange(history[step]);
       };
     }
-  }, [history]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = getContext();
-    if (canvas && ctx && history.length === 0) {
-      // Set initial background for first history entry
-      ctx.fillStyle = 'hsl(var(--card))'; // Or var(--background)
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      saveHistory();
-    }
-  }, [saveHistory, history.length]);
+  }, [history, getContext, onCanvasChange]);
 
 
   const startDrawing = ({ nativeEvent }: React.MouseEvent | React.TouchEvent) => {
@@ -102,10 +146,10 @@ export function DrawingCanvas({
 
   const endDrawing = () => {
     const ctx = getContext();
-    if (!ctx) return;
+    if (!ctx || !isDrawing) return; // ensure drawing actually happened
     ctx.closePath();
     setIsDrawing(false);
-    saveHistory();
+    saveHistoryEntry();
   };
 
   const getCoordinates = (event: MouseEvent | TouchEvent) => {
@@ -121,13 +165,7 @@ export function DrawingCanvas({
   };
 
   const handleClearCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = getContext();
-    if (canvas && ctx) {
-      ctx.fillStyle = 'hsl(var(--card))';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      saveHistory();
-    }
+    initializeCanvas(); // This will also save history
   };
 
   const handleUndo = () => {
@@ -145,6 +183,23 @@ export function DrawingCanvas({
       loadFromHistory(newStep);
     }
   };
+  
+  // Expose a method to get canvas data URL for parent component
+  React.useImperativeHandle(canvasRef, () => ({
+    // @ts-ignore
+    toDataURL: (type?: string, quality?: any) => {
+      const canvas = canvasRef.current;
+      return canvas ? canvas.toDataURL(type, quality) : null;
+    },
+    clearAndLoadDataUrl: (dataUrl: string | null) => {
+        if (dataUrl) {
+            clearAndDrawImage(dataUrl);
+        } else {
+            initializeCanvas();
+        }
+    }
+  }));
+
 
   return (
     <div className="space-y-4">
@@ -206,7 +261,7 @@ export function DrawingCanvas({
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={endDrawing}
-        onMouseLeave={endDrawing} // End drawing if mouse leaves canvas
+        onMouseLeave={endDrawing}
         onTouchStart={startDrawing}
         onTouchMove={draw}
         onTouchEnd={endDrawing}
@@ -215,4 +270,9 @@ export function DrawingCanvas({
       />
     </div>
   );
+}
+// For parent to call canvas methods
+export interface DrawingCanvasRef {
+  toDataURL: (type?: string, quality?: any) => string | null;
+  clearAndLoadDataUrl: (dataUrl: string | null) => void;
 }

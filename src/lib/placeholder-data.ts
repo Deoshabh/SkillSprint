@@ -1,5 +1,5 @@
 
-import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink, UserModuleVideos } from './types';
+import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink, UserModuleVideos, TextNote, Sketch } from './types';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 
 // Helper function to create YouTube embed URL from various link formats
@@ -199,7 +199,7 @@ export const placeholderUserProfile: UserProfile = {
     { id: 'badge2', name: 'Course Completer', description: 'Finished a full course', icon: 'Award', color: 'text-green-400' },
   ],
   enrolledCourses: ['skillify-fsdd-01', 'skillify-dait-01'],
-  role: 'admin', // Changed to admin for testing moderation
+  role: 'admin', 
   learningPreferences: {
     tracks: ['Full-Stack, DSA & DevOps', 'Design & AI Tools'],
     language: 'English',
@@ -213,6 +213,8 @@ export const placeholderUserProfile: UserProfile = {
       { id: 'usermod-1', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=some_other_html_video'), title: 'Alex\'s HTML Deep Dive', isPlaylist: false, creator: 'Alex' }
     ]
   },
+  textNotes: [],
+  sketches: [],
   profileSetupComplete: true,
 };
 

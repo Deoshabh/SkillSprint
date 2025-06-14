@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { UserProfile, VideoLink, UserModuleVideos } from '@/lib/types';
+import type { UserProfile, VideoLink, UserModuleVideos, TextNote, Sketch } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -32,6 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!parsedUser.userModuleVideos) {
           parsedUser.userModuleVideos = {};
         }
+        if (!parsedUser.textNotes) {
+          parsedUser.textNotes = [];
+        }
+        if (!parsedUser.sketches) {
+          parsedUser.sketches = [];
+        }
         setUser(parsedUser);
       } catch (e) {
         console.error("Failed to parse stored user data", e);
@@ -46,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...userData,
       customVideoLinks: userData.customVideoLinks || [],
       userModuleVideos: userData.userModuleVideos || {},
+      textNotes: userData.textNotes || [],
+      sketches: userData.sketches || [],
     };
     setUser(userToStore);
     localStorage.setItem('skillSprintUser', JSON.stringify(userToStore));
@@ -64,6 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...profileData,
         customVideoLinks: profileData.customVideoLinks !== undefined ? profileData.customVideoLinks : user.customVideoLinks || [],
         userModuleVideos: profileData.userModuleVideos !== undefined ? profileData.userModuleVideos : user.userModuleVideos || {},
+        textNotes: profileData.textNotes !== undefined ? profileData.textNotes : user.textNotes || [],
+        sketches: profileData.sketches !== undefined ? profileData.sketches : user.sketches || [],
         profileSetupComplete: profileData.profileSetupComplete !== undefined ? profileData.profileSetupComplete : user.profileSetupComplete,
       };
       setUser(updatedUser);
