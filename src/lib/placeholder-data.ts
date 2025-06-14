@@ -540,7 +540,7 @@ export const placeholderCourses: Course[] = [
     category: 'Full-Stack, DSA & DevOps',
     icon: 'Code',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'coding development',
+    dataAiHint: 'coding software',
     modules: fullStackDsaDevOpsModules,
     duration: '24 Weeks',
     rating: 4.9,
@@ -555,7 +555,7 @@ export const placeholderCourses: Course[] = [
     category: 'English Communication',
     icon: 'Mic',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'language learning',
+    dataAiHint: 'communication speech',
     modules: englishCommModules,
     duration: '12 Weeks',
     rating: 4.7,
@@ -570,7 +570,7 @@ export const placeholderCourses: Course[] = [
     category: 'Design & AI Tools',
     icon: 'Palette',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'design creative',
+    dataAiHint: 'art design',
     modules: designAiModules,
     duration: '15 Weeks',
     rating: 4.8,
@@ -585,7 +585,7 @@ export const placeholderCourses: Course[] = [
     category: 'Aptitude Prep',
     icon: 'Brain',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'puzzle logic',
+    dataAiHint: 'thinking strategy',
     modules: aptitudeModules,
     duration: '8 Weeks',
     rating: 4.6,
@@ -599,7 +599,7 @@ export const placeholderUserProfile: UserProfile = {
   name: 'Alex Johnson',
   email: 'alex.johnson@example.com',
   avatarUrl: 'https://placehold.co/100x100.png',
-  dataAiHint: 'profile person',
+  dataAiHint: 'profile portrait',
   points: 1250,
   earnedBadges: [
     { id: 'badge1', name: 'Fast Learner', description: 'Completed 5 modules in a day', icon: 'Zap', color: 'text-yellow-400' },
@@ -651,3 +651,4 @@ export const getModuleById = (courseId: string, moduleId: string): Module | unde
 export const getProgressForCourse = (courseId: string): UserProgress | undefined => {
   return placeholderUserProgress.find(progress => progress.courseId === courseId);
 };
+
