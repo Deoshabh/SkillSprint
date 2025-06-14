@@ -19,6 +19,7 @@ import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/fl
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
 import { Separator } from '@/components/ui/separator';
+import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; // Import the centralized limit
 
 interface ModuleVideoFormState {
   url: string;
@@ -28,7 +29,7 @@ interface ModuleVideoFormState {
   isPlaylist: boolean;
 }
 
-const USER_MODULE_VIDEO_LIMIT = 3; // Default limit, ideally admin-configurable
+// const USER_MODULE_VIDEO_LIMIT = 3; // Removed local constant
 
 export default function ModulePage({ params: paramsPromise }: { params: Promise<{ courseId: string; moduleId: string }> }) {
   const params = use(paramsPromise); 

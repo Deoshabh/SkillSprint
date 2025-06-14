@@ -4,10 +4,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label'; // Import Label
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCoursesForReview, getPublishedCourses, getRejectedCourses, updateCourseStatus, type Course } from '@/lib/placeholder-data';
-import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit } from 'lucide-react';
+import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; // Import the centralized limit
+import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from 'date-fns';
@@ -218,6 +220,29 @@ export default function AdminCourseManagementPage() {
         </CardContent>
       </Card>
       
+       <Card className="mt-8 shadow-md">
+        <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+                <Settings className="h-5 w-5 mr-2 text-primary" />
+                Platform Configuration (View Only)
+            </CardTitle>
+            <CardDescription>Current platform-wide settings. Admin modification UI is planned.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-3">
+                <div className="border p-4 rounded-md bg-muted/30">
+                    <Label className="text-sm font-medium text-muted-foreground">Max Custom Videos per Module (for Users)</Label>
+                    <p className="text-2xl font-semibold text-foreground">{USER_MODULE_VIDEO_LIMIT}</p>
+                </div>
+                {/* Future settings can be added here */}
+                {/* <div className="border p-3 rounded-md bg-muted/20">
+                    <Label className="text-xs font-medium text-muted-foreground">Max Courses Per User</Label>
+                    <p className="text-lg font-semibold">10 (Example)</p>
+                </div> */}
+            </div>
+        </CardContent>
+      </Card>
+
       <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl">Admin Capabilities Overview</CardTitle>
@@ -228,10 +253,10 @@ export default function AdminCourseManagementPage() {
                 <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong></li>
                 <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong></li>
                 <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong></li>
-                <li>Utilize AI tools to find and suggest updated content (e.g., latest playlists from specific creators) for existing courses. (Planned)</li>
+                <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (e.g., AI Content Scout). (Implemented)</strong></li>
+                <li><strong className="text-foreground">Set platform-wide limits (e.g., max custom videos per module for users). (Initial: Limit visible to admin, enforcement in place)</strong></li>
                 <li>Manage user roles and permissions. (Planned)</li>
                 <li>View platform analytics and reports. (Planned)</li>
-                <li>Set platform-wide limits (e.g., max custom videos per module for users). (Planned)</li>
                 <li>Broadcast messaging to user segments. (Planned)</li>
             </ul>
         </CardContent>
