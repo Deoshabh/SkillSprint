@@ -4,40 +4,47 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getCoursesForReview, updateCourseStatus, type Course } from '@/lib/placeholder-data';
-import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getCoursesForReview, getPublishedCourses, getRejectedCourses, updateCourseStatus, type Course } from '@/lib/placeholder-data';
+import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
-export default function AdminCourseModerationPage() {
-  const [coursesForReview, setCoursesForReview] = useState<Course[]>([]);
+type CourseStatusType = Course['status'];
+
+export default function AdminCourseManagementPage() {
+  const [pendingCourses, setPendingCourses] = useState<Course[]>([]);
+  const [publishedCourses, setPublishedCourses] = useState<Course[]>([]);
+  const [rejectedCourses, setRejectedCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>("pending");
   const { toast } = useToast();
 
-  const fetchCourses = useCallback(() => {
+  const fetchAllCoursesByStatus = useCallback(async () => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setCoursesForReview(getCoursesForReview());
-      setIsLoading(false);
-    }, 500);
+    // Simulate API calls
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setPendingCourses(getCoursesForReview());
+    setPublishedCourses(getPublishedCourses());
+    setRejectedCourses(getRejectedCourses());
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
+    fetchAllCoursesByStatus();
+  }, [fetchAllCoursesByStatus]);
 
-  const handleUpdateStatus = (courseId: string, newStatus: Course['status']) => {
+  const handleUpdateStatus = (courseId: string, newStatus: CourseStatusType, currentList: CourseStatusType | 'all' = 'all') => {
     const success = updateCourseStatus(courseId, newStatus);
     if (success) {
       toast({
         title: "Status Updated",
         description: `Course ${courseId} status changed to ${newStatus?.replace("_", " ")}.`,
       });
-      fetchCourses(); // Re-fetch to update the list
+      fetchAllCoursesByStatus(); // Re-fetch all lists to reflect changes across tabs
     } else {
       toast({
         title: "Update Failed",
@@ -56,92 +63,152 @@ export default function AdminCourseModerationPage() {
     }
   };
 
+  const renderCourseTable = (courses: Course[], statusType: 'pending' | 'published' | 'rejected') => {
+    if (isLoading && courses.length === 0) {
+      return (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-3 text-muted-foreground">Loading courses...</p>
+        </div>
+      );
+    }
+    if (courses.length === 0) {
+      return <p className="text-center text-muted-foreground py-10">No courses in this category.</p>;
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Author ID</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>{statusType === 'pending' ? 'Submitted' : 'Last Modified'}</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {courses.map((course) => (
+            <TableRow key={course.id}>
+              <TableCell className="font-medium">
+                <Link href={`/courses/${course.id}`} className="hover:underline" target="_blank" rel="noopener noreferrer">
+                  {course.title}
+                </Link>
+              </TableCell>
+              <TableCell>{course.authorId || 'N/A'}</TableCell>
+              <TableCell><Badge variant="outline">{course.category}</Badge></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {getRelativeTime(statusType === 'pending' ? course.submittedDate : course.lastModified)}
+                </div>
+              </TableCell>
+              <TableCell className="text-right space-x-1 sm:space-x-2">
+                <Button variant="ghost" size="sm" asChild title="View Course Details">
+                  <Link href={`/courses/${course.id}`} target="_blank" rel="noopener noreferrer">
+                    <Eye className="h-4 w-4" />
+                  </Link>
+                </Button>
+                {statusType === 'pending' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateStatus(course.id, 'published', 'pending_review')}
+                      className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                      title="Approve Course"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateStatus(course.id, 'rejected', 'pending_review')}
+                      className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                      title="Reject Course"
+                    >
+                      <XCircle className="h-4 w-4 mr-1" /> Reject
+                    </Button>
+                  </>
+                )}
+                {statusType === 'published' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUpdateStatus(course.id, 'draft', 'published')}
+                    className="text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                    title="Unpublish Course (Move to Drafts)"
+                  >
+                    <SendToBack className="h-4 w-4 mr-1" /> Unpublish
+                  </Button>
+                )}
+                {statusType === 'rejected' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUpdateStatus(course.id, 'draft', 'rejected')}
+                    className="text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                    title="Move to Drafts (for re-evaluation/editing)"
+                  >
+                    <ArchiveRestore className="h-4 w-4 mr-1" /> Move to Drafts
+                  </Button>
+                )}
+                 {/* Placeholder for Edit button - links to course designer for now */}
+                 {(statusType === 'published' || statusType === 'rejected') && (
+                    <Button variant="outline" size="sm" asChild title="Edit Course (opens in Course Designer)">
+                        <Link href={`/course-designer?courseId=${course.id}`}>
+                            <Edit className="h-4 w-4 mr-1" /> Edit
+                        </Link>
+                    </Button>
+                 )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
           <ShieldCheck className="h-10 w-10 mr-3 text-primary" />
-          Course Moderation Dashboard
+          Course Management
         </h1>
         <p className="text-xl text-muted-foreground">
-          Review and manage courses submitted for public listing.
+          Review, approve, and manage all courses on the platform.
         </p>
       </header>
 
       <Card className="shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-2xl">Pending Review ({coursesForReview.length})</CardTitle>
-            <CardDescription>Courses awaiting your approval or rejection.</CardDescription>
-          </div>
-          <Button variant="outline" onClick={fetchCourses} disabled={isLoading}>
+          <CardTitle className="text-2xl">Manage Courses</CardTitle>
+          <Button variant="outline" onClick={fetchAllCoursesByStatus} disabled={isLoading}>
             {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Refresh List
+            Refresh Lists
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoading && coursesForReview.length === 0 ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-3 text-muted-foreground">Loading courses...</p>
-            </div>
-          ) : coursesForReview.length === 0 ? (
-            <p className="text-center text-muted-foreground py-10">No courses are currently pending review.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Author ID</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {coursesForReview.map((course) => (
-                  <TableRow key={course.id}>
-                    <TableCell className="font-medium">
-                        <Link href={`/courses/${course.id}`} className="hover:underline" target="_blank" rel="noopener noreferrer">
-                            {course.title}
-                        </Link>
-                    </TableCell>
-                    <TableCell>{course.authorId || 'N/A'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {getRelativeTime(course.submittedDate)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button variant="ghost" size="sm" asChild title="View Course Details">
-                        <Link href={`/courses/${course.id}`} target="_blank" rel="noopener noreferrer">
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUpdateStatus(course.id, 'published')}
-                        className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
-                        title="Approve Course"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" /> Approve
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUpdateStatus(course.id, 'rejected')}
-                        className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
-                        title="Reject Course"
-                      >
-                        <XCircle className="h-4 w-4 mr-1" /> Reject
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="pending">Pending Review ({pendingCourses.length})</TabsTrigger>
+              <TabsTrigger value="published">Published ({publishedCourses.length})</TabsTrigger>
+              <TabsTrigger value="rejected">Rejected ({rejectedCourses.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending">
+              <CardDescription className="mb-4">Courses awaiting your approval or rejection.</CardDescription>
+              {renderCourseTable(pendingCourses, 'pending')}
+            </TabsContent>
+            <TabsContent value="published">
+              <CardDescription className="mb-4">Courses currently live on the platform.</CardDescription>
+              {renderCourseTable(publishedCourses, 'published')}
+            </TabsContent>
+            <TabsContent value="rejected">
+              <CardDescription className="mb-4">Courses that have been rejected.</CardDescription>
+              {renderCourseTable(rejectedCourses, 'rejected')}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
       
@@ -152,8 +219,9 @@ export default function AdminCourseModerationPage() {
         </CardHeader>
         <CardContent>
             <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                <li><strong className="text-foreground">Review and approve/reject courses submitted for public listing. (Implemented)</strong></li>
-                <li>Edit content (video links, documents, module details) for any course on the platform. (Planned)</li>
+                <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong></li>
+                <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong></li>
+                <li>Edit content for any course on the platform (video links, documents, module details). (Partially: Edit links to course designer for author/admin edits).</li>
                 <li>Utilize AI tools to find and suggest updated content (e.g., latest playlists from specific creators) for existing courses. (Planned)</li>
                 <li>Manage user roles and permissions. (Planned)</li>
                 <li>View platform analytics and reports. (Planned)</li>

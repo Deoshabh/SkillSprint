@@ -35,7 +35,7 @@ const accountNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-   { title: 'Course Moderation', href: '/admin/course-designer', icon: Settings }, // Updated label, path can be reused
+   { title: 'Course Management', href: '/admin/course-designer', icon: ShieldCheck }, 
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {

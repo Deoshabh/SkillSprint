@@ -30,7 +30,7 @@ const fullStackDsaDevOpsModules: Module[] = [
     practiceTask: 'Build a responsive portfolio homepage',
     videoLinks: [
       { id:'vid-fsdd1-1', langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/playlist?list=PLu0W_9lII9agiCUZYRsvtGTXdxkzPyItg'), title: 'HTML5 & CSS3 (Hinglish)', isPlaylist: true, creator: 'CodeWithHarry' },
-      { id:'vid-fsdd1-2', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=UB1O30fR-EE'), title: 'HTML5 & CSS3 (English)', creator: 'freeCodeCamp', isPlaylist: false },
+      { id:'vid-fsdd1-2', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=UB1O30fR-EE'), title: 'HTML5 & CSS3 (English)', isPlaylist: false, creator: 'freeCodeCamp' },
     ],
   },
   {
@@ -38,8 +38,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['Flexbox properties', 'Grid layout', 'responsive media queries'],
     practiceTask: 'Clone a blog layout using Flexbox & Grid',
     videoLinks: [
-      { id:'vid-fsdd2-1', langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RGOj5yH7evk'), title: 'Advanced CSS (Hinglish)', creator: 'Shradha Khapra', isPlaylist: false },
-      { id:'vid-fsdd2-2', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=EFafSYg-PkI'), title: 'Advanced CSS (English)', creator: 'Kevin Powell', isPlaylist: false },
+      { id:'vid-fsdd2-1', langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=RGOj5yH7evk'), title: 'Advanced CSS (Hinglish)', isPlaylist: false, creator: 'Shradha Khapra' },
+      { id:'vid-fsdd2-2', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=EFafSYg-PkI'), title: 'Advanced CSS (English)', isPlaylist: false, creator: 'Kevin Powell' },
     ],
   },
   // ... (other modules with unique IDs for videoLinks)
@@ -48,8 +48,8 @@ const fullStackDsaDevOpsModules: Module[] = [
     subtopics: ['STAR method', 'resume polish', 'behavioral Q&A'],
     practiceTask: 'Prepare & record 5 STAR method behavioral answers',
     videoLinks: [
-      { id:'vid-fsdd24-1', langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=2nI4i2pTlPQ'), title: 'Soft Skills & Interview Prep (Hinglish)', creator: 'Aman Dhattarwal', isPlaylist: false },
-      { id:'vid-fsdd24-2', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Q6QXyq9Iqyk'), title: 'Behavioral Interviews (English)', creator: 'Linda Raynier', isPlaylist: false },
+      { id:'vid-fsdd24-1', langCode: 'hi', langName: 'Hinglish', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=2nI4i2pTlPQ'), title: 'Soft Skills & Interview Prep (Hinglish)', isPlaylist: false, creator: 'Aman Dhattarwal' },
+      { id:'vid-fsdd24-2', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=Q6QXyq9Iqyk'), title: 'Behavioral Interviews (English)', isPlaylist: false, creator: 'Linda Raynier' },
     ],
   },
 ];
@@ -99,7 +99,7 @@ export let placeholderCourses: Course[] = [
     category: 'Full-Stack, DSA & DevOps',
     icon: 'Code',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'coding software',
+    dataAiHint: 'software development',
     modules: fullStackDsaDevOpsModules,
     duration: '24 Weeks',
     rating: 4.9,
@@ -107,7 +107,8 @@ export let placeholderCourses: Course[] = [
     authorId: 'skillify-platform-admin',
     status: 'published',
     visibility: 'public',
-    lastModified: new Date().toISOString(),
+    lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // Modified 3 days ago
+    submittedDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'skillify-ec-01',
@@ -117,7 +118,7 @@ export let placeholderCourses: Course[] = [
     category: 'English Communication',
     icon: 'Mic',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'communication speech',
+    dataAiHint: 'public speaking',
     modules: englishCommModules,
     duration: '12 Weeks',
     rating: 4.7,
@@ -135,7 +136,7 @@ export let placeholderCourses: Course[] = [
     category: 'Design & AI Tools',
     icon: 'Palette',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'art design',
+    dataAiHint: 'graphic design ai',
     modules: designAiModules,
     duration: '15 Weeks',
     rating: 4.8,
@@ -143,8 +144,8 @@ export let placeholderCourses: Course[] = [
     authorId: 'skillify-platform-admin',
     status: 'pending_review',
     visibility: 'public',
-    submittedDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Submitted yesterday
-    lastModified: new Date().toISOString(),
+    submittedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // Submitted yesterday
+    lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'skillify-ap-01',
@@ -154,7 +155,7 @@ export let placeholderCourses: Course[] = [
     category: 'Aptitude Prep',
     icon: 'Brain',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'thinking strategy',
+    dataAiHint: 'problem solving',
     modules: aptitudeModules,
     duration: '8 Weeks',
     rating: 4.6,
@@ -162,8 +163,28 @@ export let placeholderCourses: Course[] = [
     authorId: 'user-alex-johnson-123',
     status: 'published',
     visibility: 'public',
-    lastModified: new Date().toISOString(),
+    lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    submittedDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
   },
+  {
+    id: 'skillify-rejected-01',
+    title: 'Introduction to Quantum Entanglement (Rejected)',
+    description: 'An attempt to explain quantum entanglement to beginners. Needs more clarity.',
+    instructor: 'Dr. Quanta',
+    category: 'Physics',
+    icon: 'Sigma',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAiHint: 'science physics',
+    modules: [{id: 'rej-mod1', title: 'What is Entanglement?', contentType: 'text', contentData: 'Very complex stuff...', estimatedTime: '1 week'}],
+    duration: '1 Week',
+    rating: 2.1,
+    enrollmentCount: 50,
+    authorId: 'user-alex-johnson-123',
+    status: 'rejected',
+    visibility: 'public',
+    lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    submittedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  }
 ];
 
 export const placeholderUserProfile: UserProfile = {
@@ -171,7 +192,7 @@ export const placeholderUserProfile: UserProfile = {
   name: 'Alex Johnson',
   email: 'alex.johnson@example.com',
   avatarUrl: 'https://placehold.co/100x100.png',
-  dataAiHint: 'profile portrait',
+  dataAiHint: 'professional portrait',
   points: 1250,
   earnedBadges: [
     { id: 'badge1', name: 'Fast Learner', description: 'Completed 5 modules in a day', icon: 'Zap', color: 'text-yellow-400' },
@@ -238,6 +259,14 @@ export const getCoursesForReview = (): Course[] => {
   return placeholderCourses.filter(course => course.status === 'pending_review');
 };
 
+export const getPublishedCourses = (): Course[] => {
+  return placeholderCourses.filter(course => course.status === 'published');
+};
+
+export const getRejectedCourses = (): Course[] => {
+  return placeholderCourses.filter(course => course.status === 'rejected');
+};
+
 export const updateCourseStatus = (courseId: string, newStatus: Course['status']): boolean => {
   const courseIndex = placeholderCourses.findIndex(c => c.id === courseId);
   if (courseIndex > -1) {
@@ -273,8 +302,12 @@ export const saveOrUpdateCourse = (courseData: Partial<Course> & { authorId: str
   if (existingCourseIndex > -1) {
     // Update existing course
     if (placeholderCourses[existingCourseIndex].authorId !== courseData.authorId) {
-        console.error("User is not authorized to update this course.");
-        return null; // Or throw an error
+        // Allow admin (e.g. 'user-alex-johnson-123' which is current admin) to edit any course
+        const isAdmin = courseData.authorId === placeholderUserProfile.id && placeholderUserProfile.role === 'admin';
+        if (!isAdmin) {
+             console.error(`User ${courseData.authorId} is not authorized to update this course owned by ${placeholderCourses[existingCourseIndex].authorId}.`);
+             return null; 
+        }
     }
     placeholderCourses[existingCourseIndex] = {
       ...placeholderCourses[existingCourseIndex],
@@ -306,11 +339,6 @@ export const saveOrUpdateCourse = (courseData: Partial<Course> & { authorId: str
     return newCourse;
   }
 };
-
-// Add uuid to dependencies if not already there: npm install uuid && npm install --save-dev @types/uuid
-// For this environment, I'll assume it's available or the user will add it.
-// If direct modification to package.json is needed, that's a separate step.
-// For now, this code is for demonstration of in-memory updates.
 
 // Initialize some videoLinks with unique IDs
 [...fullStackDsaDevOpsModules, ...englishCommModules, ...designAiModules, ...aptitudeModules].forEach(module => {
