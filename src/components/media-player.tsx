@@ -2,7 +2,7 @@
 "use client";
 import type { Module, VideoLink, PlaylistItemDetail } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, FileText, Video, Search, Loader2, Info, ChevronDown, ListVideo, Trash2, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle, FileText, Video, Search, Loader2, Info, ChevronDown, ListVideo, Trash2, ListChecks, ChevronLeft, ChevronRight, HelpCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { fetchYoutubePlaylistItems } from '@/ai/flows/fetch-youtube-playlist-items-flow';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
 
 
 interface MediaPlayerProps {
@@ -149,7 +150,7 @@ export function MediaPlayer({
         }
         updateCurrentVideoDetails(videoToSelect);
       }
-    } else {
+    } else if (module.contentType !== 'video') { // Reset video state if not a video module
       updateCurrentVideoDetails(undefined);
     }
   }, [allAvailableVideos, module.contentType, module.id, module.contentUrl, module.title, selectedVideoKey, userPreferredLanguage, userAddedModuleVideos, updateCurrentVideoDetails, currentVideoUrl, currentVideoIsPlaylist]);
@@ -398,39 +399,47 @@ export function MediaPlayer({
           </div>
         );
       case 'markdown':
+      case 'text': // Handle 'text' as markdown as well
         return (
-          <Card className="prose dark:prose-invert max-w-none p-6 bg-background shadow-inner">
-            <pre className="whitespace-pre-wrap font-sans text-sm">
-              {module.contentData || 'No markdown content available.'}
-            </pre>
+          <Card className="prose dark:prose-invert max-w-none p-6 bg-background shadow-inner min-h-[300px] max-h-[60vh] overflow-y-auto">
+            <ReactMarkdown>{module.contentData || 'No text content available for this module.'}</ReactMarkdown>
           </Card>
         );
       case 'pdf':
         return (
-           <div className="flex flex-col items-center justify-center h-96 bg-muted rounded-lg p-4">
-            <FileText className="h-16 w-16 text-muted-foreground mb-4" aria-hidden="true" />
-            <p className="text-muted-foreground text-center mb-2">PDF Viewer</p>
+           <div className="flex flex-col items-center justify-center h-[60vh] min-h-[400px] bg-muted rounded-lg p-1 text-center">
             {module.contentUrl ? (
-                <iframe src={module.contentUrl} className="w-full h-full border-none rounded-md" title={`PDF viewer for ${module.title}`} />
+                <iframe 
+                    src={module.contentUrl} 
+                    className="w-full h-full border-none rounded-md" 
+                    title={`PDF viewer for ${module.title}`} 
+                    aria-label={`PDF content for module: ${module.title}`}
+                />
             ) : (
-                <p className="text-sm text-muted-foreground text-center">No PDF available for this module.</p>
+              <>
+                <FileText className="h-16 w-16 text-muted-foreground mb-4" aria-hidden="true" />
+                <p className="text-muted-foreground text-center mb-2">No PDF document linked for this module.</p>
+                <p className="text-sm text-muted-foreground">Please check the module content or contact support.</p>
+              </>
             )}
           </div>
         );
       case 'quiz':
          return (
-          <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
-            <FileText className="h-16 w-16 text-muted-foreground mb-2" aria-hidden="true" />
-            <p className="text-muted-foreground">Quiz content placeholder.</p>
-            <p className="text-sm text-muted-foreground">Quiz: {module.title}</p>
+          <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center">
+            <HelpCircleIcon className="h-16 w-16 text-muted-foreground mb-4" aria-hidden="true" />
+            <p className="text-lg font-semibold text-foreground">Quiz: {module.title}</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              The interactive quiz for this module will be available here soon.
+            </p>
           </div>
         );
       case 'assignment':
         return (
-          <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
-            <FileText className="h-16 w-16 text-muted-foreground mb-2" aria-hidden="true" />
-            <p className="text-muted-foreground">Assignment placeholder.</p>
-            <p className="text-sm text-muted-foreground">Assignment: {module.title}</p>
+          <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center">
+            <FileText className="h-16 w-16 text-muted-foreground mb-4" aria-hidden="true" />
+            <p className="text-lg font-semibold text-foreground">Assignment: {module.title}</p>
+            <p className="text-sm text-muted-foreground mt-2">Details for this assignment will appear here.</p>
           </div>
         );
       default:
@@ -455,3 +464,6 @@ export function MediaPlayer({
     </Card>
   );
 }
+
+
+      
