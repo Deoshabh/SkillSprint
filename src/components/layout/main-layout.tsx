@@ -16,7 +16,7 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 
@@ -37,6 +37,7 @@ const accountNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
    { title: 'Course Management', href: '/admin/course-designer', icon: ShieldCheck }, 
+   { title: 'AI Content Scout', href: '/admin/content-scout', icon: Wand2 },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
