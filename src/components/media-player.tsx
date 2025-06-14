@@ -2,7 +2,7 @@
 "use client";
 import type { Module, VideoLink, PlaylistItemDetail } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, FileText, Video, Search, Loader2, Info, ChevronDown, ListVideo, Trash2, ListChecks } from 'lucide-react';
+import { AlertTriangle, FileText, Video, Search, Loader2, Info, ChevronDown, ListVideo, Trash2, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -23,6 +23,8 @@ interface MediaPlayerProps {
   onRemoveUserVideo?: (videoId: string) => void; 
 }
 
+const PLAYLIST_ITEMS_PER_PAGE = 10;
+
 export function MediaPlayer({ 
   module, 
   aiFetchedVideos = [], 
@@ -34,17 +36,17 @@ export function MediaPlayer({
 }: MediaPlayerProps) {
   const { toast } = useToast();
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
-  const [selectedVideoKey, setSelectedVideoKey] = useState<string>(''); // Stores the youtubeEmbedUrl of the selected VideoLink
+  const [selectedVideoKey, setSelectedVideoKey] = useState<string>('');
   const [currentVideoIsPlaylist, setCurrentVideoIsPlaylist] = useState<boolean>(false);
   const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
   const [currentVideoIsUserAdded, setCurrentVideoIsUserAdded] = useState<boolean>(false);
-  const [currentVideoIdForRemoval, setCurrentVideoIdForRemoval] = useState<string | undefined>(undefined); // ID of the VideoLink object
+  const [currentVideoIdForRemoval, setCurrentVideoIdForRemoval] = useState<string | undefined>(undefined);
 
-  // State for fetched playlist items
   const [fetchedPlaylistItems, setFetchedPlaylistItems] = useState<PlaylistItemDetail[] | null>(null);
   const [isLoadingPlaylistItems, setIsLoadingPlaylistItems] = useState<boolean>(false);
   const [playlistItemsError, setPlaylistItemsError] = useState<string | null>(null);
   const [activeVideoIdFromPlaylist, setActiveVideoIdFromPlaylist] = useState<string | null>(null);
+  const [playlistCurrentPage, setPlaylistCurrentPage] = useState<number>(1);
 
 
   const allAvailableVideos = useMemo(() => {
@@ -84,6 +86,7 @@ export function MediaPlayer({
 
   const updateCurrentVideoDetails = useCallback((videoLink: VideoLink | undefined) => {
     if (videoLink) {
+      const isNewPlaylist = videoLink.isPlaylist && currentVideoUrl !== videoLink.youtubeEmbedUrl;
       setCurrentVideoUrl(videoLink.youtubeEmbedUrl);
       setSelectedVideoKey(videoLink.youtubeEmbedUrl);
       setCurrentVideoIsPlaylist(!!videoLink.isPlaylist);
@@ -92,11 +95,11 @@ export function MediaPlayer({
       setCurrentVideoIsUserAdded(isUserAdded);
       setCurrentVideoIdForRemoval(isUserAdded ? videoLink.id : undefined);
       
-      // Reset playlist specific states if not a playlist or if it's a new playlist
-      if (!videoLink.isPlaylist || (videoLink.isPlaylist && currentVideoUrl !== videoLink.youtubeEmbedUrl)) {
+      if (!videoLink.isPlaylist || isNewPlaylist) {
         setFetchedPlaylistItems(null);
         setPlaylistItemsError(null);
         setActiveVideoIdFromPlaylist(null);
+        setPlaylistCurrentPage(1); 
       }
     } else {
       setCurrentVideoUrl(null);
@@ -108,6 +111,7 @@ export function MediaPlayer({
       setFetchedPlaylistItems(null);
       setPlaylistItemsError(null);
       setActiveVideoIdFromPlaylist(null);
+      setPlaylistCurrentPage(1);
     }
   }, [userAddedModuleVideos, currentVideoUrl]);
 
@@ -117,7 +121,13 @@ export function MediaPlayer({
       const currentSelectedVideo = allAvailableVideos.find(v => v.youtubeEmbedUrl === selectedVideoKey);
       
       if (currentSelectedVideo) {
-        updateCurrentVideoDetails(currentSelectedVideo);
+        // updateCurrentVideoDetails will be called if selectedVideoKey changes via handleVideoSelectionChange
+        // or if allAvailableVideos changes. If the selectedVideoKey is already set, we might not need to call it again
+        // unless its details (like isPlaylist status) could change from under it.
+        // For safety, let's ensure it's called if details might differ.
+        if (currentVideoUrl !== currentSelectedVideo.youtubeEmbedUrl || currentVideoIsPlaylist !== !!currentSelectedVideo.isPlaylist) {
+             updateCurrentVideoDetails(currentSelectedVideo);
+        }
       } else {
         let videoToSelect: VideoLink | undefined = undefined;
         if (userAddedModuleVideos.length > 0) {
@@ -146,10 +156,9 @@ export function MediaPlayer({
     } else {
       updateCurrentVideoDetails(undefined);
     }
-  }, [allAvailableVideos, module.contentType, module.id, module.contentUrl, module.title, selectedVideoKey, userPreferredLanguage, userAddedModuleVideos, updateCurrentVideoDetails]);
+  }, [allAvailableVideos, module.contentType, module.id, module.contentUrl, module.title, selectedVideoKey, userPreferredLanguage, userAddedModuleVideos, updateCurrentVideoDetails, currentVideoUrl, currentVideoIsPlaylist]);
 
 
-  // Effect to fetch playlist items when a playlist is selected
   useEffect(() => {
     if (currentVideoIsPlaylist && currentVideoUrl) {
       const playlistIdMatch = currentVideoUrl.match(/list=([^&]+)/);
@@ -159,6 +168,7 @@ export function MediaPlayer({
         setPlaylistItemsError(null);
         setFetchedPlaylistItems(null); 
         setActiveVideoIdFromPlaylist(null);
+        setPlaylistCurrentPage(1); 
 
         fetchYoutubePlaylistItems({ playlistId })
           .then(response => {
@@ -168,7 +178,7 @@ export function MediaPlayer({
             } else if (response.items && response.items.length > 0) {
               setFetchedPlaylistItems(response.items);
             } else {
-              setFetchedPlaylistItems([]); // No items found
+              setFetchedPlaylistItems([]);
               toast({ title: "Playlist Empty", description: "No videos found in this playlist."});
             }
           })
@@ -183,19 +193,19 @@ export function MediaPlayer({
           });
       }
     } else {
-        // Not a playlist, or no URL, clear playlist items
         setFetchedPlaylistItems(null);
         setIsLoadingPlaylistItems(false);
         setPlaylistItemsError(null);
         setActiveVideoIdFromPlaylist(null);
+        setPlaylistCurrentPage(1);
     }
   }, [currentVideoUrl, currentVideoIsPlaylist, toast]);
 
 
   const handleVideoSelectionChange = (newSelectedKey: string) => {
     const selected = allAvailableVideos.find(v => v.youtubeEmbedUrl === newSelectedKey);
-    setSelectedVideoKey(newSelectedKey); // This will trigger the main useEffect to update details
-    setActiveVideoIdFromPlaylist(null); // Reset individual video selection when main source changes
+    setSelectedVideoKey(newSelectedKey); 
+    setActiveVideoIdFromPlaylist(null); 
     if (selected) {
         updateCurrentVideoDetails(selected);
     }
@@ -204,8 +214,7 @@ export function MediaPlayer({
   const handleRemoveCurrentVideo = () => {
     if (currentVideoIsUserAdded && currentVideoIdForRemoval && onRemoveUserVideo) {
       onRemoveUserVideo(currentVideoIdForRemoval);
-      // After removal, the main useEffect will re-evaluate and pick a new video
-      setSelectedVideoKey(''); // Force re-evaluation by clearing the selected key
+      setSelectedVideoKey(''); 
     }
   };
 
@@ -216,6 +225,17 @@ export function MediaPlayer({
   const iframeSrc = activeVideoIdFromPlaylist 
     ? `https://www.youtube.com/embed/${activeVideoIdFromPlaylist}` 
     : currentVideoUrl;
+
+  const currentPlaylistItemsPage = useMemo(() => {
+    if (!fetchedPlaylistItems) return [];
+    const startIndex = (playlistCurrentPage - 1) * PLAYLIST_ITEMS_PER_PAGE;
+    return fetchedPlaylistItems.slice(startIndex, startIndex + PLAYLIST_ITEMS_PER_PAGE);
+  }, [fetchedPlaylistItems, playlistCurrentPage]);
+
+  const totalPlaylistPages = useMemo(() => {
+    if (!fetchedPlaylistItems) return 1;
+    return Math.ceil(fetchedPlaylistItems.length / PLAYLIST_ITEMS_PER_PAGE);
+  }, [fetchedPlaylistItems]);
 
   const renderContent = () => {
     switch (module.contentType) {
@@ -305,7 +325,7 @@ export function MediaPlayer({
                       <span className="font-medium">Playlist Content ({fetchedPlaylistItems?.length || 0} videos)</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-3 text-xs text-muted-foreground border border-t-0 rounded-b-md bg-background max-h-96 overflow-y-auto">
+                  <AccordionContent className="p-3 text-xs text-muted-foreground border border-t-0 rounded-b-md bg-background max-h-[450px] overflow-y-auto">
                     {isLoadingPlaylistItems && (
                       <div className="flex items-center justify-center p-4">
                         <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" /> Loading playlist videos...
@@ -319,9 +339,9 @@ export function MediaPlayer({
                     {!isLoadingPlaylistItems && !playlistItemsError && fetchedPlaylistItems && fetchedPlaylistItems.length === 0 && (
                       <p className="text-center p-4">No videos found in this playlist, or it might be private.</p>
                     )}
-                    {!isLoadingPlaylistItems && !playlistItemsError && fetchedPlaylistItems && fetchedPlaylistItems.length > 0 && (
+                    {!isLoadingPlaylistItems && !playlistItemsError && currentPlaylistItemsPage.length > 0 && (
                       <div className="space-y-2">
-                        {fetchedPlaylistItems.map((item, index) => (
+                        {currentPlaylistItemsPage.map((item, index) => (
                           <div 
                             key={item.videoId} 
                             onClick={() => handlePlaylistItemClick(item.videoId)}
@@ -330,7 +350,7 @@ export function MediaPlayer({
                               activeVideoIdFromPlaylist === item.videoId && "bg-muted font-semibold ring-2 ring-primary"
                             )}
                           >
-                            <span className="text-xs w-6 text-center text-muted-foreground">{index + 1}.</span>
+                            <span className="text-xs w-6 text-center text-muted-foreground">{(playlistCurrentPage - 1) * PLAYLIST_ITEMS_PER_PAGE + index + 1}.</span>
                             <div className="relative w-20 h-12 rounded overflow-hidden flex-shrink-0">
                                 <Image 
                                     src={item.thumbnailUrl || "https://placehold.co/120x90.png?text=No+Thumb"} 
@@ -345,6 +365,29 @@ export function MediaPlayer({
                           </div>
                         ))}
                       </div>
+                    )}
+                    {!isLoadingPlaylistItems && !playlistItemsError && fetchedPlaylistItems && fetchedPlaylistItems.length > PLAYLIST_ITEMS_PER_PAGE && (
+                        <div className="flex justify-between items-center mt-4 pt-3 border-t">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => setPlaylistCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={playlistCurrentPage === 1}
+                            >
+                                <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                            </Button>
+                            <span className="text-xs text-muted-foreground">
+                                Page {playlistCurrentPage} of {totalPlaylistPages}
+                            </span>
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setPlaylistCurrentPage(p => Math.min(totalPlaylistPages, p + 1))}
+                                disabled={playlistCurrentPage === totalPlaylistPages}
+                            >
+                                Next <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                        </div>
                     )}
                      <p className="mt-3 text-center text-muted-foreground text-xs italic">
                         Use the YouTube player controls for full playlist navigation (next, previous, shuffle). Clicking an item above plays it directly.
@@ -413,4 +456,3 @@ export function MediaPlayer({
     </Card>
   );
 }
-

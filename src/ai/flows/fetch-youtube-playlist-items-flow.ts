@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fetch from 'node-fetch'; // Make sure to install node-fetch: npm install node-fetch
+import fetch from 'node-fetch';
 
 const FetchYoutubePlaylistItemsInputSchema = z.object({
   playlistId: z.string().describe('The ID of the YouTube playlist to fetch items from.'),
@@ -48,38 +48,53 @@ const fetchYoutubePlaylistItemsFlow = ai.defineFlow(
       return { items: [], error: 'YouTube API key is not configured.' };
     }
 
-    const maxResults = 25; // YouTube API default is 5, max is 50. Let's take a moderate number.
-    const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${apiKey}`;
+    const allItems: z.infer<typeof PlaylistItemSchema>[] = [];
+    let nextPageToken: string | undefined = undefined;
+    const maxResultsPerPage = 50; // YouTube API max is 50
 
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to parse API error response' }));
-        console.error(`YouTube API error: ${response.status} -`, errorData);
-        return { items: [], error: `YouTube API Error: ${response.status} ${errorData?.error?.message || response.statusText}` };
+      do {
+        let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResultsPerPage}&key=${apiKey}`;
+        if (nextPageToken) {
+          url += `&pageToken=${nextPageToken}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Failed to parse API error response' }));
+          console.error(`YouTube API error: ${response.status} -`, errorData);
+          const errorMessage = `YouTube API Error: ${response.status} ${errorData?.error?.message || response.statusText}`;
+          // If some items were already fetched, return them with the error, otherwise just error
+          return { items: allItems.length > 0 ? allItems : [], error: errorMessage };
+        }
+
+        const data = (await response.json()) as any;
+
+        if (data.items && data.items.length > 0) {
+          const playlistItemsBatch: z.infer<typeof PlaylistItemSchema>[] = data.items
+            .filter((item: any) => item.snippet?.resourceId?.kind === 'youtube#video' && item.snippet?.resourceId?.videoId)
+            .map((item: any) => ({
+              videoId: item.snippet.resourceId.videoId,
+              title: item.snippet.title,
+              thumbnailUrl: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || 'https://placehold.co/320x180.png?text=No+Thumbnail',
+            }));
+          allItems.push(...playlistItemsBatch);
+        }
+        
+        nextPageToken = data.nextPageToken;
+
+      } while (nextPageToken);
+
+      if (allItems.length === 0) {
+        return { items: [], error: 'No items found in the playlist or playlist is private/invalid.' };
       }
 
-      const data = (await response.json()) as any; // Cast to any to handle complex YouTube API structure
+      return { items: allItems };
 
-      if (!data.items || data.items.length === 0) {
-        return { items: [], error: 'No items found in the playlist or playlist is private.' };
-      }
-
-      const playlistItems: z.infer<typeof PlaylistItemSchema>[] = data.items
-        .filter((item: any) => item.snippet?.resourceId?.kind === 'youtube#video' && item.snippet?.resourceId?.videoId)
-        .map((item: any) => ({
-          videoId: item.snippet.resourceId.videoId,
-          title: item.snippet.title,
-          thumbnailUrl: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || 'https://placehold.co/320x180.png?text=No+Thumbnail',
-        }));
-
-      return { items: playlistItems };
     } catch (error) {
       console.error('Error fetching YouTube playlist items:', error);
-      if (error instanceof Error) {
-        return { items: [], error: `Failed to fetch playlist items: ${error.message}` };
-      }
-      return { items: [], error: 'An unknown error occurred while fetching playlist items.' };
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      return { items: allItems.length > 0 ? allItems : [], error: `Failed to fetch playlist items: ${errorMessage}` };
     }
   }
 );
