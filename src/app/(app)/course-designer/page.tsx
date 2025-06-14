@@ -150,15 +150,14 @@ export default function MyCourseDesignerPage() {
         setModules(courseToEdit.modules || []);
         setOriginalAuthorId(courseToEdit.authorId || null);
         
-        // Populate courseVideoPool from existing module videoLinks for easier access
         const existingCourseVideos = new Map<string, VideoLink>();
         (courseToEdit.modules || []).forEach(module => {
             if(module.contentUrl && module.contentType === 'video'){
-                 const mainVideoFromModule: VideoLink = { // Create a VideoLink object for the main contentUrl
+                 const mainVideoFromModule: VideoLink = { 
                     id: `module-main-${module.id}`,
                     youtubeEmbedUrl: module.contentUrl,
                     title: `${module.title} (Main Video)`,
-                    langCode: 'unk', // Unknown language code
+                    langCode: 'unk', 
                     langName: 'Unknown',
                     isPlaylist: module.contentUrl.includes('videoseries?list=')
                  };
@@ -203,6 +202,10 @@ export default function MyCourseDesignerPage() {
 
   const handleGenerateSyllabus = async (e: FormEvent) => {
     e.preventDefault();
+    if (user?.role !== 'admin') {
+      toast({ title: "Permission Denied", description: "AI Syllabus Generation is an admin feature.", variant: "destructive" });
+      return;
+    }
     if (!aiTopic.trim()) {
       toast({ title: "Error", description: "Please enter a course topic.", variant: "destructive" });
       return;
@@ -212,7 +215,6 @@ export default function MyCourseDesignerPage() {
       const input: AutoGenerateCourseSyllabusInput = { courseTopic: aiTopic, targetAudience, learningObjectives, desiredNumberOfModules: desiredModules };
       const result = await autoGenerateCourseSyllabus(input);
       setSyllabusResult(result.courseSyllabus);
-      // Attempt to parse syllabus into modules
         if (result.courseSyllabus) {
             const parsedModules = parseSyllabusToModules(result.courseSyllabus);
             if (parsedModules.length > 0) {
@@ -237,7 +239,6 @@ export default function MyCourseDesignerPage() {
     while ((match = moduleRegex.exec(syllabusText)) !== null) {
         const title = match[1].trim() || `Module ${generatedModules.length + 1}`;
         const content = match[3] || '';
-        // Basic parsing for description, subtopics, activities from content
         const descriptionMatch = content.match(/Description:([\s\S]*?)(Topics:|Learning Activities:|$)/i);
         const topicsMatch = content.match(/Topics:([\s\S]*?)(Learning Activities:|$)/i);
         const activitiesMatch = content.match(/Learning Activities:([\s\S]*)/i);
@@ -248,8 +249,8 @@ export default function MyCourseDesignerPage() {
             description: descriptionMatch ? descriptionMatch[1].trim() : `Details for ${title}`,
             subtopics: topicsMatch ? topicsMatch[1].trim().split('\n').map(s => s.replace(/^- /, '').trim()).filter(s => s) : [],
             practiceTask: activitiesMatch ? `Based on activities: ${activitiesMatch[1].trim().substring(0,100)}...` : '',
-            contentType: 'video', // Default
-            estimatedTime: '1 week', // Default
+            contentType: 'video', 
+            estimatedTime: '1 week', 
             contentUrl: '',
         });
     }
@@ -374,10 +375,10 @@ export default function MyCourseDesignerPage() {
   };
   
   const handleModuleContentTypeChange = (value: ModuleContentType) => {
-     setCurrentModuleForm(prev => ({ ...prev, contentType: value, contentUrl: '' })); // Reset contentUrl when type changes
+     setCurrentModuleForm(prev => ({ ...prev, contentType: value, contentUrl: '' })); 
   };
 
-  const handleModuleContentUrlChange = (value: string) => { // For Dropdown/Select
+  const handleModuleContentUrlChange = (value: string) => { 
      setCurrentModuleForm(prev => ({ ...prev, contentUrl: value }));
   };
 
@@ -418,6 +419,9 @@ export default function MyCourseDesignerPage() {
 
   // --- Module-Level AI Suggestion Handlers ---
   const handleSuggestModuleSubtopics = async () => {
+    if (user?.role !== 'admin') {
+      toast({ title: "Permission Denied", description: "This is an admin feature.", variant: "destructive" }); return;
+    }
     if (!currentModuleForm.title) {
       toast({ title: "Info", description: "Please provide a module title first.", variant: "default" });
       return;
@@ -440,7 +444,10 @@ export default function MyCourseDesignerPage() {
   };
 
   const handleSuggestModulePracticeTask = async () => {
-     if (!currentModuleForm.title) {
+    if (user?.role !== 'admin') {
+      toast({ title: "Permission Denied", description: "This is an admin feature.", variant: "destructive" }); return;
+    }
+    if (!currentModuleForm.title) {
       toast({ title: "Info", description: "Please provide a module title first.", variant: "default" });
       return;
     }
@@ -463,6 +470,9 @@ export default function MyCourseDesignerPage() {
   };
   
   const handleFindVideosForModule = async () => {
+    if (user?.role !== 'admin') {
+      toast({ title: "Permission Denied", description: "This is an admin feature.", variant: "destructive" }); return;
+    }
     if (!currentModuleForm.title) {
         toast({ title: "Info", description: "Please provide a module title first.", variant: "default" });
         return;
@@ -493,7 +503,7 @@ export default function MyCourseDesignerPage() {
             ...prev,
             subtopics: Array.from(new Set([...(prev.subtopics || []), ...moduleSubtopicSuggestions]))
         }));
-        setModuleSubtopicSuggestions([]); // Clear suggestions after adding
+        setModuleSubtopicSuggestions([]); 
         toast({description: "Suggested subtopics added to module."});
     }
   };
@@ -503,7 +513,7 @@ export default function MyCourseDesignerPage() {
             ...prev,
             practiceTask: modulePracticeTaskSuggestion
         }));
-        setModulePracticeTaskSuggestion(''); // Clear suggestion
+        setModulePracticeTaskSuggestion(''); 
         toast({description: "Suggested practice task used."});
     }
   };
@@ -726,7 +736,7 @@ export default function MyCourseDesignerPage() {
                       <ScrollArea className="max-h-[80vh] p-1">
                         <DialogHeader className="px-5 pt-5">
                             <DialogTitle>{editingModule ? "Edit Module" : "Add New Module"}</DialogTitle>
-                            <DialogDescription>Fill in the details for your module. Use AI to help generate content ideas.</DialogDescription>
+                            <DialogDescription>Fill in the details for your module. Admins can use AI for content ideas.</DialogDescription>
                         </DialogHeader>
                         <div className="p-5 space-y-4">
                             <div><Label htmlFor="moduleTitle">Title*</Label><Input id="moduleTitle" name="title" value={currentModuleForm.title} onChange={handleModuleFormChange} /></div>
@@ -766,50 +776,56 @@ export default function MyCourseDesignerPage() {
 
                             <Separator className="my-4"/>
                             <Card className="bg-card p-0">
-                                <CardHeader className="p-3 border-b"><CardTitle className="text-md flex items-center"><Brain className="h-5 w-5 mr-2 text-primary"/>AI Content Assistance</CardTitle></CardHeader>
+                                <CardHeader className="p-3 border-b"><CardTitle className="text-md flex items-center"><Brain className="h-5 w-5 mr-2 text-primary"/>AI Content Assistance (Admin Only)</CardTitle></CardHeader>
                                 <CardContent className="p-3 space-y-3">
-                                    <div className="space-y-2">
-                                        <Button variant="outline" size="sm" onClick={handleSuggestModuleSubtopics} disabled={loadingModuleSuggestions === 'subtopics'} className="w-full justify-start">
-                                            {loadingModuleSuggestions === 'subtopics' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ListPlus className="mr-2 h-4 w-4"/>} Suggest Subtopics
-                                        </Button>
-                                        {moduleSubtopicSuggestions.length > 0 && (
-                                            <div className="p-2 border rounded-md bg-muted/50 text-sm space-y-1">
-                                                <p className="font-medium text-xs">Suggested Subtopics:</p>
-                                                <ul className="list-disc list-inside pl-2 text-xs">
-                                                    {moduleSubtopicSuggestions.map((s, i) => <li key={i}>{s}</li>)}
-                                                </ul>
-                                                <Button size="xs" variant="link" onClick={addSuggestedSubtopicsToModule}>Add to Module</Button>
+                                    {user?.role === 'admin' ? (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Button variant="outline" size="sm" onClick={handleSuggestModuleSubtopics} disabled={loadingModuleSuggestions === 'subtopics'} className="w-full justify-start">
+                                                    {loadingModuleSuggestions === 'subtopics' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ListPlus className="mr-2 h-4 w-4"/>} Suggest Subtopics
+                                                </Button>
+                                                {moduleSubtopicSuggestions.length > 0 && (
+                                                    <div className="p-2 border rounded-md bg-muted/50 text-sm space-y-1">
+                                                        <p className="font-medium text-xs">Suggested Subtopics:</p>
+                                                        <ul className="list-disc list-inside pl-2 text-xs">
+                                                            {moduleSubtopicSuggestions.map((s, i) => <li key={i}>{s}</li>)}
+                                                        </ul>
+                                                        <Button size="xs" variant="link" onClick={addSuggestedSubtopicsToModule}>Add to Module</Button>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                        <div><Label htmlFor="moduleSubtopics" className="text-xs">Current Subtopics (comma-separated)</Label><Input id="moduleSubtopics" name="subtopics" value={(currentModuleForm.subtopics || []).join(', ')} onChange={e => setCurrentModuleForm(prev => ({...prev, subtopics: e.target.value.split(',').map(s=>s.trim()).filter(s=>s)}))} /></div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Button variant="outline" size="sm" onClick={handleSuggestModulePracticeTask} disabled={loadingModuleSuggestions === 'task'} className="w-full justify-start">
-                                            {loadingModuleSuggestions === 'task' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckSquare className="mr-2 h-4 w-4"/>} Suggest Practice Task
-                                        </Button>
-                                        {modulePracticeTaskSuggestion && (
-                                             <div className="p-2 border rounded-md bg-muted/50 text-sm space-y-1">
-                                                <p className="font-medium text-xs">Suggested Practice Task:</p>
-                                                <p className="text-xs">{modulePracticeTaskSuggestion}</p>
-                                                <Button size="xs" variant="link" onClick={useSuggestedPracticeTask}>Use this Task</Button>
+                                            <div className="space-y-2">
+                                                <Button variant="outline" size="sm" onClick={handleSuggestModulePracticeTask} disabled={loadingModuleSuggestions === 'task'} className="w-full justify-start">
+                                                    {loadingModuleSuggestions === 'task' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckSquare className="mr-2 h-4 w-4"/>} Suggest Practice Task
+                                                </Button>
+                                                {modulePracticeTaskSuggestion && (
+                                                    <div className="p-2 border rounded-md bg-muted/50 text-sm space-y-1">
+                                                        <p className="font-medium text-xs">Suggested Practice Task:</p>
+                                                        <p className="text-xs">{modulePracticeTaskSuggestion}</p>
+                                                        <Button size="xs" variant="link" onClick={useSuggestedPracticeTask}>Use this Task</Button>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                         <div><Label htmlFor="modulePracticeTask" className="text-xs">Current Practice Task</Label><Textarea id="modulePracticeTask" name="practiceTask" value={currentModuleForm.practiceTask} onChange={handleModuleFormChange} rows={2}/></div>
-                                    </div>
-                                     <Button variant="outline" size="sm" onClick={handleFindVideosForModule} disabled={loadingModuleSuggestions === 'videos'} className="w-full justify-start">
-                                        {loadingModuleSuggestions === 'videos' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Youtube className="mr-2 h-4 w-4" />} Find Videos for this Module
-                                    </Button>
-                                    {moduleVideoSuggestions.length > 0 && (
-                                        <div className="p-2 border rounded-md bg-muted/50 text-sm space-y-1 max-h-40 overflow-y-auto">
-                                            <p className="font-medium text-xs">Suggested Videos (can be added to Course Video Pool):</p>
-                                            {moduleVideoSuggestions.map(v => (
-                                                <div key={v.youtubeEmbedUrl} className="text-xs border-b last:border-b-0 py-1">
-                                                    <p className="truncate" title={v.title}>{v.title} ({v.langName})</p>
-                                                    <Button size="xs" variant="link" onClick={() => handleAddVideoToPool(v)}>Add to Course Pool</Button>
+                                            <Button variant="outline" size="sm" onClick={handleFindVideosForModule} disabled={loadingModuleSuggestions === 'videos'} className="w-full justify-start">
+                                                {loadingModuleSuggestions === 'videos' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Youtube className="mr-2 h-4 w-4" />} Find Videos for this Module
+                                            </Button>
+                                            {moduleVideoSuggestions.length > 0 && (
+                                                <div className="p-2 border rounded-md bg-muted/50 text-sm space-y-1 max-h-40 overflow-y-auto">
+                                                    <p className="font-medium text-xs">Suggested Videos (can be added to Course Video Pool):</p>
+                                                    {moduleVideoSuggestions.map(v => (
+                                                        <div key={v.youtubeEmbedUrl} className="text-xs border-b last:border-b-0 py-1">
+                                                            <p className="truncate" title={v.title}>{v.title} ({v.langName})</p>
+                                                            <Button size="xs" variant="link" onClick={() => handleAddVideoToPool(v)}>Add to Course Pool</Button>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground">AI content assistance features are available for administrators.</p>
                                     )}
+                                     <div><Label htmlFor="moduleSubtopics" className="text-xs">Current Subtopics (comma-separated)</Label><Input id="moduleSubtopics" name="subtopics" value={(currentModuleForm.subtopics || []).join(', ')} onChange={e => setCurrentModuleForm(prev => ({...prev, subtopics: e.target.value.split(',').map(s=>s.trim()).filter(s=>s)}))} /></div>
+                                     <div><Label htmlFor="modulePracticeTask" className="text-xs">Current Practice Task</Label><Textarea id="modulePracticeTask" name="practiceTask" value={currentModuleForm.practiceTask} onChange={handleModuleFormChange} rows={2}/></div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -835,7 +851,7 @@ export default function MyCourseDesignerPage() {
           <Card className="shadow-xl">
             <CardHeader>
               <CardTitle className="text-2xl">AI-Powered Syllabus Generator</CardTitle>
-              <CardDescription>Kickstart your course design by letting AI generate a syllabus. Generated modules will appear in the "Module Builder" tab.</CardDescription>
+              <CardDescription>Kickstart your course design by letting AI generate a syllabus. Generated modules will appear in the "Module Builder" tab. (Admin Only)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={handleGenerateSyllabus} className="space-y-4">
@@ -855,10 +871,11 @@ export default function MyCourseDesignerPage() {
                   <Label htmlFor="desiredModules">Number of Modules</Label>
                   <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} />
                 </div>
-                <Button type="submit" disabled={loadingSyllabus} className="w-full md:w-auto">
-                {loadingSyllabus ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                Generate Syllabus & Initial Modules
-              </Button>
+                <Button type="submit" disabled={loadingSyllabus || user?.role !== 'admin'} className="w-full md:w-auto">
+                  {loadingSyllabus ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                  Generate Syllabus & Initial Modules
+                </Button>
+                {user?.role !== 'admin' && <p className="text-xs text-muted-foreground">AI Syllabus Generation is an admin feature.</p>}
               </form>
               {errorSyllabus && (
                 <div className="mt-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md"><AlertTriangle className="h-5 w-5 inline mr-1" />{errorSyllabus}</div>
