@@ -113,10 +113,10 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
                 {userProgress && userProgress.completedModules.length > 0 ? 'Continue Learning' : 'Start Course'}
               </Button>
               <div className="flex space-x-2">
-                <Button variant="outline" className="flex-1" aria-label="Share this course">
+                <Button variant="outline" className="flex-1" aria-label={`Share course: ${course.title}`}>
                   <Share2 className="h-4 w-4 mr-2" aria-hidden="true" /> Share
                 </Button>
-                <Button variant="outline" className="flex-1" aria-label="Add to wishlist">
+                <Button variant="outline" className="flex-1" aria-label={`Add ${course.title} to wishlist`}>
                   <Bookmark className="h-4 w-4 mr-2" aria-hidden="true" /> Wishlist
                 </Button>
               </div>
@@ -165,3 +165,4 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
     </div>
   );
 }
+
