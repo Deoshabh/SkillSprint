@@ -10,6 +10,7 @@ import { Loader2, UserCircle2, Edit3, Mail, Briefcase, BookOpen, Languages, Shie
 import Link from 'next/link';
 import { placeholderCourses } from '@/lib/placeholder-data';
 import type { Course } from '@/lib/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function UserProfilePage() {
   const { user, loading } = useAuth();
@@ -66,9 +67,21 @@ export default function UserProfilePage() {
               </CardDescription>
             </div>
           </div>
-          <Button variant="outline" aria-label="Edit profile">
-            <Edit3 className="h-4 w-4 mr-2" aria-hidden="true" /> Edit Profile
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* Button is disabled as full profile editing is not yet implemented beyond initial setup */}
+                <span tabIndex={0}> {/* Allow focus on disabled button for tooltip */}
+                  <Button variant="outline" aria-label="Edit profile (Feature coming soon)" disabled>
+                    <Edit3 className="h-4 w-4 mr-2" aria-hidden="true" /> Edit Profile
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Full profile editing (name, password, etc.) is planned for a future update.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

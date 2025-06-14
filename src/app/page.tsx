@@ -1,10 +1,16 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Gem, Library, Settings, BarChart3, Zap, Users, ArrowRight, Brain, Palette, Mic } from 'lucide-react';
+import { Gem, Library, Settings, BarChart3, Zap, Users, ArrowRight, Brain, Palette, Mic, type LucideIcon } from 'lucide-react';
+
+interface Feature {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
 
 export default function PublicHomePage() {
-  const features = [
+  const features: Feature[] = [
     {
       icon: Library,
       title: "Pre-built & Custom Courses",
@@ -26,7 +32,7 @@ export default function PublicHomePage() {
       description: "Monitor your achievements, earn points, and collect badges to stay motivated on your learning adventure.",
     },
     {
-      icon: Brain, // Using Brain for Aptitude
+      icon: Brain, 
       title: "Diverse Learning Categories",
       description: "Explore topics from Full-Stack Development, DSA, DevOps, to English Fluency, Design, and Aptitude.",
     },
@@ -41,8 +47,8 @@ export default function PublicHomePage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <Gem className="h-7 w-7 text-primary" />
+          <Link href="/" className="flex items-center space-x-2" aria-label="SkillSprint Home">
+            <Gem className="h-7 w-7 text-primary" aria-hidden="true" />
             <span className="font-bold text-2xl font-headline">SkillSprint</span>
           </Link>
           <nav className="flex items-center space-x-2">
@@ -71,7 +77,7 @@ export default function PublicHomePage() {
               </Button>
               <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-lg py-7 px-8">
                 <Link href="#features">
-                  Explore Features <ArrowRight className="ml-2 h-5 w-5" />
+                  Explore Features <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
                 </Link>
               </Button>
             </div>
@@ -89,7 +95,7 @@ export default function PublicHomePage() {
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {features.map((feature, index) => (
                 <div key={index} className="rounded-xl border bg-card p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-start text-left">
-                  <feature.icon className="h-10 w-10 text-primary mb-4" />
+                  <feature.icon className="h-10 w-10 text-primary mb-4" aria-hidden="true" />
                   <h3 className="text-xl font-semibold mb-2 font-headline">{feature.title}</h3>
                   <p className="text-muted-foreground text-sm">{feature.description}</p>
                 </div>

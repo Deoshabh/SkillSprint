@@ -15,7 +15,7 @@ export default function GamificationPage() {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <Trophy className="h-10 w-10 mr-3 text-primary" />
+          <Trophy className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           Achievements & Rewards
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -29,7 +29,7 @@ export default function GamificationPage() {
         <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Badges Earned</CardTitle>
-            <Star className="h-5 w-5 text-yellow-400" />
+            <Star className="h-5 w-5 text-yellow-400" aria-hidden="true" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{user.earnedBadges.length} / {allBadges.length}</div>
@@ -55,7 +55,7 @@ export default function GamificationPage() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <ShieldAlert className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <ShieldAlert className="h-16 w-16 mx-auto text-muted-foreground mb-4" aria-hidden="true" />
               <p className="text-lg text-muted-foreground">No badges earned yet.</p>
               <p className="text-sm text-muted-foreground">Keep learning to unlock achievements!</p>
             </div>

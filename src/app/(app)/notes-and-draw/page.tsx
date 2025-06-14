@@ -296,7 +296,7 @@ export default function NotesAndDrawPage() {
                     </Button>
                     
                     {isCanvasVisible && (
-                        <div className="mt-2 p-1 border rounded-lg bg-card shadow-inner overflow-x-auto">
+                        <div className="mt-2 p-1 border rounded-lg bg-card shadow-inner overflow-x-auto" aria-label="Drawing canvas region">
                             <DrawingCanvas 
                                 ref={drawingCanvasRef} 
                                 initialDataUrl={currentSketch?.dataUrl}

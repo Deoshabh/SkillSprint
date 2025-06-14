@@ -8,7 +8,7 @@ import { MediaPlayer } from '@/components/media-player';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Lightbulb, ListChecks, Loader2, AlertTriangle, BookOpen, CheckSquare, PlusCircle, Youtube, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lightbulb, ListChecks, Loader2, AlertTriangle, BookOpen, CheckSquare, PlusCircle, Youtube, Trash2, FileText, HelpCircleIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,6 @@ interface ModuleVideoFormState {
   isPlaylist: boolean;
 }
 
-// const USER_MODULE_VIDEO_LIMIT = 3; // Removed local constant
 
 export default function ModulePage({ params: paramsPromise }: { params: Promise<{ courseId: string; moduleId: string }> }) {
   const params = use(paramsPromise); 
@@ -83,7 +82,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
     return (
       <div className="container mx-auto py-10 text-center">
         <Alert variant="destructive" className="max-w-md mx-auto">
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" aria-hidden="true" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>Module or course not found.</AlertDescription>
         </Alert>
@@ -250,7 +249,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
         <div className="flex items-center justify-between">
           <Button variant="outline" size="sm" asChild>
             <Link href={`/courses/${course.id}`}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
               Back to {course.title}
             </Link>
           </Button>
@@ -270,7 +269,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
         />
         {errorAIVideos && (
             <Alert variant="destructive" className="mt-4">
-                <AlertTriangle className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
                 <AlertTitle>AI Video Search Error</AlertTitle>
                 <AlertDescription>{errorAIVideos}</AlertDescription>
             </Alert>
@@ -284,8 +283,9 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
                 onClick={() => setShowAddModuleVideoForm(!showAddModuleVideoForm)}
                 className="w-full"
                 disabled={userAddedModuleVideos.length >= USER_MODULE_VIDEO_LIMIT}
+                aria-label={showAddModuleVideoForm ? 'Cancel adding video' : `Add video or playlist to this module (${userAddedModuleVideos.length}/${USER_MODULE_VIDEO_LIMIT} used)`}
               >
-                <PlusCircle className="h-4 w-4 mr-2" /> 
+                <PlusCircle className="h-4 w-4 mr-2" aria-hidden="true" /> 
                 {showAddModuleVideoForm ? 'Cancel Adding Video' : `Add Video/Playlist to Module (${userAddedModuleVideos.length}/${USER_MODULE_VIDEO_LIMIT})`}
               </Button>
               {userAddedModuleVideos.length >= USER_MODULE_VIDEO_LIMIT && !showAddModuleVideoForm && (
@@ -317,7 +317,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
                       <Input id="moduleVideoCreator" name="creator" placeholder="e.g., ChannelName" value={moduleVideoForm.creator} onChange={handleModuleVideoFormChange} />
                     </div>
                   </div>
-                  <Button type="submit" size="sm" className="w-full"><PlusCircle className="h-4 w-4 mr-2" /> Add to Module Videos</Button>
+                  <Button type="submit" size="sm" className="w-full" aria-label="Confirm adding this video/playlist to module"><PlusCircle className="h-4 w-4 mr-2" aria-hidden="true" /> Add to Module Videos</Button>
                 </form>
               )}
             </CardContent>
@@ -329,7 +329,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
           <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-xl font-headline flex items-center">
-                <ListChecks className="h-5 w-5 mr-2 text-primary" />
+                <ListChecks className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Key Subtopics
               </CardTitle>
             </CardHeader>
@@ -347,7 +347,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
           <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-xl font-headline flex items-center">
-                <CheckSquare className="h-5 w-5 mr-2 text-accent" />
+                <CheckSquare className="h-5 w-5 mr-2 text-accent" aria-hidden="true" />
                 Practice Task
               </CardTitle>
             </CardHeader>
@@ -360,21 +360,21 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
 
         <Card className="mt-6 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center"><Lightbulb className="h-5 w-5 mr-2 text-yellow-400" /> AI Quiz Generator</CardTitle>
+            <CardTitle className="flex items-center"><Lightbulb className="h-5 w-5 mr-2 text-yellow-400" aria-hidden="true" /> AI Quiz Generator</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
               Test your understanding of this module by generating a practice quiz.
               The AI will create questions based on the content you've just learned.
             </p>
-            <Button onClick={handleGenerateQuiz} disabled={loadingQuiz} className="w-full md:w-auto">
-              {loadingQuiz ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lightbulb className="h-4 w-4 mr-2"/>}
+            <Button onClick={handleGenerateQuiz} disabled={loadingQuiz} className="w-full md:w-auto" aria-label="Generate practice quiz">
+              {loadingQuiz ? <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" /> : <Lightbulb className="h-4 w-4 mr-2" aria-hidden="true"/>}
               Generate Practice Quiz
             </Button>
             {errorQuiz && (
               <div className="mt-4 p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-sm">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTriangle className="h-4 w-4" aria-hidden="true" />
                   <p className="font-semibold">Error Generating Quiz</p>
                 </div>
                 <p className="mt-1">{errorQuiz}</p>
@@ -397,23 +397,23 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
         <div className="flex justify-between mt-8">
           {prevModule ? (
             <Button variant="outline" asChild>
-              <Link href={`/courses/${course.id}/module/${prevModule.id}`}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+              <Link href={`/courses/${course.id}/module/${prevModule.id}`} aria-label={`Go to previous module: ${prevModule.title}`}>
+                <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
                 Previous: {prevModule.title}
               </Link>
             </Button>
           ) : <div />}
           {nextModule ? (
             <Button variant="default" asChild>
-              <Link href={`/courses/${course.id}/module/${nextModule.id}`}>
+              <Link href={`/courses/${course.id}/module/${nextModule.id}`} aria-label={`Go to next module: ${nextModule.title}`}>
                 Next: {nextModule.title}
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="h-4 w-4 ml-2" aria-hidden="true" />
               </Link>
             </Button>
           ) : (
             <Button variant="default" asChild>
-              <Link href={`/courses/${course.id}`}>
-                Finish Course <ListChecks className="h-4 w-4 ml-2" />
+              <Link href={`/courses/${course.id}`} aria-label={`Finish course ${course.title}`}>
+                Finish Course <ListChecks className="h-4 w-4 ml-2" aria-hidden="true" />
               </Link>
             </Button>
           )}
@@ -437,7 +437,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
                   <AccordionContent className="pl-4 text-xs">
                     <p className="text-muted-foreground mb-1 line-clamp-2">{m.description || m.subtopics?.join(', ') || 'No description available.'}</p>
                      <p className="text-muted-foreground mb-2 text-xs">Est. Time: {m.estimatedTime}</p>
-                    <Link href={`/courses/${course.id}/module/${m.id}`} className="text-primary hover:underline font-medium text-xs">
+                    <Link href={`/courses/${course.id}/module/${m.id}`} className="text-primary hover:underline font-medium text-xs" aria-label={`Go to module ${m.title}`}>
                       Go to module
                     </Link>
                   </AccordionContent>

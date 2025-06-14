@@ -107,7 +107,7 @@ export default function ProfileSetupPage() {
     <div className="flex justify-center items-start py-8 min-h-screen bg-muted/30">
       <Card className="w-full max-w-2xl shadow-xl">
         <CardHeader className="text-center">
-          <UserCog className="h-12 w-12 mx-auto text-primary mb-3" />
+          <UserCog className="h-12 w-12 mx-auto text-primary mb-3" aria-hidden="true" />
           <CardTitle className="text-3xl font-headline">Complete Your Profile</CardTitle>
           <CardDescription>Help us personalize your SkillSprint experience.</CardDescription>
         </CardHeader>
@@ -162,8 +162,8 @@ export default function ProfileSetupPage() {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting} aria-label="Save preferences and continue to dashboard">
+              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" /> : <Save className="mr-2 h-5 w-5" aria-hidden="true" />}
               Save Preferences & Continue
             </Button>
           </form>

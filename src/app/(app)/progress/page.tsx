@@ -31,7 +31,7 @@ export default function ProgressPage() {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <BarChart3 className="h-10 w-10 mr-3 text-primary" />
+          <BarChart3 className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           My Progress
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -43,7 +43,7 @@ export default function ProgressPage() {
         <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Courses Completed</CardTitle>
-            <CheckCircle className="h-5 w-5 text-green-500" />
+            <CheckCircle className="h-5 w-5 text-green-500" aria-hidden="true" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{overallProgressStats.coursesCompleted}</div>
@@ -53,7 +53,7 @@ export default function ProgressPage() {
         <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Modules Completed</CardTitle>
-            <Zap className="h-5 w-5 text-yellow-500" />
+            <Zap className="h-5 w-5 text-yellow-500" aria-hidden="true" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{overallProgressStats.modulesCompleted}</div>
@@ -63,7 +63,7 @@ export default function ProgressPage() {
         <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Hours Learned</CardTitle>
-            <Clock className="h-5 w-5 text-blue-500" />
+            <Clock className="h-5 w-5 text-blue-500" aria-hidden="true" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{overallProgressStats.hoursLearned} <span className="text-xl">hrs</span></div>
@@ -90,7 +90,7 @@ export default function ProgressPage() {
                       <div className="sm:w-1/3 relative h-40 sm:h-auto">
                         <Image
                           src={course.imageUrl}
-                          alt={course.title}
+                          alt={course.title || 'Course image'}
                           fill
                           style={{ objectFit: 'cover' }}
                           className="sm:rounded-l-lg sm:rounded-tr-none rounded-t-lg"
@@ -106,14 +106,14 @@ export default function ProgressPage() {
                           <span>Progress: {progress.completedModules.length} / {progress.totalModules} modules</span>
                           <span className="font-semibold text-primary">{percentage.toFixed(0)}%</span>
                         </div>
-                        <Progress value={percentage} className="h-3 w-full" />
+                        <Progress value={percentage} className="h-3 w-full" aria-label={`Progress for ${course.title}: ${percentage.toFixed(0)}%`} />
                       </div>
                        <p className="text-xs text-muted-foreground mb-3">
                         Next module: {course.modules.find(m => m.id === progress.currentModuleId)?.title || "Start course!"}
                       </p>
                       <Button asChild variant="default" size="sm">
-                        <Link href={`/courses/${course.id}`}>
-                          {percentage > 0 ? 'Continue Course' : 'Start Course'} <TrendingUp className="ml-2 h-4 w-4"/>
+                        <Link href={`/courses/${course.id}`} aria-label={`Go to course: ${course.title}`}>
+                          {percentage > 0 ? 'Continue Course' : 'Start Course'} <TrendingUp className="ml-2 h-4 w-4" aria-hidden="true"/>
                         </Link>
                       </Button>
                     </div>
