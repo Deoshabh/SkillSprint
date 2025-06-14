@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Download, Wand2, PlusCircle, Save, Eye, LayoutGrid, Loader2, AlertTriangle, Youtube, ListPlus, Trash2, Edit, Send, CheckSquare, XCircle, Brain, VideoIcon, FileTextIcon, HelpCircleIcon, ChevronUp, ChevronDown, CalendarClock } from 'lucide-react';
-import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
+// Removed: import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
 import { suggestYoutubeVideosForTopic, type SuggestYoutubeVideosForTopicInput } from '@/ai/flows/suggest-youtube-videos-for-topic-flow';
 import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { suggestModuleSubtopics, type SuggestModuleSubtopicsInput } from '@/ai/flows/suggest-module-subtopics-flow';
@@ -76,14 +76,14 @@ export default function MyCourseDesignerPage() {
   const [estimatedDurationWeeks, setEstimatedDurationWeeks] = useState<number>(12);
 
 
-  // AI Syllabus State
-  const [aiTopic, setAiTopic] = useState('');
-  const [targetAudience, setTargetAudience] = useState('Beginners');
-  const [learningObjectives, setLearningObjectives] = useState('');
-  const [desiredModules, setDesiredModules] = useState(5);
-  const [syllabusResult, setSyllabusResult] = useState<string | null>(null);
-  const [loadingSyllabus, setLoadingSyllabus] = useState(false);
-  const [errorSyllabus, setErrorSyllabus] = useState<string | null>(null);
+  // AI Syllabus State - REMOVED FROM HERE
+  // const [aiTopic, setAiTopic] = useState('');
+  // const [targetAudience, setTargetAudience] = useState('Beginners');
+  // const [learningObjectives, setLearningObjectives] = useState('');
+  // const [desiredModules, setDesiredModules] = useState(5);
+  // const [syllabusResult, setSyllabusResult] = useState<string | null>(null);
+  // const [loadingSyllabus, setLoadingSyllabus] = useState(false);
+  // const [errorSyllabus, setErrorSyllabus] = useState<string | null>(null);
 
   // Video Curation State
   const [videoSearchTopic, setVideoSearchTopic] = useState('');
@@ -120,8 +120,8 @@ export default function MyCourseDesignerPage() {
     setModules([]);
     setCourseVideoPool([]);
     setOriginalAuthorId(null);
-    setSyllabusResult(null);
-    setErrorSyllabus(null);
+    // setSyllabusResult(null); // Removed
+    // setErrorSyllabus(null); // Removed
     setAiSuggestedVideosList([]);
     setErrorAiVideos(null);
     setEditingModule(null);
@@ -212,130 +212,8 @@ export default function MyCourseDesignerPage() {
     }
   }, [user]);
 
-  const parseSyllabusToModules = (syllabusText: string): ModuleType[] => {
-    const generatedModules: ModuleType[] = [];
-    // Regex to capture module title and then everything until the next "Module" or end of string
-    const moduleRegex = /^(?:#+\s*)?Module\s*\d*[:\s-]*\s*(.*?)(?:\n|$)([\s\S]*?)(?=(?:#+\s*)?Module\s*\d*[:\s-]*|\Z)/gim;
-    
-    let match;
-    while ((match = moduleRegex.exec(syllabusText)) !== null) {
-        const title = match[1].trim().replace(/\*+/g, ''); // Remove markdown bolding from title
-        let contentBlock = match[2] || '';
-
-        // Attempt to extract description before "Topics:" or "Learning Activities:"
-        let description = '';
-        const descriptionMatch = contentBlock.match(/^([\s\S]*?)(?:(?:#+\s*)?Topics:|(?:#+\s*)?Learning Activities:|$)/i);
-        if (descriptionMatch && descriptionMatch[1]) {
-            description = descriptionMatch[1].trim();
-            // Remove description from contentBlock to avoid re-parsing
-            contentBlock = contentBlock.substring(description.length).trim();
-        }
-        
-        // Extract topics
-        let subtopics: string[] = [];
-        const topicsMatch = contentBlock.match(/(?:#+\s*)?Topics:([\s\S]*?)(?:(?:#+\s*)?Learning Activities:|$)/i);
-        if (topicsMatch && topicsMatch[1]) {
-            subtopics = topicsMatch[1]
-                .split('\n')
-                .map(s => s.replace(/^-|^\*|^\d+\.\s*/, '').trim()) // Remove list markers
-                .filter(s => s && s.length > 2); // Filter out empty or very short lines
-        }
-
-        // Extract practice task from learning activities
-        let practiceTask = '';
-        const activitiesMatch = contentBlock.match(/(?:#+\s*)?Learning Activities:([\s\S]*)/i);
-        if (activitiesMatch && activitiesMatch[1]) {
-            const activitiesText = activitiesMatch[1].trim();
-            // Try to find a sentence that looks like a task, or take the first significant line
-            const activityLines = activitiesText.split('\n').map(s => s.replace(/^-|^\*|^\d+\.\s*/, '').trim()).filter(s => s);
-            if (activityLines.length > 0) {
-                 // Look for lines starting with "Build", "Create", "Design", "Develop", "Write"
-                const taskKeywords = ["build", "create", "design", "develop", "write", "implement", "complete", "solve"];
-                let foundTask = activityLines.find(line => taskKeywords.some(keyword => line.toLowerCase().startsWith(keyword)));
-                practiceTask = foundTask || activityLines[0]; // Fallback to the first activity
-            }
-        }
-        if (!description && subtopics.length > 0) {
-            description = `Focuses on: ${subtopics.join(', ').substring(0, 100)}...`;
-        } else if (!description) {
-            description = `Details for ${title}`;
-        }
-
-
-        generatedModules.push({
-            id: uuidv4(),
-            title: title || `Module ${generatedModules.length + 1}`,
-            description: description.substring(0, 250), // Limit description length
-            subtopics,
-            practiceTask: practiceTask.substring(0, 250), // Limit task length
-            contentType: 'video', // Default, admin can change
-            estimatedTime: '1 week', // Default
-            contentUrl: '',
-            videoLinks: [],
-        });
-    }
-    // If regex fails to find modules, try a simpler split if it's just a list of topics.
-    if (generatedModules.length === 0 && syllabusText.includes('\n')) {
-        const lines = syllabusText.split('\n').map(s => s.trim()).filter(s => s.length > 5); // Filter short lines
-        if (lines.length > 1 && lines.length <= 15) { // Reasonable number of modules if it's just a list
-             lines.forEach((line, index) => {
-                generatedModules.push({
-                    id: uuidv4(),
-                    title: line.replace(/^-|^\*|^\d+\.\s*/, '').trim() || `Module ${index + 1}`,
-                    description: `Details for ${line}`,
-                    subtopics: [],
-                    practiceTask: '',
-                    contentType: 'video',
-                    estimatedTime: '1 week',
-                    contentUrl: '',
-                    videoLinks: [],
-                });
-            });
-        }
-    }
-
-
-    return generatedModules;
-};
-
-
-  const handleGenerateSyllabus = async (e: FormEvent) => {
-    e.preventDefault();
-    if (user?.role !== 'admin') {
-      toast({ title: "Permission Denied", description: "AI Syllabus Generation is an admin feature.", variant: "destructive" });
-      return;
-    }
-    if (!aiTopic.trim()) {
-      toast({ title: "Error", description: "Please enter a course topic.", variant: "destructive" });
-      return;
-    }
-    setLoadingSyllabus(true); setErrorSyllabus(null); setSyllabusResult(null);
-    try {
-      const input: AutoGenerateCourseSyllabusInput = { courseTopic: aiTopic, targetAudience, learningObjectives, desiredNumberOfModules: desiredModules };
-      const result = await autoGenerateCourseSyllabus(input);
-      setSyllabusResult(result.courseSyllabus);
-        if (result.courseSyllabus) {
-            const parsedModules = parseSyllabusToModules(result.courseSyllabus);
-            if (parsedModules.length > 0) {
-                setModules(parsedModules); // This will populate the Module Builder tab
-                toast({ title: "AI Course Structure Generated", description: `${parsedModules.length} modules created. Please review and refine them in the Module Builder.`});
-            } else {
-                 toast({ title: "AI Syllabus Generated", description: "Syllabus text is available below. Could not auto-structure into modules. Please build modules manually or refine the AI prompt."});
-            }
-        } else {
-             toast({ title: "AI Syllabus Failed", description: "The AI did not return a syllabus. Try adjusting your inputs.", variant: "destructive" });
-        }
-
-    } catch (err) {
-      console.error("Error generating syllabus:", err);
-      const errorMsg = err instanceof Error ? err.message : "Syllabus generation failed.";
-      setErrorSyllabus(errorMsg);
-      toast({ title: "AI Syllabus Failed", description: errorMsg, variant: "destructive" });
-    } finally {
-      setLoadingSyllabus(false);
-    }
-  };
-
+  // Removed handleGenerateSyllabus and related parseSyllabusToModules function from here.
+  // It will be on the new /admin/ai-course-generator page.
 
   const handleSuggestVideosAI = async (e: FormEvent) => {
     e.preventDefault();
@@ -811,7 +689,7 @@ export default function MyCourseDesignerPage() {
             </CardHeader>
             <CardContent className="space-y-4">
                  {modules.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-6">No modules added yet. Click "Add Module" to start, or use the AI Syllabus Generator in the "AI Tools" tab.</p>
+                    <p className="text-muted-foreground text-center py-6">No modules added yet. Click "Add Module" to start, or use the "AI Course Generator" tool in Admin Tools.</p>
                  ) : (
                     <div className="space-y-3">
                         {modules.map((module, index) => (
@@ -1024,51 +902,14 @@ export default function MyCourseDesignerPage() {
 
 
         <TabsContent value="ai-tools">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl">AI-Powered Syllabus Generator</CardTitle>
-              <CardDescription>Kickstart your course design by letting AI generate a syllabus. Generated modules will appear in the "Module Builder" tab. (Admin Only)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form onSubmit={handleGenerateSyllabus} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="aiTopic">Course Topic*</Label>
-                  <Input id="aiTopic" placeholder="e.g., Intro to Python" value={aiTopic} onChange={(e: ChangeEvent<HTMLInputElement>) => setAiTopic(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="targetAudience">Target Audience</Label>
-                  <Input id="targetAudience" placeholder="e.g., Beginners" value={targetAudience} onChange={(e: ChangeEvent<HTMLInputElement>) => setTargetAudience(e.target.value)} />
-                </div>
-                  <div className="space-y-2">
-                  <Label htmlFor="learningObjectives">Learning Objectives (comma-separated)</Label>
-                  <Textarea id="learningObjectives" placeholder="e.g., Understand core concepts" value={learningObjectives} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setLearningObjectives(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="desiredModules">Number of Modules*</Label>
-                  <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} required/>
-                </div>
-                <Button type="submit" disabled={loadingSyllabus || user?.role !== 'admin'} className="w-full md:w-auto">
-                  {loadingSyllabus ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                  Generate Full Course Structure
-                </Button>
-                {user?.role !== 'admin' && <p className="text-xs text-muted-foreground">AI Syllabus & Module Structure Generation is an admin feature.</p>}
-              </form>
-              {errorSyllabus && (
-                <div className="mt-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md"><AlertTriangle className="h-5 w-5 inline mr-1" />{errorSyllabus}</div>
-              )}
-              {syllabusResult && !loadingSyllabus && (
-                <Card className="mt-6"><CardHeader><CardTitle>Raw AI Syllabus Output (Preview)</CardTitle></CardHeader>
-                  <CardContent className="prose prose-sm dark:prose-invert max-w-none max-h-96 overflow-y-auto"><ReactMarkdown>{syllabusResult}</ReactMarkdown></CardContent>
-                </Card>
-              )}
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6"> {/* Changed to single column */}
+          {/* AI Syllabus Generator section removed from here */}
           <Card className="shadow-xl">
             <CardHeader>
                 <CardTitle className="text-2xl flex items-center"><Youtube className="h-7 w-7 mr-2 text-red-600" /> Course Video Pool</CardTitle>
-                <CardDescription>Find YouTube videos or add your own picks to your course video pool. These can then be assigned to modules.</CardDescription>
+                <CardDescription>Find YouTube videos or add your own picks to your course video pool. These can then be assigned to modules in the "Module Builder" tab.
+                To generate an initial course structure using AI, please use the "AI Course Generator" tool in the Admin Tools section of the sidebar.
+                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <form onSubmit={handleSuggestVideosAI} className="space-y-3">
@@ -1160,3 +1001,5 @@ export default function MyCourseDesignerPage() {
     </div>
   );
 }
+
+    

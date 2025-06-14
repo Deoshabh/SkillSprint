@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChartBig, Users, BookOpen, TrendingUp, CheckCircle, Activity, ShieldCheck, Wand2, MessageSquareQuote, SendHorizonal } from 'lucide-react';
+import { BarChartBig, Users, BookOpen, TrendingUp, CheckCircle, Activity, ShieldCheck, Wand2, MessageSquareQuote, SendHorizonal, Sparkles } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Pie, PieChart, Cell } from 'recharts';
 import type { ChartConfig } from '@/components/ui/chart';
@@ -185,7 +185,12 @@ export default function AdminAnalyticsPage() {
                 <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Open Designer)</Link></li>
-                <li><strong className="text-foreground">Advanced AI-powered tools within the Course Designer (Syllabus & Full Module Structure Generation, Content Suggestions) for admins. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Use in Designer)</Link></li>
+                 <li><strong className="text-foreground">Advanced AI-powered tools: (Implemented)</strong>
+                    <ul className="list-disc pl-5">
+                        <li>Syllabus & Full Module Structure Generation. <Link href="/admin/ai-course-generator" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
+                        <li>Module-level content suggestions (subtopics, tasks, videos) within Course Designer. <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Use in Designer)</Link></li>
+                    </ul>
+                </li>
                 <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (AI Content Scout). (Implemented)</strong> <Link href="/admin/content-scout" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
                 <li><strong className="text-foreground">Set platform-wide limits (Initial: Limit visible, enforcement in place).</strong></li>
                 <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
@@ -197,3 +202,5 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
+
+    

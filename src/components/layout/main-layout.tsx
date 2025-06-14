@@ -16,7 +16,7 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users, BarChartBig, SendHorizonal } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users, BarChartBig, SendHorizonal, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { FloatingChatbot } from '@/components/chatbot/floating-chatbot'; 
@@ -38,6 +38,7 @@ const accountNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
    { title: 'Course Moderation', href: '/admin/course-designer', icon: ShieldCheck }, 
+   { title: 'AI Course Generator', href: '/admin/ai-course-generator', icon: Sparkles },
    { title: 'AI Content Scout', href: '/admin/content-scout', icon: Wand2 },
    { title: 'User Management', href: '/admin/user-management', icon: Users },
    { title: 'Analytics', href: '/admin/analytics', icon: BarChartBig },
@@ -102,3 +103,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </SidebarProvider>
   );
 }
+
+    

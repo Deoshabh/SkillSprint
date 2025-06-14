@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCoursesForReview, getPublishedCourses, getRejectedCourses, updateCourseStatus, type Course } from '@/lib/placeholder-data';
 import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; 
-import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings, Users, Wand2, MessageSquareQuote, BarChartBig, SendHorizonal } from 'lucide-react'; 
+import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings, Users, Wand2, MessageSquareQuote, BarChartBig, SendHorizonal, Sparkles } from 'lucide-react'; 
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from 'date-fns';
@@ -181,16 +181,16 @@ export default function AdminCourseManagementPage() {
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
           <ShieldCheck className="h-10 w-10 mr-3 text-primary" />
-          Admin Dashboard
+          Admin Dashboard: Course Moderation
         </h1>
         <p className="text-xl text-muted-foreground">
-          Manage courses, users, and platform settings.
+          Review, approve, and manage courses on the platform.
         </p>
       </header>
 
       <Card className="shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">Course Moderation</CardTitle>
+          <CardTitle className="text-2xl">Course Moderation Queue</CardTitle>
           <Button variant="outline" onClick={fetchAllCoursesByStatus} disabled={isLoading}>
             {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Refresh Lists
@@ -250,7 +250,12 @@ export default function AdminCourseManagementPage() {
                 <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Open Designer)</Link></li>
-                <li><strong className="text-foreground">Advanced AI-powered tools within the Course Designer (Syllabus & Full Module Structure Generation, Content Suggestions) for admins. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Use in Designer)</Link></li>
+                 <li><strong className="text-foreground">Advanced AI-powered tools: (Implemented)</strong>
+                    <ul className="list-disc pl-5">
+                        <li>Syllabus & Full Module Structure Generation. <Link href="/admin/ai-course-generator" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
+                        <li>Module-level content suggestions (subtopics, tasks, videos) within Course Designer. <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Use in Designer)</Link></li>
+                    </ul>
+                </li>
                 <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (AI Content Scout). (Implemented)</strong> <Link href="/admin/content-scout" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
                 <li><strong className="text-foreground">Set platform-wide limits (Initial: Limit visible, enforcement in place).</strong></li>
                 <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
@@ -262,3 +267,5 @@ export default function AdminCourseManagementPage() {
     </div>
   );
 }
+
+    
