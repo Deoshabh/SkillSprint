@@ -1,24 +1,35 @@
 
 "use client";
 
-import React, { useState, useEffect, type FormEvent, use } from 'react'; // Import use
+import React, { useState, useEffect, type FormEvent, use, type ChangeEvent } from 'react';
 import { getCourseById, getModuleById } from '@/lib/placeholder-data';
 import type { Course, Module as ModuleType, VideoLink } from '@/lib/types';
 import { MediaPlayer } from '@/components/media-player';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Lightbulb, ListChecks, Loader2, AlertTriangle, BookOpen, CheckSquare } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lightbulb, ListChecks, Loader2, AlertTriangle, BookOpen, CheckSquare, PlusCircle, Youtube } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { generateQuiz, type GenerateQuizInput } from '@/ai/flows/ai-quiz-generator';
 import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
+import { Separator } from '@/components/ui/separator';
+
+interface SessionVideoFormState {
+  url: string;
+  language: string;
+  creator: string;
+  title: string;
+  isPlaylist: boolean;
+}
 
 export default function ModulePage({ params: paramsPromise }: { params: Promise<{ courseId: string; moduleId: string }> }) {
-  const params = use(paramsPromise); // Unwrap the params promise
+  const params = use(paramsPromise); 
 
   const { toast } = useToast();
   const { user } = useAuth(); 
@@ -33,15 +44,22 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
   const [loadingAIVideos, setLoadingAIVideos] = useState(false);
   const [errorAIVideos, setErrorAIVideos] = useState<string | null>(null);
 
+  const [userSessionVideos, setUserSessionVideos] = useState<VideoLink[]>([]);
+  const [sessionVideoForm, setSessionVideoForm] = useState<SessionVideoFormState>({ url: '', language: 'English', creator: '', title: '', isPlaylist: false });
+  const [showAddSessionVideoForm, setShowAddSessionVideoForm] = useState(false);
+
+
   useEffect(() => {
-    // params.courseId and params.moduleId are now from the resolved object
     setCourse(getCourseById(params.courseId));
     setModule(getModuleById(params.courseId, params.moduleId));
     setAiFetchedVideos([]); 
     setErrorAIVideos(null);
     setQuizQuestionsResult(null); 
     setErrorQuiz(null);
-  }, [params.courseId, params.moduleId]); // Dependencies are properties of the resolved object
+    setUserSessionVideos([]); // Reset session videos when module changes
+    setShowAddSessionVideoForm(false); // Hide form on module change
+    setSessionVideoForm({ url: '', language: 'English', creator: '', title: '', isPlaylist: false });
+  }, [params.courseId, params.moduleId]); 
 
   if (course === undefined || module === undefined) { 
     return (
@@ -55,6 +73,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
     return (
       <div className="container mx-auto py-10 text-center">
         <Alert variant="destructive" className="max-w-md mx-auto">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>Module or course not found.</AlertDescription>
         </Alert>
@@ -76,26 +95,17 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
       });
       return;
     }
-
     setLoadingQuiz(true);
     setErrorQuiz(null);
     setQuizQuestionsResult(null);
-
     try {
-      const input: GenerateQuizInput = {
-        courseModuleContent: contentForQuiz,
-        numberOfQuestions: 5,
-      };
+      const input: GenerateQuizInput = { courseModuleContent: contentForQuiz, numberOfQuestions: 5 };
       const result = await generateQuiz(input);
       setQuizQuestionsResult(result.quizQuestions);
     } catch (err) {
       console.error("Error generating quiz:", err);
       setErrorQuiz(err instanceof Error ? err.message : "An unknown error occurred.");
-       toast({
-        title: "AI Quiz Generation Failed",
-        description: "Could not generate the quiz. Please try again.",
-        variant: "destructive",
-      });
+       toast({ title: "AI Quiz Generation Failed", description: "Could not generate the quiz. Please try again.", variant: "destructive" });
     } finally {
       setLoadingQuiz(false);
     }
@@ -105,7 +115,8 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
     if (!module) return;
     setLoadingAIVideos(true);
     setErrorAIVideos(null);
-    setAiFetchedVideos([]); 
+    // Keep existing AI videos if user searches multiple times? Or clear them? For now, clearing.
+    // setAiFetchedVideos([]); 
     try {
       const input: FindYoutubeVideosInput = {
         moduleTitle: module.title,
@@ -114,30 +125,78 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
         existingVideos: module.videoLinks?.map(v => ({ creator: v.creator, topic: module.title })) || [],
       };
       const result = await findYoutubeVideosForModule(input);
-      setAiFetchedVideos(result.videos);
+      // Append new results to existing AI videos to allow multiple searches
+      setAiFetchedVideos(prev => [...prev.filter(pv => !result.videos.find(nv => nv.youtubeEmbedUrl === pv.youtubeEmbedUrl)), ...result.videos]);
       if (result.videos.length === 0) {
-        toast({
-            title: "AI Video Search",
-            description: "No additional videos found by AI for this module topic.",
-        });
+        toast({ title: "AI Video Search", description: "No additional videos found by AI for this module topic." });
       } else {
-         toast({
-            title: "AI Video Search Successful",
-            description: `Found ${result.videos.length} new video(s). Check the player dropdown.`,
-        });
+         toast({ title: "AI Video Search Successful", description: `Found ${result.videos.length} new video(s). Check the player dropdown.` });
       }
     } catch (err) {
       console.error("Error searching videos with AI:", err);
       setErrorAIVideos(err instanceof Error ? err.message : "An unknown AI error occurred.");
-      toast({
-        title: "AI Video Search Failed",
-        description: "Could not search for videos. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "AI Video Search Failed", description: "Could not search for videos. Please try again.", variant: "destructive" });
     } finally {
       setLoadingAIVideos(false);
     }
   };
+
+  const handleSessionVideoFormChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSessionVideoForm({ ...sessionVideoForm, [e.target.name]: e.target.value });
+  };
+  
+  const handleSessionVideoIsPlaylistChange = (checked: boolean | string) => {
+    setSessionVideoForm(prev => ({ ...prev, isPlaylist: !!checked }));
+  };
+
+  const handleAddUserSessionVideo = (e: FormEvent) => {
+    e.preventDefault();
+    if (!sessionVideoForm.url.trim() || !sessionVideoForm.language.trim() || !sessionVideoForm.title.trim()) {
+      toast({ title: "Error", description: "Video URL, Title, and Language are required.", variant: "destructive" });
+      return;
+    }
+
+    let embedUrl = sessionVideoForm.url;
+    const isPlaylistFromForm = sessionVideoForm.isPlaylist;
+
+    // URL processing logic (simplified version, can be expanded)
+    if (isPlaylistFromForm) {
+        if (embedUrl.includes("youtube.com/playlist?list=")) {
+            const listId = embedUrl.split("playlist?list=")[1]?.split("&")[0];
+            if (listId) embedUrl = `https://www.youtube.com/embed/videoseries?list=${listId}`;
+            else { toast({ title: "Error", description: "Invalid YouTube playlist URL.", variant: "destructive" }); return; }
+        } else if (!embedUrl.includes("youtube.com/embed/videoseries?list=")) {
+            toast({ title: "Warning", description: "URL marked as playlist, but not standard format. Using as is.", variant: "default" });
+        }
+    } else {
+        if (embedUrl.includes("watch?v=")) {
+            const videoId = embedUrl.split("watch?v=")[1]?.split("&")[0];
+            if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            else { toast({ title: "Error", description: "Invalid YouTube video URL.", variant: "destructive" }); return; }
+        } else if (embedUrl.includes("youtu.be/")) {
+            const videoId = embedUrl.split("youtu.be/")[1]?.split("?")[0];
+            if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            else { toast({ title: "Error", description: "Invalid YouTube video URL.", variant: "destructive" }); return; }
+        } else if (!embedUrl.includes("youtube.com/embed/")) {
+           toast({ title: "Error", description: "Invalid YouTube video URL. Please use embeddable link or standard watch/playlist URL.", variant: "destructive" }); return;
+        }
+    }
+    
+    const newSessionVideo: VideoLink = {
+      youtubeEmbedUrl: embedUrl,
+      title: sessionVideoForm.title || `${isPlaylistFromForm ? 'Playlist' : 'Video'} (User Added)`,
+      langCode: sessionVideoForm.language.substring(0,2).toLowerCase(),
+      langName: sessionVideoForm.language,
+      creator: sessionVideoForm.creator,
+      isPlaylist: isPlaylistFromForm,
+      notes: 'User added for this session',
+    };
+    setUserSessionVideos([...userSessionVideos, newSessionVideo]);
+    setSessionVideoForm({ url: '', language: 'English', creator: '', title: '', isPlaylist: false }); // Reset form
+    setShowAddSessionVideoForm(false);
+    toast({ title: "Video Added", description: `"${newSessionVideo.title}" added to this session's videos.` });
+  };
+
 
   const currentModuleIndex = course.modules.findIndex(m => m.id === module.id);
   const prevModule = currentModuleIndex > 0 ? course.modules[currentModuleIndex - 1] : null;
@@ -161,6 +220,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
         <MediaPlayer 
           module={module} 
           aiFetchedVideos={aiFetchedVideos}
+          userSessionVideos={userSessionVideos}
           onSearchWithAI={module.contentType === 'video' ? handleSearchVideosWithAI : undefined}
           isAISearching={loadingAIVideos}
           userPreferredLanguage={user?.learningPreferences?.language}
@@ -172,6 +232,50 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
                 <AlertDescription>{errorAIVideos}</AlertDescription>
             </Alert>
         )}
+        
+        {module.contentType === 'video' && (
+          <Card className="mt-2">
+            <CardContent className="p-4 space-y-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAddSessionVideoForm(!showAddSessionVideoForm)}
+                className="w-full"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" /> {showAddSessionVideoForm ? 'Cancel Adding Video' : 'Add Your Own Video/Playlist for this Session'}
+              </Button>
+
+              {showAddSessionVideoForm && (
+                <form onSubmit={handleAddUserSessionVideo} className="space-y-3 p-4 border rounded-md bg-muted/30">
+                  <h4 className="text-sm font-medium text-center">Add Custom Video/Playlist (Current Session)</h4>
+                  <div className="space-y-1">
+                    <Label htmlFor="sessionVideoTitle">Title*</Label>
+                    <Input id="sessionVideoTitle" name="title" placeholder="Descriptive title for the video/playlist" value={sessionVideoForm.title} onChange={handleSessionVideoFormChange} required />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="sessionVideoUrl">YouTube URL (Video or Playlist)*</Label>
+                    <Input id="sessionVideoUrl" name="url" placeholder="https://www.youtube.com/watch?v=..." value={sessionVideoForm.url} onChange={handleSessionVideoFormChange} required />
+                  </div>
+                  <div className="flex items-center space-x-2 mt-2 mb-1">
+                      <Checkbox id="sessionVideoIsPlaylist" checked={sessionVideoForm.isPlaylist} onCheckedChange={handleSessionVideoIsPlaylistChange} />
+                      <Label htmlFor="sessionVideoIsPlaylist" className="text-sm font-normal">This URL is for a playlist</Label>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="sessionVideoLang">Language*</Label>
+                      <Input id="sessionVideoLang" name="language" placeholder="e.g., English" value={sessionVideoForm.language} onChange={handleSessionVideoFormChange} required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="sessionVideoCreator">Creator (Optional)</Label>
+                      <Input id="sessionVideoCreator" name="creator" placeholder="e.g., ChannelName" value={sessionVideoForm.creator} onChange={handleSessionVideoFormChange} />
+                    </div>
+                  </div>
+                  <Button type="submit" size="sm" className="w-full"><PlusCircle className="h-4 w-4 mr-2" /> Add to Session Videos</Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
 
         {module.subtopics && module.subtopics.length > 0 && (
           <Card className="shadow-md">
@@ -298,5 +402,3 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
     </div>
   );
 }
-
-    

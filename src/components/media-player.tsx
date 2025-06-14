@@ -2,14 +2,17 @@
 "use client";
 import type { Module, VideoLink } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, FileText, Video, Search, Loader2, Info } from 'lucide-react';
+import { AlertTriangle, FileText, Video, Search, Loader2, Info, ChevronDown, ListVideo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React, { useState, useEffect, useMemo } from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 interface MediaPlayerProps {
   module: Module;
   aiFetchedVideos?: VideoLink[];
+  userSessionVideos?: VideoLink[]; // New prop for user-added session videos
   onSearchWithAI?: () => void;
   isAISearching?: boolean;
   userPreferredLanguage?: string;
@@ -18,6 +21,7 @@ interface MediaPlayerProps {
 export function MediaPlayer({ 
   module, 
   aiFetchedVideos = [], 
+  userSessionVideos = [], // Initialize new prop
   onSearchWithAI, 
   isAISearching = false,
   userPreferredLanguage 
@@ -25,6 +29,7 @@ export function MediaPlayer({
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const [selectedVideoKey, setSelectedVideoKey] = useState<string>('');
   const [currentVideoIsPlaylist, setCurrentVideoIsPlaylist] = useState<boolean>(false);
+  const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
 
 
   const allAvailableVideos = useMemo(() => {
@@ -33,8 +38,8 @@ export function MediaPlayer({
       if (module.contentUrl) {
         if (module.contentUrl.includes('youtube.com/embed/')) {
           videos.push({
-            langCode: 'en', 
-            langName: 'English (Module Default)',
+            langCode: 'module', 
+            langName: 'Module Default',
             youtubeEmbedUrl: module.contentUrl,
             title: `${module.title} (Module Default)`,
             isPlaylist: module.contentUrl.includes('videoseries?list='),
@@ -42,10 +47,13 @@ export function MediaPlayer({
         }
       }
       if (module.videoLinks) {
-        videos = videos.concat(module.videoLinks);
+        videos = videos.concat(module.videoLinks.map(v => ({...v, title: v.title || "Module Video"})));
       }
       if (aiFetchedVideos) {
-        videos = videos.concat(aiFetchedVideos);
+        videos = videos.concat(aiFetchedVideos.map(v => ({...v, title: v.title || "AI Suggested Video"})));
+      }
+      if (userSessionVideos) { // Merge user-added session videos
+        videos = videos.concat(userSessionVideos.map(v => ({...v, title: v.title || "User Added Video" })));
       }
       
       const uniqueVideosMap = new Map<string, VideoLink>();
@@ -58,7 +66,7 @@ export function MediaPlayer({
       return Array.from(uniqueVideosMap.values());
     }
     return [];
-  }, [module, aiFetchedVideos]);
+  }, [module, aiFetchedVideos, userSessionVideos]); // Add userSessionVideos to dependencies
 
   useEffect(() => {
     if (module.contentType === 'video' && allAvailableVideos.length > 0) {
@@ -67,8 +75,8 @@ export function MediaPlayer({
       if (currentSelectedVideo) {
         setCurrentVideoUrl(currentSelectedVideo.youtubeEmbedUrl);
         setCurrentVideoIsPlaylist(!!currentSelectedVideo.isPlaylist);
+        setCurrentVideoTitle(currentSelectedVideo.title);
       } else {
-        // Prioritize user's preferred language, then English, then first available
         let videoToSelect: VideoLink | undefined = undefined;
         if (userPreferredLanguage) {
           videoToSelect = allAvailableVideos.find(v => 
@@ -79,7 +87,10 @@ export function MediaPlayer({
         if (!videoToSelect) {
           videoToSelect = allAvailableVideos.find(v => v.langCode === 'en' || v.langName.toLowerCase().includes('english'));
         }
-        if (!videoToSelect) {
+        if (!videoToSelect && module.contentUrl && module.contentUrl.includes('youtube.com/embed/')) { // Check module default if not specific lang match
+            videoToSelect = allAvailableVideos.find(v => v.langCode === 'module');
+        }
+        if (!videoToSelect) { // Fallback to the very first video if no other match
           videoToSelect = allAvailableVideos[0];
         }
         
@@ -87,22 +98,26 @@ export function MediaPlayer({
           setCurrentVideoUrl(videoToSelect.youtubeEmbedUrl);
           setSelectedVideoKey(videoToSelect.youtubeEmbedUrl);
           setCurrentVideoIsPlaylist(!!videoToSelect.isPlaylist);
+          setCurrentVideoTitle(videoToSelect.title);
         } else {
           setCurrentVideoUrl(null);
           setSelectedVideoKey('');
           setCurrentVideoIsPlaylist(false);
+          setCurrentVideoTitle('');
         }
       }
     } else if (module.contentType !== 'video') {
         setCurrentVideoUrl(null); 
         setSelectedVideoKey('');
         setCurrentVideoIsPlaylist(false);
+        setCurrentVideoTitle('');
     } else { 
         setCurrentVideoUrl(null);
         setSelectedVideoKey('');
         setCurrentVideoIsPlaylist(false);
+        setCurrentVideoTitle('');
     }
-  }, [allAvailableVideos, module.contentType, selectedVideoKey, userPreferredLanguage]);
+  }, [allAvailableVideos, module.contentType, module.contentUrl, module.title, selectedVideoKey, userPreferredLanguage]);
 
   const handleVideoSelectionChange = (url: string) => {
     const selected = allAvailableVideos.find(v => v.youtubeEmbedUrl === url);
@@ -110,6 +125,7 @@ export function MediaPlayer({
       setCurrentVideoUrl(selected.youtubeEmbedUrl);
       setSelectedVideoKey(selected.youtubeEmbedUrl);
       setCurrentVideoIsPlaylist(!!selected.isPlaylist);
+      setCurrentVideoTitle(selected.title);
     }
   };
 
@@ -145,11 +161,11 @@ export function MediaPlayer({
                 <div className="aspect-video w-full">
                     <iframe
                     src={currentVideoUrl}
-                    title={module.title}
+                    title={currentVideoTitle || module.title}
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
-                    className="w-full h-full rounded-lg"
+                    className="w-full h-full rounded-lg shadow-md"
                     ></iframe>
                 </div>
             ) : (
@@ -159,23 +175,33 @@ export function MediaPlayer({
                  </div>
             )}
             {currentVideoIsPlaylist && (
-              <div className="flex items-center p-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md border border-blue-200 dark:border-blue-700">
-                <Info className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span>This is a playlist. Use the YouTube player controls to navigate videos.</span>
-              </div>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="playlist-info">
+                  <AccordionTrigger className="text-sm py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md px-3 border border-blue-200 dark:border-blue-700 hover:no-underline">
+                    <div className="flex items-center">
+                      <ListVideo className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span>This is a playlist. Use YouTube controls to navigate. (Detailed breakdown coming soon)</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-3 text-xs text-muted-foreground border border-t-0 rounded-b-md">
+                    To view individual videos within this playlist, please use the navigation controls provided by the YouTube player (e.g., "Next", "Previous", or the playlist menu icon within the player). A feature to display a clickable list of all videos in this playlist directly here is planned for a future update.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
             <div className="flex flex-col sm:flex-row gap-2 items-center">
                 {allAvailableVideos.length > 0 && (
                 <div className="w-full sm:flex-grow">
                     <Select value={selectedVideoKey} onValueChange={handleVideoSelectionChange} disabled={allAvailableVideos.length === 0}>
-                    <SelectTrigger>
+                    <SelectTrigger className="truncate">
                         <SelectValue placeholder="Select a video version" />
                     </SelectTrigger>
                     <SelectContent>
                         {allAvailableVideos.map((video) => (
-                        <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl}>
-                            {video.title} ({video.langName}){video.isPlaylist ? " (Playlist)" : ""}
-                            {video.creator && <span className="text-xs text-muted-foreground ml-1"> - by {video.creator}</span>}
+                        <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl} className="text-sm">
+                            <span className="truncate" title={video.title}>{video.title || 'Untitled Video'} ({video.langName}) {video.isPlaylist ? " (Playlist)" : ""}
+                            {video.creator && <span className="text-xs text-muted-foreground ml-1">- by {video.creator}</span>}
+                            </span>
                         </SelectItem>
                         ))}
                     </SelectContent>

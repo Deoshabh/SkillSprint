@@ -174,26 +174,26 @@ export default function MyCourseDesignerPage() {
             // Attempt to parse other formats if it's not explicitly an embed link
              try {
                 const urlObject = new URL(embedUrl);
-                let videoId = urlObject.searchParams.get('v'); // Check query param first
-                if (!videoId && urlObject.pathname.startsWith('/embed/')) { // Check path for /embed/ID
+                let videoId = urlObject.searchParams.get('v'); 
+                if (!videoId && urlObject.pathname.startsWith('/embed/')) { 
                      videoId = urlObject.pathname.split('/embed/')[1]?.split('/')[0];
                 }
-                if (!videoId) { // Fallback to last path segment if simple
+                if (!videoId) { 
                     const pathParts = urlObject.pathname.split('/');
-                    const potentialId = pathParts.pop() || pathParts.pop();
-                    if (potentialId && potentialId.length === 11 && !potentialId.includes('.')) { // Basic check for YouTube ID length
+                    const potentialId = pathParts.pop() || pathParts.pop(); 
+                    if (potentialId && potentialId.length === 11 && !potentialId.includes('.')) { 
                         videoId = potentialId;
                     }
                 }
 
                 if (videoId) {
                     embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                } else if (!embedUrl.includes("/embed/")) { // If we still couldn't parse and it's not an embed link
+                } else if (!embedUrl.includes("/embed/")) { 
                     toast({ title: "Error", description: "Could not determine YouTube video ID. Please use a standard YouTube video link.", variant: "destructive" });
                     return;
                 }
             } catch (error) {
-                 if (!embedUrl.includes("/embed/")) { // If URL parsing failed and it's not an embed link
+                 if (!embedUrl.includes("/embed/")) { 
                     toast({ title: "Error", description: "Invalid URL format. Please use a standard YouTube video link.", variant: "destructive" });
                     return;
                 }
@@ -484,14 +484,14 @@ export default function MyCourseDesignerPage() {
                     </div>
                 )}
                 <Separator />
-                <div>
-                    <h4 className="font-semibold mb-3 text-md">Manually Add Video/Playlist</h4>
-                    <form onSubmit={handleAddUserPick} className="space-y-3">
+                <div className="space-y-3 p-1 border rounded-md bg-card shadow-sm">
+                    <h4 className="font-semibold text-md px-3 pt-3">Manually Add Video/Playlist</h4>
+                    <form onSubmit={handleAddUserPick} className="space-y-3 px-3 pb-3">
                         <div className="space-y-1">
-                            <Label htmlFor="manualVideoUrl">YouTube URL (Video or Playlist)</Label>
+                            <Label htmlFor="manualVideoUrl">YouTube URL (Video or Playlist)*</Label>
                             <Input id="manualVideoUrl" name="url" placeholder="https://www.youtube.com/watch?v=... or /playlist?list=..." value={manualVideoForm.url} onChange={handleManualVideoFormChange} required />
                         </div>
-                        <div className="flex items-center space-x-2 mt-2 mb-2">
+                        <div className="flex items-center space-x-2 mt-2 mb-1"> {/* Reduced vertical margin */}
                             <Checkbox
                                 id="manualVideoIsPlaylist"
                                 checked={manualVideoForm.isPlaylist}
@@ -503,7 +503,7 @@ export default function MyCourseDesignerPage() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <Label htmlFor="manualVideoLang">Language</Label>
+                                <Label htmlFor="manualVideoLang">Language*</Label>
                                 <Input id="manualVideoLang" name="language" placeholder="e.g., English, Hindi" value={manualVideoForm.language} onChange={handleManualVideoFormChange} required />
                             </div>
                             <div className="space-y-1">
