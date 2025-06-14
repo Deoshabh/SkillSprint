@@ -43,7 +43,7 @@ export default function AdminMessagingPage() {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <SendHorizonal className="h-10 w-10 mr-3 text-primary" />
+          <SendHorizonal className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           Broadcast Messaging
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -53,7 +53,7 @@ export default function AdminMessagingPage() {
 
       <Card className="shadow-xl">
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center"><Mail className="mr-2 h-6 w-6"/>Compose Broadcast</CardTitle>
+          <CardTitle className="text-2xl flex items-center"><Mail className="mr-2 h-6 w-6" aria-hidden="true"/>Compose Broadcast</CardTitle>
           <CardDescription>Craft your message and choose the target audience.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -80,7 +80,7 @@ export default function AdminMessagingPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="segment"><UsersRound className="inline-block mr-1 h-4 w-4"/>Target Segment</Label>
+              <Label htmlFor="segment"><UsersRound className="inline-block mr-1 h-4 w-4" aria-hidden="true"/>Target Segment</Label>
               <Select value={segment} onValueChange={setSegment} required>
                 <SelectTrigger id="segment">
                   <SelectValue placeholder="Select user segment" />
@@ -105,8 +105,8 @@ export default function AdminMessagingPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" disabled={isSending} className="w-full md:w-auto">
-              {isSending ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <SendHorizonal className="h-5 w-5 mr-2" />}
+            <Button type="submit" disabled={isSending} className="w-full md:w-auto" aria-label="Send broadcast message (simulated)">
+              {isSending ? <Loader2 className="h-5 w-5 mr-2 animate-spin" aria-hidden="true" /> : <SendHorizonal className="h-5 w-5 mr-2" aria-hidden="true" />}
               Send Broadcast (Simulated)
             </Button>
           </form>
@@ -129,7 +129,7 @@ export default function AdminMessagingPage() {
        <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Admin Capabilities Overview
             </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>

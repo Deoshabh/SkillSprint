@@ -11,10 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { getAllFeedback, updateFeedbackStatus as updatePlaceholderFeedbackStatus, type FeedbackItem } from '@/lib/placeholder-data';
-import { Archive, MessageSquareText, User, Settings, ShieldCheck, Users, Wand2, BarChartBig, SendHorizonal, Sparkles, MessageSquareQuote, MailQuestion, Edit, Loader2, Eye, Filter } from 'lucide-react';
+import { Archive as ArchiveIcon, MessageSquareText, User, Settings, ShieldCheck, Users, Wand2, BarChartBig, SendHorizonal, Sparkles, MailQuestion, Edit, Loader2, Eye, Filter } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
@@ -91,7 +91,6 @@ export default function AdminFeedbackManagementPage() {
     try {
       const date = parseISO(dateString);
       if (!isValid(date)) return 'Invalid date';
-      // Using format for consistency, can use formatDistanceToNow from date-fns for "X days ago"
       return format(date, 'PPpp'); 
     } catch (e) {
       return 'Invalid date';
@@ -100,16 +99,16 @@ export default function AdminFeedbackManagementPage() {
 
   const getStatusBadgeVariant = (status: FeedbackStatusType): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
-      case 'new': return 'default'; // Or 'primary' if you add a primary variant
+      case 'new': return 'default'; 
       case 'in_progress': return 'secondary';
-      case 'resolved': return 'outline'; // Typically green, but Shadcn Outline is neutral
-      case 'archived': return 'destructive'; // Or a muted gray
+      case 'resolved': return 'outline'; 
+      case 'archived': return 'destructive'; 
       default: return 'default';
     }
   };
   
   if (authLoading) {
-    return <div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary"/></div>;
+    return <div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" aria-label="Loading page"/></div>;
   }
   if (!user || user.role !== 'admin') {
      return (
@@ -125,7 +124,7 @@ export default function AdminFeedbackManagementPage() {
     if (isLoading && feedbackItems.length === 0) {
       return (
         <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading feedback" />
           <p className="ml-3 text-muted-foreground">Loading feedback...</p>
         </div>
       );
@@ -135,7 +134,7 @@ export default function AdminFeedbackManagementPage() {
     }
 
     return (
-      <ScrollArea className="h-[calc(100vh-350px)]"> {/* Adjust height as needed */}
+      <ScrollArea className="h-[calc(100vh-350px)]"> 
         <Table>
           <TableHeader className="sticky top-0 bg-card z-10">
             <TableRow>
@@ -161,8 +160,8 @@ export default function AdminFeedbackManagementPage() {
                   <Badge variant={getStatusBadgeVariant(item.status)} className="capitalize">{item.status.replace('_', ' ')}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="outline" size="sm" onClick={() => handleViewDetails(item)}>
-                    <Eye className="h-4 w-4 mr-1" /> View
+                  <Button variant="outline" size="sm" onClick={() => handleViewDetails(item)} aria-label={`View details for feedback: ${item.subject}`}>
+                    <Eye className="h-4 w-4 mr-1" aria-hidden="true" /> View
                   </Button>
                 </TableCell>
               </TableRow>
@@ -180,7 +179,7 @@ export default function AdminFeedbackManagementPage() {
     <div className="container mx-auto py-8 space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <Archive className="h-10 w-10 mr-3 text-primary" />
+          <ArchiveIcon className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           Feedback Management
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -191,8 +190,8 @@ export default function AdminFeedbackManagementPage() {
       <Card className="shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-2xl">Feedback Inbox</CardTitle>
-          <Button variant="outline" onClick={fetchAllFeedbackItems} disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Filter className="h-4 w-4 mr-2" />}
+          <Button variant="outline" onClick={fetchAllFeedbackItems} disabled={isLoading} aria-label="Refresh feedback list">
+            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" /> : <Filter className="h-4 w-4 mr-2" aria-hidden="true" />}
             Refresh / Filter
           </Button>
         </CardHeader>
@@ -219,7 +218,7 @@ export default function AdminFeedbackManagementPage() {
         <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center"><MessageSquareText className="mr-2 h-5 w-5 text-primary"/>Feedback Details</DialogTitle>
+              <DialogTitle className="flex items-center"><MessageSquareText className="mr-2 h-5 w-5 text-primary" aria-hidden="true"/>Feedback Details</DialogTitle>
               <DialogDescription>Review and update the status of this feedback item.</DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh] p-1 pr-3">
@@ -280,9 +279,9 @@ export default function AdminFeedbackManagementPage() {
             </div>
             </ScrollArea>
             <DialogFooter>
-              <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-              <Button onClick={handleSaveChangesToFeedback} disabled={isSavingStatus}>
-                 {isSavingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <DialogClose asChild><Button variant="outline" aria-label="Cancel editing feedback">Cancel</Button></DialogClose>
+              <Button onClick={handleSaveChangesToFeedback} disabled={isSavingStatus} aria-label="Save changes to feedback">
+                 {isSavingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                 Save Changes
               </Button>
             </DialogFooter>
@@ -293,7 +292,7 @@ export default function AdminFeedbackManagementPage() {
       <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Admin Capabilities Overview
             </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>

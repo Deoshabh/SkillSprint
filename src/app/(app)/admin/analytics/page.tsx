@@ -64,7 +64,7 @@ export default function AdminAnalyticsPage() {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <BarChartBig className="h-10 w-10 mr-3 text-primary" />
+          <BarChartBig className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           Platform Analytics & Reports
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -76,7 +76,7 @@ export default function AdminAnalyticsPage() {
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-5 w-5 text-primary" />
+            <Users className="h-5 w-5 text-primary" aria-hidden="true" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{placeholderAnalyticsData.totalUsers.toLocaleString()}</div>
@@ -86,7 +86,7 @@ export default function AdminAnalyticsPage() {
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Courses</CardTitle>
-            <BookOpen className="h-5 w-5 text-primary" />
+            <BookOpen className="h-5 w-5 text-primary" aria-hidden="true" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{placeholderAnalyticsData.activeCourses}</div>
@@ -96,7 +96,7 @@ export default function AdminAnalyticsPage() {
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overall Completion Rate</CardTitle>
-            <TrendingUp className="h-5 w-5 text-primary" />
+            <TrendingUp className="h-5 w-5 text-primary" aria-hidden="true" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{placeholderAnalyticsData.completionRate}%</div>
@@ -108,7 +108,7 @@ export default function AdminAnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center"><Activity className="mr-2 h-5 w-5 text-primary"/>User Growth (Monthly)</CardTitle>
+            <CardTitle className="text-xl flex items-center"><Activity className="mr-2 h-5 w-5 text-primary" aria-hidden="true"/>User Growth (Monthly)</CardTitle>
             <CardDescription>New user registrations per month.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
@@ -125,7 +125,7 @@ export default function AdminAnalyticsPage() {
         </Card>
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center"><CheckCircle className="mr-2 h-5 w-5 text-primary"/>Popular Categories</CardTitle>
+            <CardTitle className="text-xl flex items-center"><CheckCircle className="mr-2 h-5 w-5 text-primary" aria-hidden="true"/>Popular Categories</CardTitle>
             <CardDescription>Distribution of enrollments by course category.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] flex items-center justify-center">
@@ -175,7 +175,7 @@ export default function AdminAnalyticsPage() {
       <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Admin Capabilities Overview
             </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>

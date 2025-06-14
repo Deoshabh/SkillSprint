@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, Save, Briefcase, ShieldCheck, Settings, BarChartBig, SendHorizonal, Wand2, Sparkles, Archive } from 'lucide-react'; 
+import { Loader2, Users as UsersIcon, Save, Briefcase, ShieldCheck, Settings, BarChartBig, SendHorizonal, Wand2, Sparkles, Archive } from 'lucide-react'; 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link'; 
 
@@ -63,7 +63,7 @@ export default function UserManagementPage() {
   if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary" aria-label="Loading page" />
       </div>
     );
   }
@@ -88,7 +88,7 @@ export default function UserManagementPage() {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <Users className="h-10 w-10 mr-3 text-primary" />
+          <UsersIcon className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           User Management
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -110,7 +110,7 @@ export default function UserManagementPage() {
               <form key={user.id} onSubmit={handleSaveChanges} className="space-y-6 border p-6 rounded-lg bg-muted/30">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 border">
-                        <AvatarImage src={user.avatarUrl} alt={user.name} />
+                        <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint={user.dataAiHint || "profile person"} />
                         <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -141,8 +141,8 @@ export default function UserManagementPage() {
                 </div>
                 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={isSaving || selectedRole === user.role}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  <Button type="submit" disabled={isSaving || selectedRole === user.role} aria-label="Save role change">
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="mr-2 h-4 w-4" aria-hidden="true" />}
                     Save Role Change
                   </Button>
                 </div>
@@ -157,7 +157,7 @@ export default function UserManagementPage() {
       <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Admin Capabilities Overview
             </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>

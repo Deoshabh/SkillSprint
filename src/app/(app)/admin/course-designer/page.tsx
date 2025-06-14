@@ -68,7 +68,7 @@ export default function AdminCourseManagementPage() {
     if (isLoading && courses.length === 0) {
       return (
         <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading courses" />
           <p className="ml-3 text-muted-foreground">Loading courses...</p>
         </div>
       );
@@ -100,14 +100,14 @@ export default function AdminCourseManagementPage() {
               <TableCell><Badge variant="outline">{course.category}</Badge></TableCell>
               <TableCell>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
+                  <Clock className="h-3 w-3" aria-hidden="true" />
                   {getRelativeTime(statusType === 'pending' ? course.submittedDate : course.lastModified)}
                 </div>
               </TableCell>
               <TableCell className="text-right space-x-1 sm:space-x-2">
-                <Button variant="ghost" size="sm" asChild title="View Course Details">
+                <Button variant="ghost" size="sm" asChild title="View Course Details" aria-label={`View details for ${course.title}`}>
                   <Link href={`/courses/${course.id}`} target="_blank" rel="noopener noreferrer">
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4" aria-hidden="true" />
                   </Link>
                 </Button>
                 {statusType === 'pending' && (
@@ -118,8 +118,9 @@ export default function AdminCourseManagementPage() {
                       onClick={() => handleUpdateStatus(course.id, 'published', 'pending_review')}
                       className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
                       title="Approve Course"
+                      aria-label={`Approve course ${course.title}`}
                     >
-                      <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                      <CheckCircle className="h-4 w-4 mr-1" aria-hidden="true" /> Approve
                     </Button>
                     <Button
                       variant="outline"
@@ -127,8 +128,9 @@ export default function AdminCourseManagementPage() {
                       onClick={() => handleUpdateStatus(course.id, 'rejected', 'pending_review')}
                       className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
                       title="Reject Course"
+                      aria-label={`Reject course ${course.title}`}
                     >
-                      <XCircle className="h-4 w-4 mr-1" /> Reject
+                      <XCircle className="h-4 w-4 mr-1" aria-hidden="true" /> Reject
                     </Button>
                   </>
                 )}
@@ -140,12 +142,13 @@ export default function AdminCourseManagementPage() {
                       onClick={() => handleUpdateStatus(course.id, 'draft', 'published')}
                       className="text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
                       title="Unpublish Course (Move to Drafts)"
+                      aria-label={`Unpublish course ${course.title}`}
                     >
-                      <SendToBack className="h-4 w-4 mr-1" /> Unpublish
+                      <SendToBack className="h-4 w-4 mr-1" aria-hidden="true" /> Unpublish
                     </Button>
-                     <Button variant="outline" size="sm" asChild title="Edit Course">
+                     <Button variant="outline" size="sm" asChild title="Edit Course" aria-label={`Edit course ${course.title}`}>
                         <Link href={`/course-designer?courseId=${course.id}`}>
-                            <Edit className="h-4 w-4 mr-1" /> Edit
+                            <Edit className="h-4 w-4 mr-1" aria-hidden="true" /> Edit
                         </Link>
                     </Button>
                   </>
@@ -158,12 +161,13 @@ export default function AdminCourseManagementPage() {
                       onClick={() => handleUpdateStatus(course.id, 'draft', 'rejected')}
                       className="text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
                       title="Move to Drafts (for re-evaluation/editing)"
+                      aria-label={`Move course ${course.title} to drafts`}
                     >
-                      <ArchiveRestore className="h-4 w-4 mr-1" /> Move to Drafts
+                      <ArchiveRestore className="h-4 w-4 mr-1" aria-hidden="true" /> Move to Drafts
                     </Button>
-                    <Button variant="outline" size="sm" asChild title="Edit Course">
+                    <Button variant="outline" size="sm" asChild title="Edit Course" aria-label={`Edit course ${course.title}`}>
                         <Link href={`/course-designer?courseId=${course.id}`}>
-                            <Edit className="h-4 w-4 mr-1" /> Edit
+                            <Edit className="h-4 w-4 mr-1" aria-hidden="true" /> Edit
                         </Link>
                     </Button>
                   </>
@@ -180,7 +184,7 @@ export default function AdminCourseManagementPage() {
     <div className="container mx-auto py-8 space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <ShieldCheck className="h-10 w-10 mr-3 text-primary" />
+          <ShieldCheck className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           Admin Dashboard: Course Moderation
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -191,8 +195,8 @@ export default function AdminCourseManagementPage() {
       <Card className="shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-2xl">Course Moderation Queue</CardTitle>
-          <Button variant="outline" onClick={fetchAllCoursesByStatus} disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          <Button variant="outline" onClick={fetchAllCoursesByStatus} disabled={isLoading} aria-label="Refresh course lists">
+            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" /> : <RefreshCw className="h-4 w-4 mr-2" aria-hidden="true" />}
             Refresh Lists
           </Button>
         </CardHeader>
@@ -222,7 +226,7 @@ export default function AdminCourseManagementPage() {
        <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <Settings className="h-5 w-5 mr-2 text-primary" />
+                <Settings className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Platform Configuration (View Only)
             </CardTitle>
             <CardDescription>Current platform-wide settings. Admin modification UI is planned.</CardDescription>
@@ -240,7 +244,7 @@ export default function AdminCourseManagementPage() {
       <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Admin Capabilities Overview
             </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>

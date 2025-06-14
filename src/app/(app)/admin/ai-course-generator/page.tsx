@@ -147,7 +147,7 @@ export default function AICourseGeneratorPage() {
     <div className="container mx-auto py-8 space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <Sparkles className="h-10 w-10 mr-3 text-primary" />
+          <Sparkles className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           AI Course Structure Generator
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -179,8 +179,8 @@ export default function AICourseGeneratorPage() {
                 <Label htmlFor="desiredModules">Desired Number of Modules*</Label>
                 <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} required/>
                 </div>
-                <Button type="submit" disabled={loadingSyllabus} className="w-full">
-                {loadingSyllabus ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Wand2 className="h-5 w-5 mr-2" />}
+                <Button type="submit" disabled={loadingSyllabus} className="w-full" aria-label="Generate course structure with AI">
+                {loadingSyllabus ? <Loader2 className="h-5 w-5 mr-2 animate-spin" aria-hidden="true" /> : <Wand2 className="h-5 w-5 mr-2" aria-hidden="true" />}
                 Generate Course Structure
                 </Button>
             </form>
@@ -190,7 +190,7 @@ export default function AICourseGeneratorPage() {
         <div className="space-y-6">
             {errorSyllabus && (
                 <Card className="border-destructive bg-destructive/10">
-                    <CardHeader><CardTitle className="text-destructive flex items-center"><AlertTriangle className="h-5 w-5 mr-2" /> Error</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-destructive flex items-center"><AlertTriangle className="h-5 w-5 mr-2" aria-hidden="true" /> Error</CardTitle></CardHeader>
                     <CardContent><p>{errorSyllabus}</p></CardContent>
                 </Card>
             )}
@@ -198,7 +198,7 @@ export default function AICourseGeneratorPage() {
             {parsedModulesResult.length > 0 && !loadingSyllabus && (
                 <Card className="shadow-xl">
                     <CardHeader>
-                        <CardTitle className="text-2xl flex items-center"><ListChecks className="h-6 w-6 mr-2 text-primary"/>Generated Course Structure ({parsedModulesResult.length} Modules)</CardTitle>
+                        <CardTitle className="text-2xl flex items-center"><ListChecks className="h-6 w-6 mr-2 text-primary" aria-hidden="true"/>Generated Course Structure ({parsedModulesResult.length} Modules)</CardTitle>
                         <CardDescription>Review the AI-generated module outline. You can copy this information to create a new course in the main <Link href="/course-designer" className="text-primary hover:underline">Course Designer</Link>.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -249,7 +249,7 @@ export default function AICourseGeneratorPage() {
       <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Admin Capabilities Overview
             </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>

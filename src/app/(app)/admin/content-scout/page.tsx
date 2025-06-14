@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wand2, Loader2, AlertTriangle, Youtube, Copy, Link as LinkIcon, ListChecks, ShieldCheck, Users, BarChartBig, SendHorizonal, Sparkles, Archive } from 'lucide-react'; 
+import { Wand2, Loader2, AlertTriangle, Youtube, Copy, Link as LinkIconLucide, ListChecks, ShieldCheck, Users, BarChartBig, SendHorizonal, Sparkles, Archive } from 'lucide-react'; 
 import { suggestYoutubeVideosForTopic, type SuggestYoutubeVideosForTopicInput, type SuggestYoutubeVideosForTopicOutput } from '@/ai/flows/suggest-youtube-videos-for-topic-flow';
 import type { VideoLink } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
@@ -71,7 +71,7 @@ export default function AIContentScoutPage() {
     <div className="container mx-auto py-8 space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <Wand2 className="h-10 w-10 mr-3 text-primary" />
+          <Wand2 className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           AI Content Scout
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -130,8 +130,8 @@ export default function AIContentScoutPage() {
                 />
               </div>
             </div>
-            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
-              {isLoading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Wand2 className="h-5 w-5 mr-2" />}
+            <Button type="submit" disabled={isLoading} className="w-full md:w-auto" aria-label="Find video suggestions with AI">
+              {isLoading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" aria-hidden="true" /> : <Wand2 className="h-5 w-5 mr-2" aria-hidden="true" />}
               Find Suggestions
             </Button>
           </form>
@@ -142,7 +142,7 @@ export default function AIContentScoutPage() {
         <Card className="border-destructive bg-destructive/10">
           <CardHeader>
             <CardTitle className="text-destructive flex items-center">
-              <AlertTriangle className="h-5 w-5 mr-2" /> Error Fetching Suggestions
+              <AlertTriangle className="h-5 w-5 mr-2" aria-hidden="true" /> Error Fetching Suggestions
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -155,7 +155,7 @@ export default function AIContentScoutPage() {
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle className="text-2xl flex items-center">
-              <ListChecks className="h-6 w-6 mr-2 text-primary" /> Suggested Videos ({suggestedVideos.length})
+              <ListChecks className="h-6 w-6 mr-2 text-primary" aria-hidden="true" /> Suggested Videos ({suggestedVideos.length})
             </CardTitle>
             <CardDescription>Review the AI-generated suggestions below. Use these to update your courses via the Course Designer.</CardDescription>
           </CardHeader>
@@ -184,12 +184,12 @@ export default function AIContentScoutPage() {
                         <p className="text-sm text-muted-foreground">Language: {video.langName}</p>
                         <p className="text-sm text-muted-foreground">Type: {video.isPlaylist ? 'Playlist' : 'Single Video'}</p>
                         <div className="mt-3 flex flex-wrap gap-2">
-                           <Button variant="outline" size="sm" onClick={() => handleCopyToClipboard(video.youtubeEmbedUrl)}>
-                            <Copy className="h-4 w-4 mr-2" /> Copy URL
+                           <Button variant="outline" size="sm" onClick={() => handleCopyToClipboard(video.youtubeEmbedUrl)} aria-label={`Copy URL for ${video.title}`}>
+                            <Copy className="h-4 w-4 mr-2" aria-hidden="true" /> Copy URL
                           </Button>
                            <Button variant="ghost" size="sm" asChild>
-                            <a href={video.youtubeEmbedUrl.replace('/embed/','/watch?v=').replace('/embed/videoseries?list=','/playlist?list=')} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                                <LinkIcon className="h-4 w-4 mr-2" /> Open on YouTube
+                            <a href={video.youtubeEmbedUrl.replace('/embed/','/watch?v=').replace('/embed/videoseries?list=','/playlist?list=')} target="_blank" rel="noopener noreferrer" className="flex items-center" aria-label={`Open ${video.title} on YouTube`}>
+                                <LinkIconLucide className="h-4 w-4 mr-2" aria-hidden="true" /> Open on YouTube
                             </a>
                            </Button>
                         </div>
@@ -213,7 +213,7 @@ export default function AIContentScoutPage() {
       <Card className="mt-8 shadow-md">
         <CardHeader>
             <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
+                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Admin Capabilities Overview
             </CardTitle>
             <CardDescription>Current and planned features for administrators.</CardDescription>
