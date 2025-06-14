@@ -17,7 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils'; // Added missing import
+import { cn } from '@/lib/utils';
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 interface ManualVideoFormState {
@@ -25,6 +26,7 @@ interface ManualVideoFormState {
   language: string;
   creator: string;
   notes: string;
+  isPlaylist: boolean;
 }
 
 type CourseVisibility = "private" | "shared" | "public";
@@ -45,17 +47,17 @@ export default function MyCourseDesignerPage() {
   const [loadingAiVideos, setLoadingAiVideos] = useState(false);
   const [errorAiVideos, setErrorAiVideos] = useState<string | null>(null);
 
-  const [manualVideoForm, setManualVideoForm] = useState<ManualVideoFormState>({ url: '', language: 'English', creator: '', notes: '' });
+  const [manualVideoForm, setManualVideoForm] = useState<ManualVideoFormState>({ url: '', language: 'English', creator: '', notes: '', isPlaylist: false });
   const [userPickedVideosList, setUserPickedVideosList] = useState<VideoLink[]>([]);
   const [courseVideoPool, setCourseVideoPool] = useState<VideoLink[]>([]);
 
   // Course Settings State
   const [courseTitle, setCourseTitle] = useState('');
   const [courseCategory, setCourseCategory] = useState('');
-  const [courseDescriptionText, setCourseDescriptionText] = useState(''); // Renamed to avoid conflict with component
+  const [courseDescriptionText, setCourseDescriptionText] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [courseVisibility, setCourseVisibility] = useState<CourseVisibility>("private");
-  const [courseStatus, setCourseStatus] = useState<string>("Draft"); // e.g., Draft, Pending Review, Published
+  const [courseStatus, setCourseStatus] = useState<string>("Draft");
 
   const handleGenerateSyllabus = async (e: FormEvent) => {
     e.preventDefault();
@@ -127,6 +129,10 @@ export default function MyCourseDesignerPage() {
   const handleManualVideoFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setManualVideoForm({ ...manualVideoForm, [e.target.name]: e.target.value });
   };
+  
+  const handleManualVideoIsPlaylistChange = (checked: boolean | string) => {
+    setManualVideoForm(prev => ({ ...prev, isPlaylist: !!checked }));
+  };
 
   const handleAddUserPick = (e: FormEvent) => {
     e.preventDefault();
@@ -134,47 +140,79 @@ export default function MyCourseDesignerPage() {
       toast({ title: "Error", description: "Video URL and Language are required.", variant: "destructive" });
       return;
     }
-    if (!manualVideoForm.url.includes('youtube.com/') && !manualVideoForm.url.includes('youtu.be/')) {
-        toast({ title: "Error", description: "Please enter a valid YouTube video URL.", variant: "destructive" });
-        return;
-    }
 
     let embedUrl = manualVideoForm.url;
-    if (embedUrl.includes("watch?v=")) {
-        const videoId = embedUrl.split("watch?v=")[1]?.split("&")[0];
-        if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    } else if (embedUrl.includes("youtu.be/")) {
-        const videoId = embedUrl.split("youtu.be/")[1]?.split("?")[0];
-        if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    } else if (!embedUrl.includes("/embed/")) {
-        try {
-            const urlObject = new URL(embedUrl);
-            const pathParts = urlObject.pathname.split('/');
-            const videoId = pathParts.pop() || pathParts.pop(); 
-            if (videoId) {
-                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    const isPlaylistFromForm = manualVideoForm.isPlaylist;
+
+    if (isPlaylistFromForm) {
+        if (embedUrl.includes("youtube.com/playlist?list=")) {
+            const listId = embedUrl.split("playlist?list=")[1]?.split("&")[0];
+            if (listId) {
+                embedUrl = `https://www.youtube.com/embed/videoseries?list=${listId}`;
             } else {
-                 toast({ title: "Error", description: "Could not determine YouTube video ID. Please use a standard YouTube video link.", variant: "destructive" });
-                 return;
+                toast({ title: "Error", description: "Invalid YouTube playlist URL format.", variant: "destructive" });
+                return;
             }
-        } catch (error) {
-            toast({ title: "Error", description: "Invalid URL format. Please use a standard YouTube video link.", variant: "destructive" });
-            return;
+        } else if (embedUrl.includes("youtube.com/embed/videoseries?list=")) {
+            // Already a valid embed playlist URL
+        } else {
+            toast({ title: "Warning", description: "URL marked as playlist, but format is not a standard YouTube playlist link. Please ensure it's correct.", variant: "default" });
+            // Proceeding with user's intent, URL as is
+        }
+    } else { // It's an individual video
+        if (embedUrl.includes("watch?v=")) {
+            const videoId = embedUrl.split("watch?v=")[1]?.split("&")[0];
+            if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            else { toast({ title: "Error", description: "Invalid YouTube video URL (watch?v=).", variant: "destructive" }); return; }
+        } else if (embedUrl.includes("youtu.be/")) {
+            const videoId = embedUrl.split("youtu.be/")[1]?.split("?")[0];
+            if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            else { toast({ title: "Error", description: "Invalid YouTube video URL (youtu.be/).", variant: "destructive" }); return; }
+        } else if (embedUrl.includes("youtube.com/embed/") && !embedUrl.includes("list=")) {
+            // Already a valid individual embed URL
+        } else {
+            // Attempt to parse other formats if it's not explicitly an embed link
+             try {
+                const urlObject = new URL(embedUrl);
+                let videoId = urlObject.searchParams.get('v'); // Check query param first
+                if (!videoId && urlObject.pathname.startsWith('/embed/')) { // Check path for /embed/ID
+                     videoId = urlObject.pathname.split('/embed/')[1]?.split('/')[0];
+                }
+                if (!videoId) { // Fallback to last path segment if simple
+                    const pathParts = urlObject.pathname.split('/');
+                    const potentialId = pathParts.pop() || pathParts.pop();
+                    if (potentialId && potentialId.length === 11 && !potentialId.includes('.')) { // Basic check for YouTube ID length
+                        videoId = potentialId;
+                    }
+                }
+
+                if (videoId) {
+                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                } else if (!embedUrl.includes("/embed/")) { // If we still couldn't parse and it's not an embed link
+                    toast({ title: "Error", description: "Could not determine YouTube video ID. Please use a standard YouTube video link.", variant: "destructive" });
+                    return;
+                }
+            } catch (error) {
+                 if (!embedUrl.includes("/embed/")) { // If URL parsing failed and it's not an embed link
+                    toast({ title: "Error", description: "Invalid URL format. Please use a standard YouTube video link.", variant: "destructive" });
+                    return;
+                }
+            }
         }
     }
 
-
     const newUserPick: VideoLink = {
       youtubeEmbedUrl: embedUrl,
-      title: manualVideoForm.url.substring(0,50)+'... (User Submitted)',
+      title: `${manualVideoForm.url.substring(0, 50)}... (User Submitted${isPlaylistFromForm ? ' Playlist' : ''})`,
       langCode: manualVideoForm.language.substring(0,2).toLowerCase(),
       langName: manualVideoForm.language,
       creator: manualVideoForm.creator,
       notes: manualVideoForm.notes,
+      isPlaylist: isPlaylistFromForm,
     };
     setUserPickedVideosList([...userPickedVideosList, newUserPick]);
-    setManualVideoForm({ url: '', language: 'English', creator: '', notes: '' }); // Reset form
-    toast({ title: "Video Added", description: "Your video has been added to User Picks." });
+    setManualVideoForm({ url: '', language: 'English', creator: '', notes: '', isPlaylist: false });
+    toast({ title: "Video Added", description: `Your ${isPlaylistFromForm ? 'playlist' : 'video'} has been added to User Picks.` });
   };
 
   const handleAddVideoToPool = (video: VideoLink) => {
@@ -192,10 +230,9 @@ export default function MyCourseDesignerPage() {
   };
 
   const handleSaveCourseSettings = () => {
-    // Placeholder for actual save logic
     console.log({ courseTitle, courseCategory, courseDescriptionText, coverImageUrl, courseVisibility, courseStatus });
     toast({ title: "Settings Saved", description: "Course settings have been saved (simulated)." });
-    setCourseStatus("Draft - Saved"); // Example status update
+    setCourseStatus("Draft - Saved");
   };
 
 
@@ -234,7 +271,6 @@ export default function MyCourseDesignerPage() {
                 </Button>
               </div>
               <div className="space-y-4">
-                {/* Placeholder for actual modules list */}
                 <Card className="bg-background">
                   <CardContent className="p-4 flex justify-between items-center">
                     <div>
@@ -264,7 +300,7 @@ export default function MyCourseDesignerPage() {
                     {courseVideoPool.map((video, idx) => (
                       <Card key={idx} className="p-3 flex justify-between items-center bg-background shadow-sm">
                         <div className="flex-grow">
-                           <p className="text-sm font-medium truncate" title={video.title}>{video.title}</p>
+                           <p className="text-sm font-medium truncate" title={video.title}>{video.title}{video.isPlaylist && " (Playlist)"}</p>
                            <p className="text-xs text-muted-foreground">Creator: {video.creator || 'N/A'} - Lang: {video.langName}</p>
                            {video.notes && <p className="text-xs text-muted-foreground italic truncate" title={video.notes}>Notes: {video.notes}</p>}
                         </div>
@@ -436,7 +472,7 @@ export default function MyCourseDesignerPage() {
                         <div className="max-h-60 overflow-y-auto space-y-2 pr-2 border rounded-md p-2 bg-muted/20">
                             {aiSuggestedVideosList.map((video, idx) => (
                                 <Card key={`ai-${idx}`} className="p-3 text-sm bg-background shadow-sm">
-                                    <p className="font-medium truncate" title={video.title}>{video.title}</p>
+                                    <p className="font-medium truncate" title={video.title}>{video.title}{video.isPlaylist && " (Playlist)"}</p>
                                     {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
                                     <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
                                     <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => handleAddVideoToPool(video)}>
@@ -449,11 +485,21 @@ export default function MyCourseDesignerPage() {
                 )}
                 <Separator />
                 <div>
-                    <h4 className="font-semibold mb-3 text-md">Manually Add Video</h4>
+                    <h4 className="font-semibold mb-3 text-md">Manually Add Video/Playlist</h4>
                     <form onSubmit={handleAddUserPick} className="space-y-3">
                         <div className="space-y-1">
-                            <Label htmlFor="manualVideoUrl">YouTube Video URL</Label>
-                            <Input id="manualVideoUrl" name="url" placeholder="https://www.youtube.com/watch?v=..." value={manualVideoForm.url} onChange={handleManualVideoFormChange} required />
+                            <Label htmlFor="manualVideoUrl">YouTube URL (Video or Playlist)</Label>
+                            <Input id="manualVideoUrl" name="url" placeholder="https://www.youtube.com/watch?v=... or /playlist?list=..." value={manualVideoForm.url} onChange={handleManualVideoFormChange} required />
+                        </div>
+                        <div className="flex items-center space-x-2 mt-2 mb-2">
+                            <Checkbox
+                                id="manualVideoIsPlaylist"
+                                checked={manualVideoForm.isPlaylist}
+                                onCheckedChange={handleManualVideoIsPlaylistChange}
+                            />
+                            <Label htmlFor="manualVideoIsPlaylist" className="text-sm font-normal">
+                                This URL is for a playlist
+                            </Label>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
@@ -467,7 +513,7 @@ export default function MyCourseDesignerPage() {
                         </div>
                         <div className="space-y-1">
                             <Label htmlFor="manualVideoNotes">Notes (Optional)</Label>
-                            <Textarea id="manualVideoNotes" name="notes" placeholder="Brief notes about the video..." value={manualVideoForm.notes} onChange={handleManualVideoFormChange} rows={2} />
+                            <Textarea id="manualVideoNotes" name="notes" placeholder="Brief notes about the video/playlist..." value={manualVideoForm.notes} onChange={handleManualVideoFormChange} rows={2} />
                         </div>
                         <Button type="submit" className="w-full md:w-auto"><PlusCircle className="h-4 w-4 mr-2" /> Add User Pick</Button>
                     </form>
@@ -478,7 +524,7 @@ export default function MyCourseDesignerPage() {
                          <div className="max-h-60 overflow-y-auto space-y-2 pr-2 border rounded-md p-2 bg-muted/20">
                             {userPickedVideosList.map((video, idx) => (
                                 <Card key={`user-${idx}`} className="p-3 text-sm bg-background shadow-sm">
-                                    <p className="font-medium truncate" title={video.title}>{video.title}</p>
+                                    <p className="font-medium truncate" title={video.title}>{video.title}{video.isPlaylist && " (Playlist)"}</p>
                                     {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
                                     <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
                                     {video.notes && <p className="text-xs text-muted-foreground italic truncate" title={video.notes}>Notes: {video.notes}</p>}
