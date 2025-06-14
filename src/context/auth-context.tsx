@@ -1,15 +1,15 @@
 
 "use client";
 
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, VideoLink } from '@/lib/types'; // Added VideoLink
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: UserProfile | null;
   login: (userData: UserProfile) => void;
   logout: () => void;
-  updateUserProfile: (profileData: Partial<UserProfile>) => void; // New function
+  updateUserProfile: (profileData: Partial<UserProfile>) => void;
   loading: boolean;
 }
 
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = localStorage.getItem('skillSprintUser');
     if (storedUser) {
       try {
-        const parsedUser = JSON.parse(storedUser);
+        const parsedUser: UserProfile = JSON.parse(storedUser);
         setUser(parsedUser);
       } catch (e) {
         console.error("Failed to parse stored user data", e);
@@ -35,9 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (userData: UserProfile) => {
-    setUser(userData);
-    localStorage.setItem('skillSprintUser', JSON.stringify(userData));
-    // Redirection logic is now handled in login/signup pages based on profileSetupComplete
+    const userToStore = {
+      ...userData,
+      customVideoLinks: userData.customVideoLinks || [] // Ensure it's initialized
+    };
+    setUser(userToStore);
+    localStorage.setItem('skillSprintUser', JSON.stringify(userToStore));
   };
 
   const logout = () => {
@@ -48,10 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = (profileData: Partial<UserProfile>) => {
     if (user) {
-      const updatedUser = { 
+      const updatedUser: UserProfile = { 
         ...user, 
-        ...profileData, 
-        profileSetupComplete: true // Always mark as complete when this function is called
+        ...profileData,
+        // If profileData includes customVideoLinks, it will override.
+        // Otherwise, user.customVideoLinks (which could be undefined if not set before) is kept.
+        // Ensure customVideoLinks is an array if it's being set or updated.
+        customVideoLinks: profileData.customVideoLinks !== undefined ? profileData.customVideoLinks : user.customVideoLinks || [],
+        profileSetupComplete: profileData.profileSetupComplete !== undefined ? profileData.profileSetupComplete : user.profileSetupComplete,
       };
       setUser(updatedUser);
       localStorage.setItem('skillSprintUser', JSON.stringify(updatedUser));

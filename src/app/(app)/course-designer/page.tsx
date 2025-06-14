@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from '@/context/auth-context';
 
 
 interface ManualVideoFormState {
@@ -33,6 +34,8 @@ type CourseVisibility = "private" | "shared" | "public";
 
 export default function MyCourseDesignerPage() {
   const { toast } = useToast();
+  const { user, updateUserProfile } = useAuth();
+
   const [aiTopic, setAiTopic] = useState('');
   const [targetAudience, setTargetAudience] = useState('Beginners');
   const [learningObjectives, setLearningObjectives] = useState('');
@@ -48,6 +51,7 @@ export default function MyCourseDesignerPage() {
   const [errorAiVideos, setErrorAiVideos] = useState<string | null>(null);
 
   const [manualVideoForm, setManualVideoForm] = useState<ManualVideoFormState>({ url: '', language: 'English', creator: '', notes: '', isPlaylist: false });
+  // userPickedVideosList now represents the user's persistent library of videos
   const [userPickedVideosList, setUserPickedVideosList] = useState<VideoLink[]>([]);
   const [courseVideoPool, setCourseVideoPool] = useState<VideoLink[]>([]);
 
@@ -58,6 +62,12 @@ export default function MyCourseDesignerPage() {
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [courseVisibility, setCourseVisibility] = useState<CourseVisibility>("private");
   const [courseStatus, setCourseStatus] = useState<string>("Draft");
+
+  useEffect(() => {
+    if (user && user.customVideoLinks) {
+      setUserPickedVideosList(user.customVideoLinks);
+    }
+  }, [user]);
 
   const handleGenerateSyllabus = async (e: FormEvent) => {
     e.preventDefault();
@@ -110,7 +120,11 @@ export default function MyCourseDesignerPage() {
     setErrorAiVideos(null);
     setAiSuggestedVideosList([]);
     try {
-      const input: SuggestYoutubeVideosForTopicInput = { searchQuery: videoSearchTopic, numberOfSuggestions: 5 };
+      const input: SuggestYoutubeVideosForTopicInput = { 
+        searchQuery: videoSearchTopic, 
+        numberOfSuggestions: 5,
+        preferredLanguage: user?.learningPreferences?.language 
+      };
       const result = await suggestYoutubeVideosForTopic(input);
       setAiSuggestedVideosList(result.suggestedVideos);
       if (result.suggestedVideos.length === 0) {
@@ -157,9 +171,8 @@ export default function MyCourseDesignerPage() {
             // Already a valid embed playlist URL
         } else {
             toast({ title: "Warning", description: "URL marked as playlist, but format is not a standard YouTube playlist link. Please ensure it's correct.", variant: "default" });
-            // Proceeding with user's intent, URL as is
         }
-    } else { // It's an individual video
+    } else { 
         if (embedUrl.includes("watch?v=")) {
             const videoId = embedUrl.split("watch?v=")[1]?.split("&")[0];
             if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
@@ -171,7 +184,6 @@ export default function MyCourseDesignerPage() {
         } else if (embedUrl.includes("youtube.com/embed/") && !embedUrl.includes("list=")) {
             // Already a valid individual embed URL
         } else {
-            // Attempt to parse other formats if it's not explicitly an embed link
              try {
                 const urlObject = new URL(embedUrl);
                 let videoId = urlObject.searchParams.get('v'); 
@@ -203,16 +215,22 @@ export default function MyCourseDesignerPage() {
 
     const newUserPick: VideoLink = {
       youtubeEmbedUrl: embedUrl,
-      title: `${manualVideoForm.url.substring(0, 50)}... (User Submitted${isPlaylistFromForm ? ' Playlist' : ''})`,
+      title: `${manualVideoForm.url.substring(0, 30)}... (User Pick${isPlaylistFromForm ? ' Playlist' : ''})`,
       langCode: manualVideoForm.language.substring(0,2).toLowerCase(),
       langName: manualVideoForm.language,
       creator: manualVideoForm.creator,
       notes: manualVideoForm.notes,
       isPlaylist: isPlaylistFromForm,
     };
-    setUserPickedVideosList([...userPickedVideosList, newUserPick]);
+
+    const updatedPicks = [...userPickedVideosList, newUserPick];
+    setUserPickedVideosList(updatedPicks);
+    if (user) {
+      updateUserProfile({ customVideoLinks: updatedPicks });
+    }
+    
     setManualVideoForm({ url: '', language: 'English', creator: '', notes: '', isPlaylist: false });
-    toast({ title: "Video Added", description: `Your ${isPlaylistFromForm ? 'playlist' : 'video'} has been added to User Picks.` });
+    toast({ title: "Video Added", description: `Your ${isPlaylistFromForm ? 'playlist' : 'video'} has been added to your personal library.` });
   };
 
   const handleAddVideoToPool = (video: VideoLink) => {
@@ -228,6 +246,17 @@ export default function MyCourseDesignerPage() {
     setCourseVideoPool(courseVideoPool.filter(v => v.youtubeEmbedUrl !== videoUrl));
     toast({ title: "Video Removed", description: "Video removed from course video pool." });
   };
+
+  // Placeholder for removing from user's persistent library (userPickedVideosList)
+  const handleRemoveFromUserPicks = (videoUrl: string) => {
+    const updatedPicks = userPickedVideosList.filter(v => v.youtubeEmbedUrl !== videoUrl);
+    setUserPickedVideosList(updatedPicks);
+    if (user) {
+        updateUserProfile({ customVideoLinks: updatedPicks });
+    }
+    toast({ title: "Video Removed", description: "Video removed from your personal library." });
+  };
+
 
   const handleSaveCourseSettings = () => {
     console.log({ courseTitle, courseCategory, courseDescriptionText, coverImageUrl, courseVisibility, courseStatus });
@@ -485,13 +514,13 @@ export default function MyCourseDesignerPage() {
                 )}
                 <Separator />
                 <div className="space-y-3 p-1 border rounded-md bg-card shadow-sm">
-                    <h4 className="font-semibold text-md px-3 pt-3">Manually Add Video/Playlist</h4>
+                    <h4 className="font-semibold text-md px-3 pt-3">Manually Add Video/Playlist to My Library</h4>
                     <form onSubmit={handleAddUserPick} className="space-y-3 px-3 pb-3">
                         <div className="space-y-1">
                             <Label htmlFor="manualVideoUrl">YouTube URL (Video or Playlist)*</Label>
                             <Input id="manualVideoUrl" name="url" placeholder="https://www.youtube.com/watch?v=... or /playlist?list=..." value={manualVideoForm.url} onChange={handleManualVideoFormChange} required />
                         </div>
-                        <div className="flex items-center space-x-2 mt-2 mb-1"> {/* Reduced vertical margin */}
+                        <div className="flex items-center space-x-2 mt-2 mb-1">
                             <Checkbox
                                 id="manualVideoIsPlaylist"
                                 checked={manualVideoForm.isPlaylist}
@@ -515,21 +544,26 @@ export default function MyCourseDesignerPage() {
                             <Label htmlFor="manualVideoNotes">Notes (Optional)</Label>
                             <Textarea id="manualVideoNotes" name="notes" placeholder="Brief notes about the video/playlist..." value={manualVideoForm.notes} onChange={handleManualVideoFormChange} rows={2} />
                         </div>
-                        <Button type="submit" className="w-full md:w-auto"><PlusCircle className="h-4 w-4 mr-2" /> Add User Pick</Button>
+                        <Button type="submit" className="w-full md:w-auto"><PlusCircle className="h-4 w-4 mr-2" /> Add to My Library</Button>
                     </form>
                 </div>
                  {userPickedVideosList.length > 0 && (
                     <div className="mt-4">
-                        <h4 className="font-semibold mb-2 text-md">User Picks ({userPickedVideosList.length})</h4>
+                        <h4 className="font-semibold mb-2 text-md">My Video Library ({userPickedVideosList.length})</h4>
                          <div className="max-h-60 overflow-y-auto space-y-2 pr-2 border rounded-md p-2 bg-muted/20">
                             {userPickedVideosList.map((video, idx) => (
-                                <Card key={`user-${idx}`} className="p-3 text-sm bg-background shadow-sm">
-                                    <p className="font-medium truncate" title={video.title}>{video.title}{video.isPlaylist && " (Playlist)"}</p>
-                                    {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
-                                    <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
-                                    {video.notes && <p className="text-xs text-muted-foreground italic truncate" title={video.notes}>Notes: {video.notes}</p>}
-                                    <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => handleAddVideoToPool(video)}>
-                                      <ListPlus className="h-4 w-4 mr-2" /> Add to Course Pool
+                                <Card key={`user-${idx}`} className="p-3 text-sm bg-background shadow-sm flex justify-between items-start">
+                                    <div className="flex-grow mr-2">
+                                        <p className="font-medium truncate" title={video.title}>{video.title}{video.isPlaylist && " (Playlist)"}</p>
+                                        {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
+                                        <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
+                                        {video.notes && <p className="text-xs text-muted-foreground italic truncate" title={video.notes}>Notes: {video.notes}</p>}
+                                        <Button variant="outline" size="xs" className="mt-2 w-full text-xs" onClick={() => handleAddVideoToPool(video)}>
+                                          <ListPlus className="h-3 w-3 mr-1" /> Add to Course Pool
+                                        </Button>
+                                    </div>
+                                    <Button variant="ghost" size="icon-sm" onClick={() => handleRemoveFromUserPicks(video.youtubeEmbedUrl)} className="flex-shrink-0">
+                                        <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </Card>
                             ))}

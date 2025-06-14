@@ -89,6 +89,7 @@ export interface UserProfile {
     tracks: string[];
     language: string; 
   };
+  customVideoLinks?: VideoLink[]; // Added for persistent user-picked videos
   profileSetupComplete?: boolean;
 }
 
@@ -101,3 +102,4 @@ export interface NavItem {
   external?: boolean;
   children?: NavItem[];
 }
+
