@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, Save, Briefcase, ShieldCheck, Settings } from 'lucide-react';
+import { Loader2, Users, Save, Briefcase, ShieldCheck, Settings, BarChartBig, SendHorizonal, Wand2 } from 'lucide-react'; // Added BarChartBig, SendHorizonal, Wand2
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link'; // Added Link for navigation
 
 export default function UserManagementPage() {
   const { user: currentUser, updateUserProfile, loading: authLoading } = useAuth();
@@ -167,14 +168,14 @@ export default function UserManagementPage() {
         </CardHeader>
         <CardContent>
             <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong></li>
-                <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong></li>
-                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong></li>
-                <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (AI Content Scout). (Implemented)</strong></li>
-                <li><strong className="text-foreground">Set platform-wide limits (e.g., max custom videos per module for users). (Initial: Limit visible, enforcement in place)</strong></li>
-                <li><strong className="text-foreground">Manage user roles and permissions. (Initial Simulation Implemented: Can change current admin's role)</strong></li>
-                <li>View platform analytics and reports. (Planned)</li>
-                <li>Broadcast messaging to user segments. (Planned)</li>
+                <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
+                <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
+                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
+                <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (AI Content Scout). (Implemented)</strong> <Link href="/admin/content-scout" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
+                <li><strong className="text-foreground">Set platform-wide limits (Initial: Limit visible, enforcement in place).</strong></li>
+                <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
+                <li><strong className="text-foreground">View platform analytics and reports (Placeholder UI Implemented).</strong> <Link href="/admin/analytics" className="text-xs text-primary hover:underline ml-1">(View)</Link></li>
+                <li><strong className="text-foreground">Broadcast messaging to user segments (Placeholder UI Implemented).</strong> <Link href="/admin/messaging" className="text-xs text-primary hover:underline ml-1">(Compose)</Link></li>
             </ul>
         </CardContent>
       </Card>

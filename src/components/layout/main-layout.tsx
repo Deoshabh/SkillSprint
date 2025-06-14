@@ -16,7 +16,7 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users, BarChartBig, SendHorizonal } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { FloatingChatbot } from '@/components/chatbot/floating-chatbot'; 
@@ -40,6 +40,8 @@ const adminNavItems: NavItem[] = [
    { title: 'Course Moderation', href: '/admin/course-designer', icon: ShieldCheck }, 
    { title: 'AI Content Scout', href: '/admin/content-scout', icon: Wand2 },
    { title: 'User Management', href: '/admin/user-management', icon: Users },
+   { title: 'Analytics', href: '/admin/analytics', icon: BarChartBig },
+   { title: 'Messaging', href: '/admin/messaging', icon: SendHorizonal },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -82,16 +84,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </ScrollArea>
         </SidebarContent>
         {/* Removed redundant Admin Panel button from footer as it's in the nav now */}
-        {/* {user && (user.role === 'educator' || user.role === 'admin') && (
-          <SidebarFooter className="p-4 mt-auto">
-             <Link href="/admin/course-designer" className="w-full">
-              <Button variant="outline" className="w-full group-data-[collapsible=icon]:hidden">
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                Admin Panel
-              </Button>
-            </Link>
-          </SidebarFooter>
-        )} */}
       </Sidebar>
       <SidebarRail />
       <SidebarInset>
