@@ -27,7 +27,7 @@ export default function AdminCourseManagementPage() {
 
   const fetchAllCoursesByStatus = useCallback(async () => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     setPendingCourses(getCoursesForReview());
     setPublishedCourses(getPublishedCourses());
     setRejectedCourses(getRejectedCourses());
@@ -249,8 +249,8 @@ export default function AdminCourseManagementPage() {
             <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
                 <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
-                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
-                <li><strong className="text-foreground">AI-powered tools within the Course Designer (Syllabus Generation, Module Content Suggestions) for admins. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Use in Designer)</Link></li>
+                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Open Designer)</Link></li>
+                <li><strong className="text-foreground">Advanced AI-powered tools within the Course Designer (Syllabus & Full Module Structure Generation, Content Suggestions) for admins. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Use in Designer)</Link></li>
                 <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (AI Content Scout). (Implemented)</strong> <Link href="/admin/content-scout" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
                 <li><strong className="text-foreground">Set platform-wide limits (Initial: Limit visible, enforcement in place).</strong></li>
                 <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>

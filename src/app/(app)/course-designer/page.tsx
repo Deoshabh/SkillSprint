@@ -160,7 +160,6 @@ export default function MyCourseDesignerPage() {
         setModules(courseToEdit.modules || []);
         setOriginalAuthorId(courseToEdit.authorId || null);
         setSuggestedSchedule(courseToEdit.suggestedSchedule || '');
-        // Basic logic to infer duration from schedule or modules if available. A dedicated field in Course model might be better.
         setEstimatedDurationWeeks(courseToEdit.duration ? parseInt(courseToEdit.duration.split(" ")[0]) : (courseToEdit.modules?.length || 12));
 
         
@@ -213,6 +212,92 @@ export default function MyCourseDesignerPage() {
     }
   }, [user]);
 
+  const parseSyllabusToModules = (syllabusText: string): ModuleType[] => {
+    const generatedModules: ModuleType[] = [];
+    // Regex to capture module title and then everything until the next "Module" or end of string
+    const moduleRegex = /^(?:#+\s*)?Module\s*\d*[:\s-]*\s*(.*?)(?:\n|$)([\s\S]*?)(?=(?:#+\s*)?Module\s*\d*[:\s-]*|\Z)/gim;
+    
+    let match;
+    while ((match = moduleRegex.exec(syllabusText)) !== null) {
+        const title = match[1].trim().replace(/\*+/g, ''); // Remove markdown bolding from title
+        let contentBlock = match[2] || '';
+
+        // Attempt to extract description before "Topics:" or "Learning Activities:"
+        let description = '';
+        const descriptionMatch = contentBlock.match(/^([\s\S]*?)(?:(?:#+\s*)?Topics:|(?:#+\s*)?Learning Activities:|$)/i);
+        if (descriptionMatch && descriptionMatch[1]) {
+            description = descriptionMatch[1].trim();
+            // Remove description from contentBlock to avoid re-parsing
+            contentBlock = contentBlock.substring(description.length).trim();
+        }
+        
+        // Extract topics
+        let subtopics: string[] = [];
+        const topicsMatch = contentBlock.match(/(?:#+\s*)?Topics:([\s\S]*?)(?:(?:#+\s*)?Learning Activities:|$)/i);
+        if (topicsMatch && topicsMatch[1]) {
+            subtopics = topicsMatch[1]
+                .split('\n')
+                .map(s => s.replace(/^-|^\*|^\d+\.\s*/, '').trim()) // Remove list markers
+                .filter(s => s && s.length > 2); // Filter out empty or very short lines
+        }
+
+        // Extract practice task from learning activities
+        let practiceTask = '';
+        const activitiesMatch = contentBlock.match(/(?:#+\s*)?Learning Activities:([\s\S]*)/i);
+        if (activitiesMatch && activitiesMatch[1]) {
+            const activitiesText = activitiesMatch[1].trim();
+            // Try to find a sentence that looks like a task, or take the first significant line
+            const activityLines = activitiesText.split('\n').map(s => s.replace(/^-|^\*|^\d+\.\s*/, '').trim()).filter(s => s);
+            if (activityLines.length > 0) {
+                 // Look for lines starting with "Build", "Create", "Design", "Develop", "Write"
+                const taskKeywords = ["build", "create", "design", "develop", "write", "implement", "complete", "solve"];
+                let foundTask = activityLines.find(line => taskKeywords.some(keyword => line.toLowerCase().startsWith(keyword)));
+                practiceTask = foundTask || activityLines[0]; // Fallback to the first activity
+            }
+        }
+        if (!description && subtopics.length > 0) {
+            description = `Focuses on: ${subtopics.join(', ').substring(0, 100)}...`;
+        } else if (!description) {
+            description = `Details for ${title}`;
+        }
+
+
+        generatedModules.push({
+            id: uuidv4(),
+            title: title || `Module ${generatedModules.length + 1}`,
+            description: description.substring(0, 250), // Limit description length
+            subtopics,
+            practiceTask: practiceTask.substring(0, 250), // Limit task length
+            contentType: 'video', // Default, admin can change
+            estimatedTime: '1 week', // Default
+            contentUrl: '',
+            videoLinks: [],
+        });
+    }
+    // If regex fails to find modules, try a simpler split if it's just a list of topics.
+    if (generatedModules.length === 0 && syllabusText.includes('\n')) {
+        const lines = syllabusText.split('\n').map(s => s.trim()).filter(s => s.length > 5); // Filter short lines
+        if (lines.length > 1 && lines.length <= 15) { // Reasonable number of modules if it's just a list
+             lines.forEach((line, index) => {
+                generatedModules.push({
+                    id: uuidv4(),
+                    title: line.replace(/^-|^\*|^\d+\.\s*/, '').trim() || `Module ${index + 1}`,
+                    description: `Details for ${line}`,
+                    subtopics: [],
+                    practiceTask: '',
+                    contentType: 'video',
+                    estimatedTime: '1 week',
+                    contentUrl: '',
+                    videoLinks: [],
+                });
+            });
+        }
+    }
+
+
+    return generatedModules;
+};
+
 
   const handleGenerateSyllabus = async (e: FormEvent) => {
     e.preventDefault();
@@ -232,44 +317,24 @@ export default function MyCourseDesignerPage() {
         if (result.courseSyllabus) {
             const parsedModules = parseSyllabusToModules(result.courseSyllabus);
             if (parsedModules.length > 0) {
-                setModules(parsedModules);
-                toast({ title: "Syllabus Parsed", description: `${parsedModules.length} modules created in Module Builder.`});
+                setModules(parsedModules); // This will populate the Module Builder tab
+                toast({ title: "AI Course Structure Generated", description: `${parsedModules.length} modules created. Please review and refine them in the Module Builder.`});
+            } else {
+                 toast({ title: "AI Syllabus Generated", description: "Syllabus text is available below. Could not auto-structure into modules. Please build modules manually or refine the AI prompt."});
             }
+        } else {
+             toast({ title: "AI Syllabus Failed", description: "The AI did not return a syllabus. Try adjusting your inputs.", variant: "destructive" });
         }
 
     } catch (err) {
       console.error("Error generating syllabus:", err);
-      setErrorSyllabus(err instanceof Error ? err.message : "Syllabus generation failed.");
-      toast({ title: "AI Syllabus Failed", description: "Could not generate. Try again.", variant: "destructive" });
+      const errorMsg = err instanceof Error ? err.message : "Syllabus generation failed.";
+      setErrorSyllabus(errorMsg);
+      toast({ title: "AI Syllabus Failed", description: errorMsg, variant: "destructive" });
     } finally {
       setLoadingSyllabus(false);
     }
   };
-
-  const parseSyllabusToModules = (syllabusText: string): ModuleType[] => {
-    const generatedModules: ModuleType[] = [];
-    const moduleRegex = /Module\s*\d*[:\s-]*\s*(.*?)(\n|$)([\s\S]*?)(?=Module\s*\d*[:\s-]*|\Z)/gi;
-    let match;
-    while ((match = moduleRegex.exec(syllabusText)) !== null) {
-        const title = match[1].trim() || `Module ${generatedModules.length + 1}`;
-        const content = match[3] || '';
-        const descriptionMatch = content.match(/Description:([\s\S]*?)(Topics:|Learning Activities:|$)/i);
-        const topicsMatch = content.match(/Topics:([\s\S]*?)(Learning Activities:|$)/i);
-        const activitiesMatch = content.match(/Learning Activities:([\s\S]*)/i);
-
-        generatedModules.push({
-            id: uuidv4(),
-            title: title,
-            description: descriptionMatch ? descriptionMatch[1].trim() : `Details for ${title}`,
-            subtopics: topicsMatch ? topicsMatch[1].trim().split('\n').map(s => s.replace(/^- /, '').trim()).filter(s => s) : [],
-            practiceTask: activitiesMatch ? `Based on activities: ${activitiesMatch[1].trim().substring(0,100)}...` : '',
-            contentType: 'video', 
-            estimatedTime: '1 week', 
-            contentUrl: '',
-        });
-    }
-    return generatedModules;
-};
 
 
   const handleSuggestVideosAI = async (e: FormEvent) => {
@@ -553,8 +618,8 @@ export default function MyCourseDesignerPage() {
       status: courseStatus, 
       modules: modules, 
       authorId: user.id,
-      suggestedSchedule: suggestedSchedule, // Save the schedule
-      duration: `${estimatedDurationWeeks} Weeks`, // Save duration if needed
+      suggestedSchedule: suggestedSchedule, 
+      duration: `${estimatedDurationWeeks} Weeks`, 
     };
 
     const savedCourse = saveOrUpdateCourse(courseDataToSave);
@@ -609,7 +674,6 @@ export default function MyCourseDesignerPage() {
         courseTitle,
         moduleTitles,
         estimatedCourseDurationWeeks,
-        // studyHoursPerWeek could be another input if desired
       };
       const result = await generateCourseSchedule(input);
       setSuggestedSchedule(result.scheduleText);
@@ -740,14 +804,14 @@ export default function MyCourseDesignerPage() {
                 <div>
                     <CardTitle className="text-2xl">Module Builder</CardTitle>
                     <CardDescription>
-                        Design your course structure module by module. AI tools are available within the module editor.
+                        Design your course structure module by module. Admins can use AI for content ideas.
                     </CardDescription>
                 </div>
                 <Button onClick={() => handleOpenModuleEditor()}><PlusCircle className="mr-2 h-4 w-4"/> Add Module</Button>
             </CardHeader>
             <CardContent className="space-y-4">
                  {modules.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-6">No modules added yet. Click "Add Module" to start.</p>
+                    <p className="text-muted-foreground text-center py-6">No modules added yet. Click "Add Module" to start, or use the AI Syllabus Generator in the "AI Tools" tab.</p>
                  ) : (
                     <div className="space-y-3">
                         {modules.map((module, index) => (
@@ -924,11 +988,9 @@ export default function MyCourseDesignerPage() {
                   </Button>
                   {modules.length === 0 && <p className="text-xs text-destructive">Please add modules in the 'Module Builder' tab first.</p>}
                   {errorCourseSchedule && (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Error Generating Schedule</AlertTitle>
-                      <AlertDescription>{errorCourseSchedule}</AlertDescription>
-                    </Alert>
+                     <div className="p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-sm">
+                        <AlertTriangle className="h-4 w-4 inline mr-1" /> {errorCourseSchedule}
+                     </div>
                   )}
                 </div>
               )}
@@ -971,7 +1033,7 @@ export default function MyCourseDesignerPage() {
             <CardContent className="space-y-4">
               <form onSubmit={handleGenerateSyllabus} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="aiTopic">Course Topic</Label>
+                  <Label htmlFor="aiTopic">Course Topic*</Label>
                   <Input id="aiTopic" placeholder="e.g., Intro to Python" value={aiTopic} onChange={(e: ChangeEvent<HTMLInputElement>) => setAiTopic(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
@@ -983,21 +1045,21 @@ export default function MyCourseDesignerPage() {
                   <Textarea id="learningObjectives" placeholder="e.g., Understand core concepts" value={learningObjectives} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setLearningObjectives(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="desiredModules">Number of Modules</Label>
-                  <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} />
+                  <Label htmlFor="desiredModules">Number of Modules*</Label>
+                  <Input id="desiredModules" type="number" min="1" max="20" value={desiredModules} onChange={(e: ChangeEvent<HTMLInputElement>) => setDesiredModules(parseInt(e.target.value, 10) || 1)} required/>
                 </div>
                 <Button type="submit" disabled={loadingSyllabus || user?.role !== 'admin'} className="w-full md:w-auto">
                   {loadingSyllabus ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                  Generate Syllabus & Initial Modules
+                  Generate Full Course Structure
                 </Button>
-                {user?.role !== 'admin' && <p className="text-xs text-muted-foreground">AI Syllabus Generation is an admin feature.</p>}
+                {user?.role !== 'admin' && <p className="text-xs text-muted-foreground">AI Syllabus & Module Structure Generation is an admin feature.</p>}
               </form>
               {errorSyllabus && (
                 <div className="mt-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md"><AlertTriangle className="h-5 w-5 inline mr-1" />{errorSyllabus}</div>
               )}
               {syllabusResult && !loadingSyllabus && (
-                <Card className="mt-6"><CardHeader><CardTitle>Generated Syllabus (Preview)</CardTitle></CardHeader>
-                  <CardContent className="prose prose-sm dark:prose-invert max-w-none"><ReactMarkdown>{syllabusResult}</ReactMarkdown></CardContent>
+                <Card className="mt-6"><CardHeader><CardTitle>Raw AI Syllabus Output (Preview)</CardTitle></CardHeader>
+                  <CardContent className="prose prose-sm dark:prose-invert max-w-none max-h-96 overflow-y-auto"><ReactMarkdown>{syllabusResult}</ReactMarkdown></CardContent>
                 </Card>
               )}
             </CardContent>
