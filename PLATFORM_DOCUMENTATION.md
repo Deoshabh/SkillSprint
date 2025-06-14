@@ -46,6 +46,7 @@
 7.  [Key Components & UI Libraries](#7-key-components--ui-libraries)
 8.  [Limitations & Future Enhancements](#8-limitations--future-enhancements)
 9.  [Setup & Running (Development)](#9-setup--running-development)
+10. [Deployment (Firebase App Hosting)](#10-deployment-firebase-app-hosting)
 
 ---
 
@@ -373,6 +374,71 @@ As a prototype, SkillSprint has several limitations and areas for future develop
     *   Next.js app: `npm run dev` (typically on `http://localhost:9002`)
     *   Genkit development UI (optional, for testing flows): `npm run genkit:dev` (typically on `http://localhost:4000`)
 
+---
+
+## 10. Deployment (Firebase App Hosting)
+
+This project is structured for deployment to Firebase App Hosting, which supports Next.js applications with server-side functionalities like Genkit flows.
+
+### 10.1 Prerequisites
+
+*   **Firebase CLI:** Ensure you have the Firebase CLI installed and updated: `npm install -g firebase-tools`.
+*   **Firebase Project:** Create or select an existing Firebase project in the [Firebase Console](https://console.firebase.google.com/).
+*   **Login to Firebase:** Authenticate with Firebase: `firebase login`.
+*   **Initialize Firebase in your project (if not already done):** Run `firebase init` in your project root and select "App Hosting". Follow the prompts to connect to your Firebase project and set up a backend.
+
+### 10.2 Configuration
+
+1.  **Firebase App Hosting Backend (`apphosting.yaml`):**
+    *   This file is already present in your project root (`apphosting.yaml`). It contains basic configuration for the App Hosting backend, like `maxInstances`. You can adjust these settings as needed based on Firebase documentation.
+
+2.  **Environment Variables for Genkit:**
+    *   Your Genkit flows (e.g., for Gemini and YouTube API) require API keys. These should **NOT** be hardcoded or committed to your repository.
+    *   Set these as secrets in your Firebase App Hosting backend:
+        *   In the Firebase Console, navigate to your project -> App Hosting.
+        *   Select your backend.
+        *   Go to the "Settings" or "Environment variables" section.
+        *   Add your secrets, for example:
+            *   `GEMINI_API_KEY` = `YOUR_ACTUAL_GEMINI_API_KEY`
+            *   `YOUTUBE_API_KEY` = `YOUR_ACTUAL_YOUTUBE_API_KEY`
+    *   Your `src/ai/genkit.ts` and `src/ai/flows/fetch-youtube-playlist-items-flow.ts` files already use `process.env.GEMINI_API_KEY` and `process.env.YOUTUBE_API_KEY` respectively, which App Hosting will populate from the secrets you set.
+
+### 10.3 Build
+
+Before deploying, ensure your application builds successfully:
+```bash
+npm run build
+```
+This command creates an optimized production build of your Next.js application.
+
+### 10.4 Deployment Commands
+
+To deploy your application to Firebase App Hosting, use the Firebase CLI:
+
+1.  **Deploy specific backend (if you have multiple):**
+    If you know your App Hosting backend ID (e.g., `my-skillprint-app`), you can deploy it directly:
+    ```bash
+    firebase apphosting:backends:deploy YOUR_BACKEND_ID --project YOUR_FIREBASE_PROJECT_ID
+    ```
+    (Replace `YOUR_BACKEND_ID` and `YOUR_FIREBASE_PROJECT_ID` accordingly).
+
+2.  **General Deploy Command (Recommended):**
+    The simpler command will deploy all Firebase services configured in your `firebase.json` (which App Hosting setup should configure for you):
+    ```bash
+    firebase deploy --only apphosting
+    ```
+    If you only have one App Hosting backend, this usually works without specifying the backend ID.
+
+### 10.5 Post-Deployment
+
+1.  **Check Deployed URL:** After a successful deployment, the Firebase CLI will output the URL of your live application. You can also find this URL in the Firebase Console under App Hosting.
+2.  **Monitor Logs:** Use the Firebase Console to monitor logs for your App Hosting backend to troubleshoot any runtime issues.
+3.  **Manage Backend:** You can manage your deployed backend (scaling, environment variables, domains) through the Firebase Console.
+
+**Important Notes for Production:**
+*   **Data Persistence:** The current prototype uses `localStorage`. For a production deployment, you would need to migrate to a persistent database solution (e.g., Firestore, Cloud SQL) and update your data handling logic accordingly. This is a significant architectural change.
+*   **Security:** Implement robust server-side authentication and authorization for all sensitive operations, especially admin features. Client-side checks are not sufficient for production.
+*   **Genkit in Production:** Ensure your Genkit flows are optimized and handle errors gracefully. Consider Genkit's production best practices.
+
 This documentation provides a snapshot of the SkillSprint platform. It's a feature-rich prototype with a strong foundation for further development into a production-ready learning management system.
 
-    
