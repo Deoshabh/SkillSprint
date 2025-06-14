@@ -23,7 +23,6 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // If user is already logged in (e.g. navigated back after signup/login), redirect appropriately
     if (!authLoading && authUser?.profileSetupComplete) {
       router.replace('/dashboard');
     } else if (!authLoading && authUser && !authUser.profileSetupComplete) {
@@ -34,30 +33,32 @@ export default function SignupPage() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log('Signing up with:', name, email, password);
-    if (name && email && password) { 
-      // For signup, profileSetupComplete will always be false initially.
-      // The actual placeholderUserProfile.profileSetupComplete (which we set to false) will be used.
-      const newUserProfile = { 
-        ...placeholderUserProfile, // Includes points, badges, enrolledCourses defaults
-        name, 
-        email,
-        profileSetupComplete: false // New users always need to setup profile
-      };
-      login(newUserProfile); 
-      
-      toast({
-        title: "Signup Successful",
-        description: `Welcome, ${name}! Let's set up your profile.`,
-      });
-      router.push('/profile-setup'); // Always redirect to profile setup after signup
-    } else {
+    
+    if (!name.trim() || !email.trim() || !password.trim()) {
       toast({
         title: "Signup Failed",
-        description: "Please fill in all fields.",
+        description: "Please fill in all fields: Name, Email, and Password.",
         variant: "destructive",
       });
+      setIsSubmitting(false);
+      return;
     }
+    
+    console.log('Signing up with:', name, email, password);
+    
+    const newUserProfile = { 
+      ...placeholderUserProfile, 
+      name, 
+      email,
+      profileSetupComplete: false 
+    };
+    login(newUserProfile); 
+    
+    toast({
+      title: "Signup Successful",
+      description: `Welcome, ${name}! Let's set up your profile.`,
+    });
+    router.push('/profile-setup');
     setIsSubmitting(false);
   };
 
@@ -95,6 +96,7 @@ export default function SignupPage() {
                   required
                   className="pl-10"
                   disabled={isSubmitting}
+                  aria-describedby="name-error"
                 />
               </div>
             </div>
@@ -111,6 +113,7 @@ export default function SignupPage() {
                   required
                   className="pl-10"
                   disabled={isSubmitting}
+                  aria-describedby="email-error"
                 />
               </div>
             </div>
@@ -127,6 +130,7 @@ export default function SignupPage() {
                   required
                   className="pl-10"
                   disabled={isSubmitting}
+                  aria-describedby="password-error"
                 />
               </div>
             </div>

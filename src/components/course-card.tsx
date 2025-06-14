@@ -34,12 +34,12 @@ export function CourseCard({ course }: CourseCardProps) {
           <div className="relative h-48 w-full">
             <Image
               src={course.imageUrl}
-              alt={course.title}
+              alt={course.title || "Course image"}
               fill
               style={{ objectFit: 'cover' }}
               className="rounded-t-lg"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority={false} // Set to true for above-the-fold images if needed
+              priority={false} 
               data-ai-hint={course.dataAiHint || "education learning"}
             />
              <div className="absolute top-2 right-2">
@@ -52,7 +52,7 @@ export function CourseCard({ course }: CourseCardProps) {
       </CardHeader>
       <CardContent className="flex-grow p-6 space-y-3">
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          {IconComponent && <IconComponent className="h-5 w-5 text-primary" />}
+          {IconComponent && <IconComponent className="h-5 w-5 text-primary" aria-hidden="true" />}
           <span className="font-semibold">{course.instructor}</span>
         </div>
         <CardTitle className="text-xl font-headline line-clamp-2">{course.title}</CardTitle>
@@ -61,28 +61,28 @@ export function CourseCard({ course }: CourseCardProps) {
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground pt-2">
           {course.duration && (
             <div className="flex items-center">
-              <Clock className="h-3 w-3 mr-1" />
+              <Clock className="h-3 w-3 mr-1" aria-hidden="true" />
               <span>{course.duration}</span>
             </div>
           )}
           {course.enrollmentCount && (
             <div className="flex items-center">
-              <Users className="h-3 w-3 mr-1" />
+              <Users className="h-3 w-3 mr-1" aria-hidden="true" />
               <span>{course.enrollmentCount.toLocaleString()} learners</span>
             </div>
           )}
           {course.rating && (
             <div className="flex items-center">
-              <Star className="h-3 w-3 mr-1 text-yellow-400 fill-yellow-400" />
+              <Star className="h-3 w-3 mr-1 text-yellow-400 fill-yellow-400" aria-hidden="true" />
               <span>{course.rating}/5</span>
             </div>
           )}
         </div>
       </CardContent>
       <CardFooter className="p-6 border-t dark:border-border/50">
-        <Button asChild className="w-full" variant="default">
+        <Button asChild className="w-full" variant="default" aria-label={`View course: ${course.title}`}>
           <Link href={`/courses/${course.id}`}>
-            View Course <ArrowRight className="ml-2 h-4 w-4" />
+            View Course <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         </Button>
       </CardFooter>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { DrawingCanvas, type DrawingCanvasRef } from '@/components/drawing-canvas';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { SquarePen, FileText, Image as ImageIcon, PlusCircle, Save, Trash2, Edit2, Loader2, List, Eye } from 'lucide-react';
+import { SquarePen, FileText, Image as ImageIcon, PlusCircle, Save, Trash2, Edit2, Loader2, List, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { TextNote, Sketch } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,14 +21,12 @@ export default function NotesAndDrawPage() {
   const { user, updateUserProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  // Text Notes State
   const [textNotes, setTextNotes] = useState<TextNote[]>([]);
   const [currentNote, setCurrentNote] = useState<TextNote | null>(null);
   const [noteTitleInput, setNoteTitleInput] = useState('');
   const [noteBodyInput, setNoteBodyInput] = useState('');
   const [isEditingNote, setIsEditingNote] = useState(false);
 
-  // Sketches State
   const [sketches, setSketches] = useState<Sketch[]>([]);
   const [currentSketch, setCurrentSketch] = useState<Sketch | null>(null);
   const [sketchTitleInput, setSketchTitleInput] = useState('');
@@ -44,12 +42,11 @@ export default function NotesAndDrawPage() {
     }
   }, [user]);
 
-  // --- Text Note Handlers ---
   const handleNewNote = () => {
     setCurrentNote(null);
     setNoteTitleInput('');
     setNoteBodyInput('');
-    setIsEditingNote(true); // Open editor for new note
+    setIsEditingNote(true); 
   };
 
   const handleSelectNote = (note: TextNote) => {
@@ -66,11 +63,11 @@ export default function NotesAndDrawPage() {
     }
     const now = new Date().toISOString();
     let updatedNotes;
-    if (currentNote) { // Update existing note
+    if (currentNote) { 
       updatedNotes = textNotes.map(n =>
         n.id === currentNote.id ? { ...n, title: noteTitleInput, body: noteBodyInput, updatedAt: now } : n
       );
-    } else { // Create new note
+    } else { 
       const newNote: TextNote = {
         id: uuidv4(),
         title: noteTitleInput,
@@ -83,15 +80,13 @@ export default function NotesAndDrawPage() {
     setTextNotes(updatedNotes);
     updateUserProfile({ textNotes: updatedNotes });
     toast({ title: "Note Saved", description: `"${noteTitleInput}" has been saved.` });
-    if (!currentNote) { // If it was a new note, select it
-        const savedNewNote = updatedNotes.find(n => n.updatedAt === now); // A bit hacky to find it
+    if (!currentNote) { 
+        const savedNewNote = updatedNotes.find(n => n.updatedAt === now); 
         if (savedNewNote) handleSelectNote(savedNewNote);
     } else {
-        // refresh currentNote with updated timestamp
         const refreshedNote = updatedNotes.find(n => n.id === currentNote.id);
         if (refreshedNote) setCurrentNote(refreshedNote);
     }
-    // setIsEditingNote(false); // Optionally close editor after save
   };
 
   const handleDeleteNote = (noteId: string) => {
@@ -100,18 +95,17 @@ export default function NotesAndDrawPage() {
     updateUserProfile({ textNotes: updatedNotes });
     toast({ title: "Note Deleted", description: "The note has been deleted." });
     if (currentNote && currentNote.id === noteId) {
-      handleNewNote(); // Clear editor if deleted note was open
+      handleNewNote(); 
       setIsEditingNote(false);
     }
   };
 
-  // --- Sketch Handlers ---
   const handleNewSketch = () => {
     setCurrentSketch(null);
     setSketchTitleInput('');
     setIsEditingSketch(true);
     setIsCanvasVisible(true);
-    drawingCanvasRef.current?.clearAndLoadDataUrl(null); // Clear canvas
+    drawingCanvasRef.current?.clearAndLoadDataUrl(null); 
   };
 
   const handleSelectSketch = (sketch: Sketch) => {
@@ -134,11 +128,11 @@ export default function NotesAndDrawPage() {
     }
     const now = new Date().toISOString();
     let updatedSketches;
-    if (currentSketch) { // Update existing sketch
+    if (currentSketch) { 
       updatedSketches = sketches.map(s =>
         s.id === currentSketch.id ? { ...s, title: sketchTitleInput, dataUrl: canvasDataUrl, updatedAt: now } : s
       );
-    } else { // Create new sketch
+    } else { 
       const newSketch: Sketch = {
         id: uuidv4(),
         title: sketchTitleInput,
@@ -158,7 +152,6 @@ export default function NotesAndDrawPage() {
         const refreshedSketch = updatedSketches.find(s => s.id === currentSketch.id);
         if (refreshedSketch) setCurrentSketch(refreshedSketch);
     }
-    // setIsEditingSketch(false); // Optionally close editor after save
   };
 
   const handleDeleteSketch = (sketchId: string) => {
@@ -201,7 +194,7 @@ export default function NotesAndDrawPage() {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <SquarePen className="h-10 w-10 mr-3 text-primary" />
+          <SquarePen className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           My Notes & Sketches
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -210,15 +203,14 @@ export default function NotesAndDrawPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Text Notes Section */}
         <Card className="shadow-xl">
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="text-2xl flex items-center">
-                <FileText className="h-6 w-6 mr-2 text-primary" /> Text Notes
+                <FileText className="h-6 w-6 mr-2 text-primary" aria-hidden="true" /> Text Notes
               </CardTitle>
-              <Button onClick={handleNewNote} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" /> New Note
+              <Button onClick={handleNewNote} size="sm" aria-label="Create new note">
+                <PlusCircle className="mr-2 h-4 w-4" aria-hidden="true" /> New Note
               </Button>
             </div>
             <CardDescription>Create, view, edit, and delete your text notes.</CardDescription>
@@ -232,13 +224,13 @@ export default function NotesAndDrawPage() {
                   <Label htmlFor="noteBodyInput" className="font-semibold">Body</Label>
                   <Textarea id="noteBodyInput" value={noteBodyInput} onChange={(e) => setNoteBodyInput(e.target.value)} placeholder="Type your note..." rows={8} />
                   <div className="flex justify-between items-center">
-                     <Button onClick={handleSaveNote} size="sm"><Save className="mr-2 h-4 w-4" /> Save Note</Button>
+                     <Button onClick={handleSaveNote} size="sm" aria-label="Save current note"><Save className="mr-2 h-4 w-4" aria-hidden="true" /> Save Note</Button>
                      {currentNote && (
                         <p className="text-xs text-muted-foreground">
                             Last updated: {getRelativeTime(currentNote.updatedAt)}
                         </p>
                      )}
-                     <Button variant="outline" size="sm" onClick={() => setIsEditingNote(false)}>Close Editor</Button>
+                     <Button variant="outline" size="sm" onClick={() => setIsEditingNote(false)} aria-label="Close note editor">Close Editor</Button>
                   </div>
                 </div>
               </div>
@@ -248,21 +240,21 @@ export default function NotesAndDrawPage() {
             
             {textNotes.length > 0 && (
               <div className="mt-4">
-                <h4 className="font-semibold mb-2 text-md flex items-center"><List className="mr-2 h-5 w-5"/> My Notes ({textNotes.length})</h4>
+                <h4 className="font-semibold mb-2 text-md flex items-center"><List className="mr-2 h-5 w-5" aria-hidden="true" /> My Notes ({textNotes.length})</h4>
                 <ScrollArea className="h-60 border rounded-md p-2 bg-background">
                   {textNotes.sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map(note => (
                     <div key={note.id} className="mb-2 p-3 rounded-md hover:bg-muted/50 transition-colors border bg-card shadow-sm">
                       <div className="flex justify-between items-start">
-                        <div className="flex-grow cursor-pointer" onClick={() => handleSelectNote(note)}>
+                        <button className="flex-grow cursor-pointer text-left" onClick={() => handleSelectNote(note)} aria-label={`Select note ${note.title}`}>
                           <p className="font-medium text-sm truncate" title={note.title}>{note.title}</p>
                           <p className="text-xs text-muted-foreground line-clamp-1">{note.body || "No content"}</p>
                           <p className="text-xs text-muted-foreground mt-1">Updated: {getRelativeTime(note.updatedAt)}</p>
-                        </div>
+                        </button>
                         <div className="flex gap-1 flex-shrink-0 ml-2">
-                           <Button variant="ghost" size="icon-sm" onClick={() => handleSelectNote(note)} title="Edit Note"><Edit2 className="h-4 w-4" /></Button>
+                           <Button variant="ghost" size="icon-sm" onClick={() => handleSelectNote(note)} title="Edit Note" aria-label={`Edit note ${note.title}`}><Edit2 className="h-4 w-4" aria-hidden="true" /></Button>
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon-sm" title="Delete Note"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              <Button variant="ghost" size="icon-sm" title="Delete Note" aria-label={`Delete note ${note.title}`}><Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" /></Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader><AlertDialogTitle>Delete Note?</AlertDialogTitle><AlertDialogDescription>Are you sure you want to delete the note titled "{note.title}"? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
@@ -279,15 +271,14 @@ export default function NotesAndDrawPage() {
           </CardContent>
         </Card>
 
-        {/* Sketches Section */}
         <Card className="shadow-xl">
           <CardHeader>
              <div className="flex justify-between items-center">
                 <CardTitle className="text-2xl flex items-center">
-                    <ImageIcon className="h-6 w-6 mr-2 text-primary" /> Sketches
+                    <ImageIcon className="h-6 w-6 mr-2 text-primary" aria-hidden="true" /> Sketches
                 </CardTitle>
-                 <Button onClick={handleNewSketch} size="sm">
-                    <PlusCircle className="mr-2 h-4 w-4" /> New Sketch
+                 <Button onClick={handleNewSketch} size="sm" aria-label="Create new sketch">
+                    <PlusCircle className="mr-2 h-4 w-4" aria-hidden="true" /> New Sketch
                 </Button>
             </div>
             <CardDescription>Create, view, edit, and delete your sketches.</CardDescription>
@@ -299,8 +290,8 @@ export default function NotesAndDrawPage() {
                     <Label htmlFor="sketchTitleInput" className="font-semibold">Sketch Title</Label>
                     <Input id="sketchTitleInput" value={sketchTitleInput} onChange={(e) => setSketchTitleInput(e.target.value)} placeholder="Sketch title..." />
                     
-                    <Button variant="outline" onClick={() => setIsCanvasVisible(!isCanvasVisible)} className="w-full">
-                        {isCanvasVisible ? <Eye className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                    <Button variant="outline" onClick={() => setIsCanvasVisible(!isCanvasVisible)} className="w-full" aria-label={isCanvasVisible ? "Hide drawing canvas" : "Show drawing canvas"}>
+                        {isCanvasVisible ? <EyeOff className="mr-2 h-4 w-4" aria-hidden="true" /> : <Eye className="mr-2 h-4 w-4" aria-hidden="true" />}
                         {isCanvasVisible ? 'Hide Canvas' : 'Show Canvas'}
                     </Button>
                     
@@ -314,13 +305,13 @@ export default function NotesAndDrawPage() {
                         </div>
                     )}
                      <div className="flex justify-between items-center mt-2">
-                        <Button onClick={handleSaveSketch} size="sm"><Save className="mr-2 h-4 w-4" /> Save Sketch</Button>
+                        <Button onClick={handleSaveSketch} size="sm" aria-label="Save current sketch"><Save className="mr-2 h-4 w-4" aria-hidden="true" /> Save Sketch</Button>
                         {currentSketch && (
                             <p className="text-xs text-muted-foreground">
                                 Last updated: {getRelativeTime(currentSketch.updatedAt)}
                             </p>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => { setIsEditingSketch(false); setIsCanvasVisible(false); setCurrentSketch(null);}}>Close Editor</Button>
+                        <Button variant="outline" size="sm" onClick={() => { setIsEditingSketch(false); setIsCanvasVisible(false); setCurrentSketch(null);}} aria-label="Close sketch editor">Close Editor</Button>
                     </div>
                 </div>
               </div>
@@ -330,23 +321,23 @@ export default function NotesAndDrawPage() {
 
             {sketches.length > 0 && (
                  <div className="mt-4">
-                    <h4 className="font-semibold mb-2 text-md flex items-center"><List className="mr-2 h-5 w-5"/> My Sketches ({sketches.length})</h4>
+                    <h4 className="font-semibold mb-2 text-md flex items-center"><List className="mr-2 h-5 w-5" aria-hidden="true" /> My Sketches ({sketches.length})</h4>
                     <ScrollArea className="h-60 border rounded-md p-2 bg-background">
                     {sketches.sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map(sketch => (
                         <div key={sketch.id} className="mb-2 p-3 rounded-md hover:bg-muted/50 transition-colors border bg-card shadow-sm">
                         <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-3 flex-grow cursor-pointer" onClick={() => handleSelectSketch(sketch)}>
-                                <img src={sketch.dataUrl} alt={sketch.title} className="w-16 h-12 object-contain border rounded bg-white"/>
+                            <button className="flex items-center gap-3 flex-grow cursor-pointer text-left" onClick={() => handleSelectSketch(sketch)} aria-label={`Select sketch ${sketch.title}`}>
+                                <img src={sketch.dataUrl} alt={sketch.title || "Sketch preview"} className="w-16 h-12 object-contain border rounded bg-white" data-ai-hint="user sketch drawing"/>
                                 <div>
                                     <p className="font-medium text-sm truncate" title={sketch.title}>{sketch.title}</p>
                                     <p className="text-xs text-muted-foreground mt-1">Updated: {getRelativeTime(sketch.updatedAt)}</p>
                                 </div>
-                            </div>
+                            </button>
                             <div className="flex gap-1 flex-shrink-0 ml-2">
-                                <Button variant="ghost" size="icon-sm" onClick={() => handleSelectSketch(sketch)} title="Edit Sketch"><Edit2 className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon-sm" onClick={() => handleSelectSketch(sketch)} title="Edit Sketch" aria-label={`Edit sketch ${sketch.title}`}><Edit2 className="h-4 w-4" aria-hidden="true" /></Button>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon-sm" title="Delete Sketch"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    <Button variant="ghost" size="icon-sm" title="Delete Sketch" aria-label={`Delete sketch ${sketch.title}`}><Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" /></Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                     <AlertDialogHeader><AlertDialogTitle>Delete Sketch?</AlertDialogTitle><AlertDialogDescription>Are you sure you want to delete the sketch titled "{sketch.title}"? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>

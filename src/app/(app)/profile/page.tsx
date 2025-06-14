@@ -23,7 +23,6 @@ export default function UserProfilePage() {
   }
 
   if (!user) {
-    // This should ideally be handled by route protection, redirecting to login
     return (
       <Card>
         <CardHeader>
@@ -45,7 +44,7 @@ export default function UserProfilePage() {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
-          <UserCircle2 className="h-10 w-10 mr-3 text-primary" />
+          <UserCircle2 className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           My Profile
         </h1>
         <p className="text-xl text-muted-foreground">
@@ -57,18 +56,18 @@ export default function UserProfilePage() {
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20 border-2 border-primary">
-              <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint={user.dataAiHint || "profile person"} />
+              <AvatarImage src={user.avatarUrl} alt={`${user.name}'s avatar`} data-ai-hint={user.dataAiHint || "profile person"} />
               <AvatarFallback className="text-2xl">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
               <CardTitle className="text-3xl font-headline">{user.name}</CardTitle>
               <CardDescription className="flex items-center mt-1">
-                <Mail className="h-4 w-4 mr-2 text-muted-foreground" /> {user.email}
+                <Mail className="h-4 w-4 mr-2 text-muted-foreground" aria-hidden="true" /> {user.email}
               </CardDescription>
             </div>
           </div>
-          <Button variant="outline">
-            <Edit3 className="h-4 w-4 mr-2" /> Edit Profile
+          <Button variant="outline" aria-label="Edit profile">
+            <Edit3 className="h-4 w-4 mr-2" aria-hidden="true" /> Edit Profile
           </Button>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
@@ -76,7 +75,7 @@ export default function UserProfilePage() {
             <Card className="bg-background/50">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
-                  <Briefcase className="h-5 w-5 mr-2 text-primary" /> Role
+                  <Briefcase className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> Role
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -84,13 +83,16 @@ export default function UserProfilePage() {
                 {user.role === 'educator' && (
                   <Badge variant="secondary" className="mt-2">Educator Tools Enabled</Badge>
                 )}
+                 {user.role === 'admin' && (
+                  <Badge variant="default" className="mt-2">Administrator Access</Badge>
+                )}
               </CardContent>
             </Card>
 
             <Card className="bg-background/50">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
-                  <BookOpen className="h-5 w-5 mr-2 text-primary" /> Learning Tracks
+                  <BookOpen className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> Learning Tracks
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -111,7 +113,7 @@ export default function UserProfilePage() {
             <Card className="bg-background/50">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
-                  <Languages className="h-5 w-5 mr-2 text-primary" /> Preferred Language
+                  <Languages className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> Preferred Language
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -121,7 +123,7 @@ export default function UserProfilePage() {
             <Card className="bg-background/50">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
-                  <ShieldCheck className="h-5 w-5 mr-2 text-primary" /> Account Status
+                  <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> Account Status
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -138,7 +140,7 @@ export default function UserProfilePage() {
           <Card className="bg-background/50">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
-                <LayoutGrid className="h-5 w-5 mr-2 text-primary" /> My Created Courses
+                <LayoutGrid className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> My Created Courses
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -146,7 +148,7 @@ export default function UserProfilePage() {
                 <div className="flex flex-wrap gap-2">
                   {myCreatedCourses.map((course: Course) => (
                     <Badge key={course.id} variant="secondary" className="cursor-pointer hover:bg-primary/20">
-                       <Link href={`/courses/${course.id}`}>{course.title}</Link>
+                       <Link href={`/course-designer?courseId=${course.id}`}>{course.title}</Link>
                     </Badge>
                   ))}
                 </div>
@@ -155,7 +157,7 @@ export default function UserProfilePage() {
                   <p className="mb-3">You haven&apos;t created any courses yet.</p>
                   <Button variant="outline" asChild size="sm">
                     <Link href="/course-designer">
-                      <PlusCircle className="h-4 w-4 mr-2" /> Create Your First Course
+                      <PlusCircle className="h-4 w-4 mr-2" aria-hidden="true" /> Create Your First Course
                     </Link>
                   </Button>
                 </div>

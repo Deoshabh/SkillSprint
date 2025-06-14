@@ -16,36 +16,47 @@ import { useToast } from "@/hooks/use-toast";
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { user, login, loading: authLoading } = useAuth(); // Get user and authLoading
+  const { user, login, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // If user is already logged in and profile is complete, redirect to dashboard
     if (!authLoading && user?.profileSetupComplete) {
       router.replace('/dashboard');
     }
-    // If user is logged in but profile is NOT complete, redirect to profile setup
     else if (!authLoading && user && !user.profileSetupComplete) {
       router.replace('/profile-setup');
     }
-     // If no user and not loading, stay on login page.
   }, [user, authLoading, router]);
 
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    if (!email.trim() || !password.trim()) {
+       toast({
+        title: "Login Failed",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Simulate login logic
     console.log('Logging in with:', email, password);
 
-    if (email && password) {
-      // Simulate fetching full user data, including profileSetupComplete status
+    // In a real app, you'd validate credentials against a backend.
+    // For this prototype, we'll assume the entered email/password are "correct"
+    // if they are not empty, and proceed with the placeholder user.
+    // To simulate an "incorrect credential" scenario, we can add a dummy check.
+    if (email === placeholderUserProfile.email && password === "password123") { // Simulated "correct" credentials
       const potentialUser = { 
-        ...placeholderUserProfile, // Base placeholder
+        ...placeholderUserProfile,
         email: email, 
-        name: email.split('@')[0] || "User", // Simulate name based on email
-         // Crucially, use the profileSetupComplete from placeholder, which is false for first time
+        name: email.split('@')[0] || "User",
         profileSetupComplete: placeholderUserProfile.profileSetupComplete 
       };
 
@@ -64,14 +75,13 @@ export default function LoginPage() {
     } else {
        toast({
         title: "Login Failed",
-        description: "Please enter email and password.",
+        description: "Invalid email or password. Please try again.",
         variant: "destructive",
       });
     }
     setIsSubmitting(false);
   };
   
-  // If still loading auth state, or if user is loaded and being redirected, show loader
   if (authLoading || (user && (user.profileSetupComplete || !user.profileSetupComplete)) ) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -106,6 +116,7 @@ export default function LoginPage() {
                   required
                   className="pl-10"
                   disabled={isSubmitting}
+                  aria-describedby="email-error"
                 />
               </div>
             </div>
@@ -122,6 +133,7 @@ export default function LoginPage() {
                   required
                   className="pl-10"
                   disabled={isSubmitting}
+                  aria-describedby="password-error"
                 />
               </div>
             </div>

@@ -47,18 +47,18 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
           <div className="relative h-64 md:h-96 w-full rounded-xl overflow-hidden shadow-lg">
             <Image
               src={course.imageUrl}
-              alt={course.title}
+              alt={course.title || "Course cover image"}
               fill
               style={{ objectFit: 'cover' }}
               priority
-              data-ai-hint={course.dataAiHint || "learning online"}
+              data-ai-hint={course.dataAiHint || "learning online course"}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
           </div>
         )}
         <div className={course.imageUrl ? "absolute bottom-0 left-0 p-6 md:p-10 text-white" : "p-6 md:p-10 bg-card rounded-xl shadow-lg"}>
           <div className="flex items-center space-x-3 mb-2">
-            {IconComponent && <IconComponent className={cn("h-8 w-8", course.imageUrl ? "text-white" : "text-primary")} />}
+            {IconComponent && <IconComponent className={cn("h-8 w-8", course.imageUrl ? "text-white" : "text-primary")} aria-hidden="true" />}
             <span className={cn("text-sm font-medium", course.imageUrl ? "bg-black/50 px-2 py-1 rounded" : "")}>{course.category}</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-bold font-headline tracking-tight">{course.title}</h1>
@@ -77,7 +77,7 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
                     <span>Progress</span>
                     <span>{userProgress.completedModules.length} / {userProgress.totalModules} modules</span>
                   </div>
-                  <Progress value={progressPercentage} className="h-3" />
+                  <Progress value={progressPercentage} className="h-3" aria-label={`Course progress: ${progressPercentage.toFixed(0)}%`} />
                 </div>
               )}
             </CardHeader>
@@ -99,10 +99,9 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
               <CardTitle className="text-xl font-headline">What you'll learn</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {/* Placeholder for learning objectives */}
-              <p className="flex items-start"><CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" /> Master key concepts of {course.title.toLowerCase()}.</p>
-              <p className="flex items-start"><CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" /> Apply your knowledge to practical projects.</p>
-              <p className="flex items-start"><CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" /> Prepare for relevant industry certifications or roles.</p>
+              <p className="flex items-start"><CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" aria-hidden="true" /> Master key concepts of {course.title.toLowerCase()}.</p>
+              <p className="flex items-start"><CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" aria-hidden="true" /> Apply your knowledge to practical projects.</p>
+              <p className="flex items-start"><CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" aria-hidden="true" /> Prepare for relevant industry certifications or roles.</p>
             </CardContent>
           </Card>
         </div>
@@ -110,15 +109,15 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
         <div className="space-y-6">
           <Card className="shadow-lg">
             <CardContent className="p-6 space-y-4">
-               <Button size="lg" className="w-full text-lg">
+               <Button size="lg" className="w-full text-lg" aria-label={userProgress && userProgress.completedModules.length > 0 ? `Continue learning ${course.title}` : `Start course ${course.title}`}>
                 {userProgress && userProgress.completedModules.length > 0 ? 'Continue Learning' : 'Start Course'}
               </Button>
               <div className="flex space-x-2">
-                <Button variant="outline" className="flex-1">
-                  <Share2 className="h-4 w-4 mr-2" /> Share
+                <Button variant="outline" className="flex-1" aria-label="Share this course">
+                  <Share2 className="h-4 w-4 mr-2" aria-hidden="true" /> Share
                 </Button>
-                <Button variant="outline" className="flex-1">
-                  <Bookmark className="h-4 w-4 mr-2" /> Wishlist
+                <Button variant="outline" className="flex-1" aria-label="Add to wishlist">
+                  <Bookmark className="h-4 w-4 mr-2" aria-hidden="true" /> Wishlist
                 </Button>
               </div>
             </CardContent>
@@ -130,36 +129,35 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center">
-                <Users className="h-5 w-5 mr-3 text-muted-foreground" />
+                <Users className="h-5 w-5 mr-3 text-muted-foreground" aria-hidden="true" />
                 <span>Instructor: <strong>{course.instructor}</strong></span>
               </div>
               {course.duration && (
                 <div className="flex items-center">
-                  <Clock className="h-5 w-5 mr-3 text-muted-foreground" />
+                  <Clock className="h-5 w-5 mr-3 text-muted-foreground" aria-hidden="true" />
                   <span>Duration: {course.duration}</span>
                 </div>
               )}
               {course.rating && (
                 <div className="flex items-center">
-                  <Star className="h-5 w-5 mr-3 text-yellow-400 fill-yellow-400" />
+                  <Star className="h-5 w-5 mr-3 text-yellow-400 fill-yellow-400" aria-hidden="true" />
                   <span>Rating: {course.rating}/5 ({course.enrollmentCount?.toLocaleString()} ratings)</span>
                 </div>
               )}
                <div className="flex items-center">
-                  <Award className="h-5 w-5 mr-3 text-muted-foreground" />
+                  <Award className="h-5 w-5 mr-3 text-muted-foreground" aria-hidden="true" />
                   <span>Certificate of Completion</span>
                 </div>
             </CardContent>
           </Card>
 
-          {/* Placeholder for reviews or related courses */}
         </div>
       </div>
       
       <div className="mt-8">
         <Button variant="outline" asChild>
           <Link href="/courses">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
             Back to All Courses
           </Link>
         </Button>

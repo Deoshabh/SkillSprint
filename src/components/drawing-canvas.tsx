@@ -36,7 +36,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     },
     forwardedRef
   ) => {
-    const internalCanvasRef = useRef<HTMLCanvasElement>(null); // Ref for the actual <canvas> element
+    const internalCanvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [penColor, setPenColor] = useState(initialPenColor);
     const [penSize, setPenSize] = useState(initialPenSize);
@@ -209,9 +209,9 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         <div className="flex flex-wrap items-center gap-4 p-2 border rounded-md bg-muted">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Palette className="mr-2 h-4 w-4" /> Color
-                <Dot className="ml-1 h-6 w-6" style={{ color: penColor }}/>
+              <Button variant="outline" size="sm" aria-label="Select pen color">
+                <Palette className="mr-2 h-4 w-4" aria-hidden="true" /> Color
+                <Dot className="ml-1 h-6 w-6" style={{ color: penColor }} aria-hidden="true"/>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-2">
@@ -224,7 +224,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                     className="h-8 w-8"
                     style={{ backgroundColor: color }}
                     onClick={() => setPenColor(color)}
-                    aria-label={`Select color ${color}`}
+                    aria-label={`Select color ${color === '#FFFFFF' ? 'white' : color === '#000000' ? 'black' : color}`}
                   />
                 ))}
               </div>
@@ -232,9 +232,10 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           </Popover>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="penSize" className="text-sm">Size:</label>
+            <Label htmlFor="penSize" className="text-sm sr-only">Pen Size:</Label>
             <Slider
               id="penSize"
+              aria-label="Pen size"
               min={1}
               max={20}
               step={1}
@@ -242,23 +243,23 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               onValueChange={(value) => setPenSize(value[0])}
               className="w-32"
             />
-            <span className="text-xs w-6 text-center">{penSize}</span>
+            <span className="text-xs w-6 text-center" aria-live="polite">{penSize}px</span>
           </div>
           
           <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleUndo} disabled={historyStep <= 0}>
-              <Undo className="mr-2 h-4 w-4" /> Undo
+              <Button variant="outline" size="sm" onClick={handleUndo} disabled={historyStep <= 0} aria-label="Undo last stroke">
+              <Undo className="mr-2 h-4 w-4" aria-hidden="true" /> Undo
               </Button>
-              <Button variant="outline" size="sm" onClick={handleRedo} disabled={historyStep >= history.length - 1}>
-              <Redo className="mr-2 h-4 w-4" /> Redo
+              <Button variant="outline" size="sm" onClick={handleRedo} disabled={historyStep >= history.length - 1} aria-label="Redo last undone stroke">
+              <Redo className="mr-2 h-4 w-4" aria-hidden="true" /> Redo
               </Button>
-              <Button variant="destructive" size="sm" onClick={handleClearCanvas}>
-              <Trash2 className="mr-2 h-4 w-4" /> Clear
+              <Button variant="destructive" size="sm" onClick={handleClearCanvas} aria-label="Clear canvas">
+              <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" /> Clear
               </Button>
           </div>
         </div>
         <canvas
-          ref={internalCanvasRef} // Attach the internal ref here
+          ref={internalCanvasRef}
           width={width}
           height={height}
           onMouseDown={startDrawing}
@@ -270,6 +271,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           onTouchEnd={endDrawing}
           className="border rounded-md shadow-inner bg-card cursor-crosshair touch-none"
           style={{ width: `${width}px`, height: `${height}px` }} 
+          aria-label="Drawing canvas"
         />
       </div>
     );
@@ -278,8 +280,3 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 DrawingCanvas.displayName = "DrawingCanvas";
 
 export { DrawingCanvas };
-// For parent to call canvas methods - This interface should already be defined or ensure it matches.
-// export interface DrawingCanvasRef {
-//   toDataURL: (type?: string, quality?: any) => string | null;
-//   clearAndLoadDataUrl: (dataUrl: string | null) => void;
-// }

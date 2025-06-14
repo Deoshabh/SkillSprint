@@ -21,17 +21,17 @@ import Link from 'next/link';
 
 export function UserNav() {
   const { user, logout } = useAuth();
-  const profile = user || placeholderUserProfile; // Fallback to placeholder if no real user
+  const profile = user || placeholderUserProfile; 
 
   return (
     <div className="flex items-center gap-2">
       <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Open user menu">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={profile.avatarUrl} alt={profile.name} data-ai-hint={profile.dataAiHint || "profile person"} />
-              <AvatarFallback>{profile.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={profile.avatarUrl} alt={profile.name ? `${profile.name}'s avatar` : "User avatar"} data-ai-hint={profile.dataAiHint || "profile person"} />
+              <AvatarFallback>{profile.name ? profile.name.substring(0, 2).toUpperCase() : "NA"}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
@@ -50,24 +50,24 @@ export function UserNav() {
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
                   <Link href="/profile">
-                    <UserCircle2 className="mr-2 h-4 w-4" />
+                    <UserCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <CreditCard className="mr-2 h-4 w-4" />
+                <DropdownMenuItem disabled>
+                  <CreditCard className="mr-2 h-4 w-4" aria-hidden="true" />
                   <span>Billing</span>
                   <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
+                <DropdownMenuItem disabled>
+                  <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                   <span>Settings</span>
                   <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
                 <span>Log out</span>
                 <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
               </DropdownMenuItem>
@@ -76,13 +76,13 @@ export function UserNav() {
             <>
               <DropdownMenuItem asChild>
                 <Link href="/login">
-                  <LogIn className="mr-2 h-4 w-4" />
+                  <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
                   <span>Login</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/signup">
-                  <UserPlus className="mr-2 h-4 w-4" />
+                  <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
                   <span>Sign Up</span>
                 </Link>
               </DropdownMenuItem>

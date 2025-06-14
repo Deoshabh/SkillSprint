@@ -121,10 +121,6 @@ export function MediaPlayer({
       const currentSelectedVideo = allAvailableVideos.find(v => v.youtubeEmbedUrl === selectedVideoKey);
       
       if (currentSelectedVideo) {
-        // updateCurrentVideoDetails will be called if selectedVideoKey changes via handleVideoSelectionChange
-        // or if allAvailableVideos changes. If the selectedVideoKey is already set, we might not need to call it again
-        // unless its details (like isPlaylist status) could change from under it.
-        // For safety, let's ensure it's called if details might differ.
         if (currentVideoUrl !== currentSelectedVideo.youtubeEmbedUrl || currentVideoIsPlaylist !== !!currentSelectedVideo.isPlaylist) {
              updateCurrentVideoDetails(currentSelectedVideo);
         }
@@ -243,7 +239,7 @@ export function MediaPlayer({
         if (isAISearching && allAvailableVideos.length === 0) { 
             return (
               <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg aspect-video">
-                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" aria-label="Loading videos" />
                 <p className="text-muted-foreground">AI is searching for videos...</p>
               </div>
             );
@@ -251,12 +247,13 @@ export function MediaPlayer({
         if (allAvailableVideos.length === 0 ) {
           return (
             <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center aspect-video">
-              <Video className="h-16 w-16 text-muted-foreground mb-2" />
+              <Video className="h-16 w-16 text-muted-foreground mb-2" aria-hidden="true" />
               <p className="text-muted-foreground mb-4">No video available for this module yet.</p>
               {onSearchWithAI && (
-                <Button onClick={onSearchWithAI} disabled={isAISearching}>
-                  <Search className="h-4 w-4 mr-2" /> 
-                  {isAISearching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Search with AI'}
+                <Button onClick={onSearchWithAI} disabled={isAISearching} aria-label="Search for videos with AI">
+                  <Search className="h-4 w-4 mr-2" aria-hidden="true" /> 
+                  {isAISearching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" /> : null}
+                  {isAISearching ? 'Searching...' : 'Search with AI'}
                 </Button>
               )}
             </div>
@@ -278,7 +275,7 @@ export function MediaPlayer({
                 </div>
             ) : (
                  <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center aspect-video">
-                    <Video className="h-16 w-16 text-muted-foreground mb-2" />
+                    <Video className="h-16 w-16 text-muted-foreground mb-2" aria-hidden="true" />
                     <p className="text-muted-foreground">Video could not be loaded or none selected.</p>
                  </div>
             )}
@@ -287,7 +284,7 @@ export function MediaPlayer({
                 {allAvailableVideos.length > 0 && (
                 <div className="w-full sm:flex-grow">
                     <Select value={selectedVideoKey} onValueChange={handleVideoSelectionChange} disabled={allAvailableVideos.length === 0}>
-                    <SelectTrigger className="truncate">
+                    <SelectTrigger className="truncate" aria-label="Select video version">
                         <SelectValue placeholder="Select a video version" />
                     </SelectTrigger>
                     <SelectContent>
@@ -305,14 +302,14 @@ export function MediaPlayer({
                 </div>
                 )}
                 {onSearchWithAI && (
-                    <Button onClick={onSearchWithAI} variant="outline" className="w-full sm:w-auto flex-shrink-0" disabled={isAISearching}>
-                        {isAISearching && !currentVideoUrl ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                    <Button onClick={onSearchWithAI} variant="outline" className="w-full sm:w-auto flex-shrink-0" disabled={isAISearching} aria-label="Find more videos with AI">
+                        {isAISearching && !currentVideoUrl ? <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" /> : <Search className="h-4 w-4 mr-2" aria-hidden="true" />}
                         {isAISearching && !currentVideoUrl ? 'Searching...' : 'Find More Videos'}
                     </Button>
                 )}
                  {currentVideoIsUserAdded && onRemoveUserVideo && currentVideoIdForRemoval && (
-                    <Button onClick={handleRemoveCurrentVideo} variant="destructive" size="icon" className="flex-shrink-0" title="Remove this video from module">
-                        <Trash2 className="h-4 w-4" />
+                    <Button onClick={handleRemoveCurrentVideo} variant="destructive" size="icon" className="flex-shrink-0" title="Remove this video from module" aria-label="Remove this video from module">
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </Button>
                 )}
             </div>
@@ -321,19 +318,19 @@ export function MediaPlayer({
                 <AccordionItem value="playlist-items">
                    <AccordionTrigger className="text-sm py-2 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground/90 rounded-md px-3 border border-primary/30 hover:no-underline hover:bg-primary/20">
                     <div className="flex items-center">
-                      <ListChecks className="h-5 w-5 mr-2 flex-shrink-0" />
+                      <ListChecks className="h-5 w-5 mr-2 flex-shrink-0" aria-hidden="true" />
                       <span className="font-medium">Playlist Content ({fetchedPlaylistItems?.length || 0} videos)</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="p-3 text-xs text-muted-foreground border border-t-0 rounded-b-md bg-background max-h-[450px] overflow-y-auto">
                     {isLoadingPlaylistItems && (
                       <div className="flex items-center justify-center p-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" /> Loading playlist videos...
+                        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" aria-label="Loading playlist items" /> Loading playlist videos...
                       </div>
                     )}
                     {playlistItemsError && (
                       <div className="flex items-center text-destructive p-4">
-                        <AlertTriangle className="h-5 w-5 mr-2" /> Error: {playlistItemsError}
+                        <AlertTriangle className="h-5 w-5 mr-2" aria-hidden="true" /> Error: {playlistItemsError}
                       </div>
                     )}
                     {!isLoadingPlaylistItems && !playlistItemsError && fetchedPlaylistItems && fetchedPlaylistItems.length === 0 && (
@@ -354,7 +351,7 @@ export function MediaPlayer({
                             <div className="relative w-20 h-12 rounded overflow-hidden flex-shrink-0">
                                 <Image 
                                     src={item.thumbnailUrl || "https://placehold.co/120x90.png?text=No+Thumb"} 
-                                    alt={item.title} 
+                                    alt={item.title || "Video thumbnail"} 
                                     fill
                                     style={{objectFit: 'cover'}}
                                     sizes="(max-width: 768px) 80px, 80px"
@@ -373,10 +370,11 @@ export function MediaPlayer({
                                 size="sm" 
                                 onClick={() => setPlaylistCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={playlistCurrentPage === 1}
+                                aria-label="Previous page of playlist items"
                             >
-                                <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                                <ChevronLeft className="h-4 w-4 mr-1" aria-hidden="true" /> Previous
                             </Button>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground" aria-live="polite">
                                 Page {playlistCurrentPage} of {totalPlaylistPages}
                             </span>
                             <Button 
@@ -384,8 +382,9 @@ export function MediaPlayer({
                                 size="sm"
                                 onClick={() => setPlaylistCurrentPage(p => Math.min(totalPlaylistPages, p + 1))}
                                 disabled={playlistCurrentPage === totalPlaylistPages}
+                                aria-label="Next page of playlist items"
                             >
-                                Next <ChevronRight className="h-4 w-4 ml-1" />
+                                Next <ChevronRight className="h-4 w-4 ml-1" aria-hidden="true" />
                             </Button>
                         </div>
                     )}
@@ -409,7 +408,7 @@ export function MediaPlayer({
       case 'pdf':
         return (
            <div className="flex flex-col items-center justify-center h-96 bg-muted rounded-lg p-4">
-            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+            <FileText className="h-16 w-16 text-muted-foreground mb-4" aria-hidden="true" />
             <p className="text-muted-foreground text-center mb-2">PDF Viewer</p>
             {module.contentUrl ? (
                 <iframe src={module.contentUrl} className="w-full h-full border-none rounded-md" title={`PDF viewer for ${module.title}`} />
@@ -421,7 +420,7 @@ export function MediaPlayer({
       case 'quiz':
          return (
           <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
-            <FileText className="h-16 w-16 text-muted-foreground mb-2" />
+            <FileText className="h-16 w-16 text-muted-foreground mb-2" aria-hidden="true" />
             <p className="text-muted-foreground">Quiz content placeholder.</p>
             <p className="text-sm text-muted-foreground">Quiz: {module.title}</p>
           </div>
@@ -429,7 +428,7 @@ export function MediaPlayer({
       case 'assignment':
         return (
           <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
-            <FileText className="h-16 w-16 text-muted-foreground mb-2" />
+            <FileText className="h-16 w-16 text-muted-foreground mb-2" aria-hidden="true" />
             <p className="text-muted-foreground">Assignment placeholder.</p>
             <p className="text-sm text-muted-foreground">Assignment: {module.title}</p>
           </div>
@@ -437,7 +436,7 @@ export function MediaPlayer({
       default:
         return (
           <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
-            <AlertTriangle className="h-16 w-16 text-destructive mb-2" />
+            <AlertTriangle className="h-16 w-16 text-destructive mb-2" aria-hidden="true" />
             <p className="text-destructive-foreground">Unsupported content type.</p>
           </div>
         );

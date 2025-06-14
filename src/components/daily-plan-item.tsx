@@ -20,14 +20,20 @@ interface DailyPlanItemProps {
 }
 
 const iconMap: { [key: string]: LucideIcon } = {
-  Briefcase, // coursework
-  Clock,     // review
-  Coffee,    // break
-  Target,    // quiz
-  HelpCircle, // personal (default)
-  Users, // meeting
-  BookOpen, // generic study/coursework
-  CalendarDays, // generic planner item
+  Briefcase, 
+  coursework: Briefcase,
+  Clock,     
+  review: Clock,
+  Coffee,    
+  break: Coffee,
+  Target,    
+  quiz: Target,
+  HelpCircle, 
+  personal: HelpCircle,
+  Users, 
+  meeting: Users,
+  BookOpen, 
+  CalendarDays, 
 };
 
 export function DailyPlanItem({ task, onToggleCompletion, onEdit, onDelete }: DailyPlanItemProps) {
@@ -36,7 +42,7 @@ export function DailyPlanItem({ task, onToggleCompletion, onEdit, onDelete }: Da
 
   useEffect(() => {
     setIsClient(true);
-    setIsChecked(task.isCompleted); // Sync with prop changes
+    setIsChecked(task.isCompleted); 
   }, [task.isCompleted]);
 
   const handleCheckedChange = (checked: boolean | string) => {
@@ -63,6 +69,7 @@ export function DailyPlanItem({ task, onToggleCompletion, onEdit, onDelete }: Da
             onCheckedChange={handleCheckedChange}
             className="mt-1 flex-shrink-0"
             aria-labelledby={`task-label-${task.id}`}
+            aria-label={`Mark task ${task.title} as ${isChecked ? 'incomplete' : 'complete'}`}
           />
         )}
         <div className="flex-grow space-y-1">
@@ -70,10 +77,10 @@ export function DailyPlanItem({ task, onToggleCompletion, onEdit, onDelete }: Da
             {task.title}
           </Label>
           <p className={cn("text-sm text-muted-foreground flex items-center", isChecked && "line-through")}>
-            <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
+            <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
             {task.time} 
             <span className="mx-1.5 text-muted-foreground/50">·</span>
-            <TaskIconComponent className="h-4 w-4 mr-1.5 flex-shrink-0" />
+            <TaskIconComponent className="h-4 w-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
             <span className="capitalize">{task.type}</span>
           </p>
           {task.description && <p className={cn("text-xs text-muted-foreground", isChecked && "line-through")}>{task.description}</p>}
@@ -85,13 +92,13 @@ export function DailyPlanItem({ task, onToggleCompletion, onEdit, onDelete }: Da
           )}
         </div>
         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-           <Button variant="ghost" size="icon-sm" onClick={onEdit} title="Edit Task">
-             <Edit className="h-4 w-4" />
+           <Button variant="ghost" size="icon-sm" onClick={onEdit} title="Edit Task" aria-label={`Edit task ${task.title}`}>
+             <Edit className="h-4 w-4" aria-hidden="true" />
            </Button>
            <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon-sm" title="Delete Task">
-                <Trash2 className="h-4 w-4 text-destructive" />
+              <Button variant="ghost" size="icon-sm" title="Delete Task" aria-label={`Delete task ${task.title}`}>
+                <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -109,9 +116,9 @@ export function DailyPlanItem({ task, onToggleCompletion, onEdit, onDelete }: Da
           </AlertDialog>
         </div>
         {task.courseId && task.moduleId && !isChecked && (
-          <Button variant="ghost" size="sm" asChild className="flex-shrink-0 self-center ml-auto">
+          <Button variant="ghost" size="sm" asChild className="flex-shrink-0 self-center ml-auto" aria-label={`Go to module ${task.moduleTitle || task.title}`}>
             <Link href={`/courses/${task.courseId}/module/${task.moduleId}`}>
-              Go to Module <ArrowRight className="h-4 w-4 ml-1" />
+              Go to Module <ArrowRight className="h-4 w-4 ml-1" aria-hidden="true" />
             </Link>
           </Button>
         )}
