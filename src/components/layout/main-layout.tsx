@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
+import { FloatingChatbot } from '@/components/chatbot/floating-chatbot'; // Added chatbot import
 
 const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -103,6 +104,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           {children}
         </main>
+        {user && <FloatingChatbot />} {/* Added Chatbot here, conditionally rendered if user is logged in */}
       </SidebarInset>
     </SidebarProvider>
   );

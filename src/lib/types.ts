@@ -134,3 +134,16 @@ export interface PlaylistItemDetail {
   title: string;
   thumbnailUrl: string;
 }
+
+// Types for Chatbot
+export interface ChatMessagePart {
+  text: string;
+  // Later we could add other part types like 'media'
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  parts: ChatMessagePart[];
+  timestamp?: Date;
+  id?: string;
+}
