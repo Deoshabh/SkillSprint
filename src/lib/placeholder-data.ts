@@ -1,6 +1,7 @@
 
-import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink, UserModuleVideos, TextNote, Sketch } from './types';
+import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink, UserModuleVideos, TextNote, Sketch, DailyPlans } from './types';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
+import { format } from 'date-fns';
 
 // Helper function to create YouTube embed URL from various link formats
 const getEmbedUrl = (url: string): string => {
@@ -187,6 +188,22 @@ export let placeholderCourses: Course[] = [
   }
 ];
 
+const todayKey = format(new Date(), 'yyyy-MM-dd');
+const yesterdayKey = format(new Date(Date.now() - 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+
+const initialDailyPlans: DailyPlans = {
+  [todayKey]: [
+    { id: 'task1-today', title: 'HTML5 & CSS3 - Module 1', courseId: 'skillify-fsdd-01', moduleId: 'fsdd-mod1', courseTitle: 'Full-Stack, DSA & DevOps', moduleTitle: 'HTML5 & CSS3', time: '9:00 AM - 11:00 AM', isCompleted: false, type: 'coursework', icon: 'Briefcase' },
+    { id: 'task2-today', title: 'UI/UX Design with Figma', courseId: 'skillify-dait-01', moduleId: 'dai-mod1', courseTitle: 'Design & AI Tools', moduleTitle: 'UI/UX Design with Figma', time: '11:30 AM - 12:30 PM', isCompleted: false, type: 'review', icon: 'Clock' },
+    { id: 'task3-today', title: 'Team Meeting', description: 'Discuss project progress', time: '2:00 PM - 2:30 PM', isCompleted: false, type: 'meeting', icon: 'Users'},
+  ],
+  [yesterdayKey]: [
+    { id: 'task1-yesterday', title: 'Review CSS Flexbox Concepts', courseId: 'skillify-fsdd-01', moduleId: 'fsdd-mod2', courseTitle: 'Full-Stack, DSA & DevOps', moduleTitle: 'Advanced CSS', time: '10:00 AM - 11:00 AM', isCompleted: true, type: 'review', icon: 'Clock' },
+    { id: 'task2-yesterday', title: 'Read Chapter 3: English Grammar', courseTitle: 'English Communication', time: '3:00 PM - 4:00 PM', isCompleted: true, type: 'coursework', icon: 'BookOpen' },
+  ]
+};
+
+
 export const placeholderUserProfile: UserProfile = {
   id: 'user-alex-johnson-123',
   name: 'Alex Johnson',
@@ -213,15 +230,20 @@ export const placeholderUserProfile: UserProfile = {
       { id: 'usermod-1', langCode: 'en', langName: 'English', youtubeEmbedUrl: getEmbedUrl('https://www.youtube.com/watch?v=some_other_html_video'), title: 'Alex\'s HTML Deep Dive', isPlaylist: false, creator: 'Alex' }
     ]
   },
-  textNotes: [],
-  sketches: [],
+  textNotes: [
+    {id: uuidv4(), title: "Initial Idea", body: "This is a great idea for a new course on advanced AI!", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()},
+    {id: uuidv4(), title: "Project SkillSprint TODOs", body: "- Implement planner CRUD\n- Add more AI features", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()}
+  ],
+  sketches: [
+    {id: uuidv4(), title: "App Flow Diagram", dataUrl: "https://placehold.co/300x200.png?text=Flow+Diagram+Sketch", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()}
+  ],
+  dailyPlans: initialDailyPlans,
   profileSetupComplete: true,
 };
 
-export const placeholderDailyPlan: DailyTask[] = [
-  { id: 'task1', title: 'HTML5 & CSS3 - Module 1', courseId: 'skillify-fsdd-01', moduleId: 'fsdd-mod1', courseTitle: 'Full-Stack, DSA & DevOps', moduleTitle: 'HTML5 & CSS3', time: '9:00 AM - 11:00 AM', isCompleted: false, type: 'coursework', icon: 'Briefcase' },
-  { id: 'task2', title: 'UI/UX Design with Figma', courseId: 'skillify-dait-01', moduleId: 'dai-mod1', courseTitle: 'Design & AI Tools', moduleTitle: 'UI/UX Design with Figma', time: '11:30 AM - 12:30 PM', isCompleted: false, type: 'review', icon: 'Clock' },
-];
+// This is deprecated, use user.dailyPlans instead
+export const placeholderDailyPlan: DailyTask[] = initialDailyPlans[todayKey] || [];
+
 
 export const placeholderUserProgress: UserProgress[] = [
   { courseId: 'skillify-fsdd-01', completedModules: ['fsdd-mod1'], totalModules: fullStackDsaDevOpsModules.length, currentModuleId: 'fsdd-mod2' },
@@ -303,13 +325,11 @@ export const saveOrUpdateCourse = (courseData: Partial<Course> & { authorId: str
 
   if (existingCourseIndex > -1) {
     // Update existing course
-    if (placeholderCourses[existingCourseIndex].authorId !== courseData.authorId) {
-        // Allow admin (e.g. 'user-alex-johnson-123' which is current admin) to edit any course
-        const isAdmin = courseData.authorId === placeholderUserProfile.id && placeholderUserProfile.role === 'admin';
-        if (!isAdmin) {
-             console.error(`User ${courseData.authorId} is not authorized to update this course owned by ${placeholderCourses[existingCourseIndex].authorId}.`);
-             return null; 
-        }
+    // Admin (current placeholder user) can edit any course
+    const isAdminEditing = courseData.authorId === placeholderUserProfile.id && placeholderUserProfile.role === 'admin';
+    if (placeholderCourses[existingCourseIndex].authorId !== courseData.authorId && !isAdminEditing) {
+         console.error(`User ${courseData.authorId} is not authorized to update this course owned by ${placeholderCourses[existingCourseIndex].authorId}.`);
+         return null; 
     }
     placeholderCourses[existingCourseIndex] = {
       ...placeholderCourses[existingCourseIndex],

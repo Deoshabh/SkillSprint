@@ -62,9 +62,6 @@ export interface Module {
   isCompleted?: boolean; // For user progress tracking, not directly edited by admin here
   subtopics?: string[]; // Admin can edit this
   practiceTask?: string; // Admin can edit this
-  // New fields for AI suggestions within module context, if needed later
-  // aiSuggestedSubtopics?: string[];
-  // aiSuggestedPracticeTask?: string;
 }
 
 export interface UserProgress {
@@ -83,10 +80,15 @@ export interface DailyTask {
   moduleId?: string;
   courseTitle?: string;
   moduleTitle?: string;
-  time: string;
+  time: string; // Consider making this more structured if complex time logic is needed
   isCompleted: boolean;
-  type: 'coursework' | 'quiz' | 'review' | 'break';
+  type: 'coursework' | 'quiz' | 'review' | 'break' | 'meeting' | 'personal';
   icon?: string;
+  // Removed date from individual task, as it will be the key in the dailyPlans object
+}
+
+export interface DailyPlans {
+  [dateKey: string]: DailyTask[]; // dateKey will be 'yyyy-MM-dd'
 }
 
 export interface Badge {
@@ -121,6 +123,7 @@ export interface UserProfile {
   userModuleVideos?: UserModuleVideos;
   textNotes?: TextNote[];
   sketches?: Sketch[];
+  dailyPlans?: DailyPlans;
   profileSetupComplete?: boolean;
 }
 
