@@ -26,7 +26,7 @@ export interface Course {
   icon: string;
   imageUrl?: string;
   dataAiHint?: string;
-  modules: Module[]; // Modules are now part of the course
+  modules: Module[]; 
   duration?: string;
   rating?: number;
   enrollmentCount?: number;
@@ -35,6 +35,7 @@ export interface Course {
   status?: 'draft' | 'pending_review' | 'published' | 'rejected' | 'archived';
   submittedDate?: string;
   lastModified?: string;
+  suggestedSchedule?: string; // Added for AI-generated course schedule
 }
 
 export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment' | 'text';
@@ -55,13 +56,13 @@ export interface Module {
   title: string;
   description?: string;
   contentType: ModuleContentType;
-  contentUrl?: string; // For primary video or PDF link
-  videoLinks?: VideoLink[]; // Could still store AI suggested/alternative videos here
-  contentData?: string; // For markdown content
+  contentUrl?: string; 
+  videoLinks?: VideoLink[]; 
+  contentData?: string; 
   estimatedTime: string;
-  isCompleted?: boolean; // For user progress tracking, not directly edited by admin here
-  subtopics?: string[]; // Admin can edit this
-  practiceTask?: string; // Admin can edit this
+  isCompleted?: boolean; 
+  subtopics?: string[]; 
+  practiceTask?: string; 
 }
 
 export interface UserProgress {
@@ -80,15 +81,14 @@ export interface DailyTask {
   moduleId?: string;
   courseTitle?: string;
   moduleTitle?: string;
-  time: string; // Consider making this more structured if complex time logic is needed
+  time: string; 
   isCompleted: boolean;
   type: 'coursework' | 'quiz' | 'review' | 'break' | 'meeting' | 'personal';
   icon?: string;
-  // Removed date from individual task, as it will be the key in the dailyPlans object
 }
 
 export interface DailyPlans {
-  [dateKey: string]: DailyTask[]; // dateKey will be 'yyyy-MM-dd'
+  [dateKey: string]: DailyTask[]; 
 }
 
 export interface Badge {
@@ -153,3 +153,4 @@ export interface ChatMessage {
   timestamp?: Date;
   id?: string;
 }
+

@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Download, Wand2, PlusCircle, Save, Eye, LayoutGrid, Loader2, AlertTriangle, Youtube, ListPlus, Trash2, Edit, Send, CheckSquare, XCircle, Brain, VideoIcon, FileTextIcon, HelpCircleIcon, ChevronUp, ChevronDown } from 'lucide-react';
+import { Upload, Download, Wand2, PlusCircle, Save, Eye, LayoutGrid, Loader2, AlertTriangle, Youtube, ListPlus, Trash2, Edit, Send, CheckSquare, XCircle, Brain, VideoIcon, FileTextIcon, HelpCircleIcon, ChevronUp, ChevronDown, CalendarClock } from 'lucide-react';
 import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
 import { suggestYoutubeVideosForTopic, type SuggestYoutubeVideosForTopicInput } from '@/ai/flows/suggest-youtube-videos-for-topic-flow';
 import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { suggestModuleSubtopics, type SuggestModuleSubtopicsInput } from '@/ai/flows/suggest-module-subtopics-flow';
 import { suggestModulePracticeTask, type SuggestModulePracticeTaskInput } from '@/ai/flows/suggest-module-practice-task-flow';
+import { generateCourseSchedule, type GenerateCourseScheduleInput } from '@/ai/flows/generate-course-schedule-flow';
 
 import type { VideoLink, Course as CourseType, Module as ModuleType, ModuleContentType } from '@/lib/types';
 import { saveOrUpdateCourse, submitCourseForReview, getCourseById } from '@/lib/placeholder-data';
@@ -71,6 +72,9 @@ export default function MyCourseDesignerPage() {
   const [courseStatus, setCourseStatus] = useState<CourseType['status']>("draft");
   const [modules, setModules] = useState<ModuleType[]>([]);
   const [originalAuthorId, setOriginalAuthorId] = useState<string | null>(null);
+  const [suggestedSchedule, setSuggestedSchedule] = useState<string>('');
+  const [estimatedDurationWeeks, setEstimatedDurationWeeks] = useState<number>(12);
+
 
   // AI Syllabus State
   const [aiTopic, setAiTopic] = useState('');
@@ -99,6 +103,9 @@ export default function MyCourseDesignerPage() {
   const [modulePracticeTaskSuggestion, setModulePracticeTaskSuggestion] = useState<string>('');
   const [moduleVideoSuggestions, setModuleVideoSuggestions] = useState<VideoLink[]>([]);
 
+  const [loadingCourseSchedule, setLoadingCourseSchedule] = useState(false);
+  const [errorCourseSchedule, setErrorCourseSchedule] = useState<string | null>(null);
+
 
   const [isLoadingCourse, setIsLoadingCourse] = useState(false);
 
@@ -120,6 +127,9 @@ export default function MyCourseDesignerPage() {
     setEditingModule(null);
     setCurrentModuleForm(initialModuleState);
     setIsModuleEditorOpen(false);
+    setSuggestedSchedule('');
+    setEstimatedDurationWeeks(12);
+    setErrorCourseSchedule(null);
     router.replace('/course-designer', {scroll: false});
   }, [router]);
 
@@ -149,6 +159,10 @@ export default function MyCourseDesignerPage() {
         setCourseStatus(courseToEdit.status || 'draft');
         setModules(courseToEdit.modules || []);
         setOriginalAuthorId(courseToEdit.authorId || null);
+        setSuggestedSchedule(courseToEdit.suggestedSchedule || '');
+        // Basic logic to infer duration from schedule or modules if available. A dedicated field in Course model might be better.
+        setEstimatedDurationWeeks(courseToEdit.duration ? parseInt(courseToEdit.duration.split(" ")[0]) : (courseToEdit.modules?.length || 12));
+
         
         const existingCourseVideos = new Map<string, VideoLink>();
         (courseToEdit.modules || []).forEach(module => {
@@ -538,7 +552,9 @@ export default function MyCourseDesignerPage() {
       visibility: courseVisibility,
       status: courseStatus, 
       modules: modules, 
-      authorId: user.id, 
+      authorId: user.id,
+      suggestedSchedule: suggestedSchedule, // Save the schedule
+      duration: `${estimatedDurationWeeks} Weeks`, // Save duration if needed
     };
 
     const savedCourse = saveOrUpdateCourse(courseDataToSave);
@@ -573,6 +589,38 @@ export default function MyCourseDesignerPage() {
         toast({ title: "Course Submitted", description: "Your course has been submitted for admin review." });
     } else {
         toast({ title: "Submission Failed", description: "Could not submit the course. Ensure it is saved and public.", variant: "destructive" });
+    }
+  };
+
+   const handleGenerateCourseSchedule = async () => {
+    if (user?.role !== 'admin') {
+      toast({ title: "Permission Denied", description: "AI Schedule Generation is an admin feature.", variant: "destructive" });
+      return;
+    }
+    if (!courseTitle.trim() || modules.length === 0) {
+      toast({ title: "Error", description: "Course Title and at least one Module are required to generate a schedule.", variant: "destructive" });
+      return;
+    }
+    setLoadingCourseSchedule(true);
+    setErrorCourseSchedule(null);
+    try {
+      const moduleTitles = modules.map(m => m.title);
+      const input: GenerateCourseScheduleInput = {
+        courseTitle,
+        moduleTitles,
+        estimatedCourseDurationWeeks,
+        // studyHoursPerWeek could be another input if desired
+      };
+      const result = await generateCourseSchedule(input);
+      setSuggestedSchedule(result.scheduleText);
+      toast({ title: "AI Schedule Generated", description: "Review and save the suggested schedule." });
+    } catch (err) {
+      console.error("Error generating course schedule:", err);
+      const errorMsg = err instanceof Error ? err.message : "Schedule generation failed.";
+      setErrorCourseSchedule(errorMsg);
+      toast({ title: "AI Schedule Failed", description: errorMsg, variant: "destructive" });
+    } finally {
+      setLoadingCourseSchedule(false);
     }
   };
 
@@ -614,10 +662,11 @@ export default function MyCourseDesignerPage() {
       </header>
 
       <Tabs defaultValue="settings" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-6">
           <TabsTrigger value="settings">Course Settings</TabsTrigger>
           <TabsTrigger value="builder">Module Builder</TabsTrigger>
-          <TabsTrigger value="ai-tools">AI Tools & Video Pool</TabsTrigger>
+          <TabsTrigger value="schedule">Suggested Schedule (AI)</TabsTrigger>
+          <TabsTrigger value="ai-tools">Video Pool & AI</TabsTrigger>
           <TabsTrigger value="import-export">Import/Export</TabsTrigger>
         </TabsList>
 
@@ -767,7 +816,7 @@ export default function MyCourseDesignerPage() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-xs text-muted-foreground mt-1">Select a primary video from the Course Video Pool (manage in 'AI Tools & Video Pool' tab).</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Select a primary video from the Course Video Pool (manage in 'Video Pool & AI' tab).</p>
                                 </div>
                             )}
                             {currentModuleForm.contentType === 'text' && (
@@ -840,6 +889,72 @@ export default function MyCourseDesignerPage() {
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" disabled><Eye className="h-4 w-4 mr-2" /> Preview Course</Button>
                 <Button onClick={handleSaveCourse}><Save className="h-4 w-4 mr-2" /> Save Course & Modules</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="schedule">
+          <Card className="shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-2xl flex items-center"><CalendarClock className="h-6 w-6 mr-2 text-primary"/>Suggested Course Schedule (AI)</CardTitle>
+              <CardDescription>
+                Generate a suggested weekly learning plan for this course. Admins can use AI to help populate this.
+                This schedule is saved with the course and can be viewed by students.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {user?.role === 'admin' && (
+                <div className="p-4 border rounded-md bg-muted/30 space-y-4">
+                  <h4 className="font-medium">AI Schedule Generator (Admin Tool)</h4>
+                  <div className="space-y-2">
+                    <Label htmlFor="estimatedDurationWeeks">Estimated Course Duration (Weeks)</Label>
+                    <Input 
+                      id="estimatedDurationWeeks" 
+                      type="number" 
+                      value={estimatedDurationWeeks} 
+                      onChange={(e) => setEstimatedDurationWeeks(parseInt(e.target.value, 10) || 1)} 
+                      min="1" 
+                      max="52"
+                    />
+                  </div>
+                  <Button onClick={handleGenerateCourseSchedule} disabled={loadingCourseSchedule || modules.length === 0}>
+                    {loadingCourseSchedule ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                    Generate Schedule with AI
+                  </Button>
+                  {modules.length === 0 && <p className="text-xs text-destructive">Please add modules in the 'Module Builder' tab first.</p>}
+                  {errorCourseSchedule && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Error Generating Schedule</AlertTitle>
+                      <AlertDescription>{errorCourseSchedule}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="suggestedScheduleTextarea" className="text-lg font-medium">Course Schedule Text (Markdown supported)</Label>
+                <Textarea
+                  id="suggestedScheduleTextarea"
+                  value={suggestedSchedule}
+                  onChange={(e) => setSuggestedSchedule(e.target.value)}
+                  rows={15}
+                  placeholder="Manually enter or edit the AI-generated weekly schedule here..."
+                  className="font-mono text-sm"
+                />
+              </div>
+               <div className="pt-4">
+                <h4 className="text-lg font-medium mb-2">Schedule Preview:</h4>
+                {suggestedSchedule ? (
+                     <ScrollArea className="h-[400px] border rounded-md p-4 bg-background">
+                        <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none">{suggestedSchedule}</ReactMarkdown>
+                     </ScrollArea>
+                ) : (
+                    <p className="text-muted-foreground">No schedule defined yet. Generate one with AI or type directly above.</p>
+                )}
+              </div>
+              <div className="flex justify-end pt-4">
+                 <Button onClick={handleSaveCourse}><Save className="h-4 w-4 mr-2" /> Save Schedule with Course</Button>
               </div>
             </CardContent>
           </Card>

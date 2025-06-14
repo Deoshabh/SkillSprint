@@ -110,6 +110,7 @@ export let placeholderCourses: Course[] = [
     visibility: 'public',
     lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // Modified 3 days ago
     submittedDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    suggestedSchedule: "## Week 1-2: HTML, CSS Basics\n- Focus: Module 1, Module 2\n- Activities: Build static pages, practice selectors.",
   },
   {
     id: 'skillify-ec-01',
@@ -325,7 +326,6 @@ export const saveOrUpdateCourse = (courseData: Partial<Course> & { authorId: str
 
   if (existingCourseIndex > -1) {
     // Update existing course
-    // Admin (current placeholder user) can edit any course
     const isAdminEditing = courseData.authorId === placeholderUserProfile.id && placeholderUserProfile.role === 'admin';
     if (placeholderCourses[existingCourseIndex].authorId !== courseData.authorId && !isAdminEditing) {
          console.error(`User ${courseData.authorId} is not authorized to update this course owned by ${placeholderCourses[existingCourseIndex].authorId}.`);
@@ -355,6 +355,8 @@ export const saveOrUpdateCourse = (courseData: Partial<Course> & { authorId: str
       dataAiHint: courseData.dataAiHint || 'custom course',
       lastModified: new Date().toISOString(),
       submittedDate: courseData.status === 'pending_review' ? new Date().toISOString() : undefined,
+      suggestedSchedule: courseData.suggestedSchedule || '', // Ensure new field is handled
+      duration: courseData.duration, // Ensure duration is handled
     };
     placeholderCourses.push(newCourse);
     console.log("New course created:", newCourse.id);
