@@ -26,14 +26,14 @@ export interface Course {
   icon: string;
   imageUrl?: string;
   dataAiHint?: string;
-  modules: Module[];
+  modules: Module[]; // Modules are now part of the course
   duration?: string;
   rating?: number;
   enrollmentCount?: number;
   authorId?: string;
   visibility?: 'private' | 'shared' | 'public';
-  status?: 'draft' | 'pending_review' | 'published' | 'rejected' | 'archived'; // Added archived
-  submittedDate?: string; // For moderation queue
+  status?: 'draft' | 'pending_review' | 'published' | 'rejected' | 'archived';
+  submittedDate?: string;
   lastModified?: string;
 }
 
@@ -55,13 +55,16 @@ export interface Module {
   title: string;
   description?: string;
   contentType: ModuleContentType;
-  contentUrl?: string;
-  videoLinks?: VideoLink[];
-  contentData?: string;
+  contentUrl?: string; // For primary video or PDF link
+  videoLinks?: VideoLink[]; // Could still store AI suggested/alternative videos here
+  contentData?: string; // For markdown content
   estimatedTime: string;
-  isCompleted?: boolean;
-  subtopics?: string[];
-  practiceTask?: string;
+  isCompleted?: boolean; // For user progress tracking, not directly edited by admin here
+  subtopics?: string[]; // Admin can edit this
+  practiceTask?: string; // Admin can edit this
+  // New fields for AI suggestions within module context, if needed later
+  // aiSuggestedSubtopics?: string[];
+  // aiSuggestedPracticeTask?: string;
 }
 
 export interface UserProgress {
@@ -135,10 +138,8 @@ export interface PlaylistItemDetail {
   thumbnailUrl: string;
 }
 
-// Types for Chatbot
 export interface ChatMessagePart {
   text: string;
-  // Later we could add other part types like 'media'
 }
 
 export interface ChatMessage {
