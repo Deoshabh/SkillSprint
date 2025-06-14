@@ -17,6 +17,21 @@ export interface Sketch {
   updatedAt: string;
 }
 
+export interface FeedbackItem {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  type: 'general' | 'course' | 'bug' | 'feature_request';
+  courseId?: string;
+  courseTitle?: string;
+  subject: string;
+  message: string;
+  submittedAt: string;
+  status: 'new' | 'in_progress' | 'resolved' | 'archived';
+  adminNotes?: string;
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -35,7 +50,7 @@ export interface Course {
   status?: 'draft' | 'pending_review' | 'published' | 'rejected' | 'archived';
   submittedDate?: string;
   lastModified?: string;
-  suggestedSchedule?: string; // Added for AI-generated course schedule
+  suggestedSchedule?: string; 
 }
 
 export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment' | 'text';
@@ -125,6 +140,7 @@ export interface UserProfile {
   sketches?: Sketch[];
   dailyPlans?: DailyPlans;
   profileSetupComplete?: boolean;
+  submittedFeedback?: FeedbackItem[]; // Optional: track feedback submitted by user
 }
 
 export interface NavItem {
@@ -153,4 +169,3 @@ export interface ChatMessage {
   timestamp?: Date;
   id?: string;
 }
-

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wand2, Loader2, AlertTriangle, Youtube, Copy, Link as LinkIcon, ListChecks, ShieldCheck, Users, BarChartBig, SendHorizonal, Sparkles } from 'lucide-react'; 
+import { Wand2, Loader2, AlertTriangle, Youtube, Copy, Link as LinkIcon, ListChecks, ShieldCheck, Users, BarChartBig, SendHorizonal, Sparkles, Archive } from 'lucide-react'; 
 import { suggestYoutubeVideosForTopic, type SuggestYoutubeVideosForTopicInput, type SuggestYoutubeVideosForTopicOutput } from '@/ai/flows/suggest-youtube-videos-for-topic-flow';
 import type { VideoLink } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
@@ -234,11 +234,10 @@ export default function AIContentScoutPage() {
                 <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">View platform analytics and reports (Placeholder UI Implemented).</strong> <Link href="/admin/analytics" className="text-xs text-primary hover:underline ml-1">(View)</Link></li>
                 <li><strong className="text-foreground">Broadcast messaging to user segments (Placeholder UI Implemented).</strong> <Link href="/admin/messaging" className="text-xs text-primary hover:underline ml-1">(Compose)</Link></li>
+                <li><strong className="text-foreground">Manage User Feedback. (Implemented)</strong> <Link href="/admin/feedback-management" className="text-xs text-primary hover:underline ml-1">(Review Feedback)</Link></li>
             </ul>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    

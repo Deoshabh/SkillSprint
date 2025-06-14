@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Wand2, Loader2, AlertTriangle, Sparkles, ListChecks, ShieldCheck, Users, BarChartBig, SendHorizonal } from 'lucide-react';
+import { Wand2, Loader2, AlertTriangle, Sparkles, ListChecks, ShieldCheck, Users, BarChartBig, SendHorizonal, Archive } from 'lucide-react';
 import { autoGenerateCourseSyllabus, type AutoGenerateCourseSyllabusInput } from '@/ai/flows/auto-generate-course-syllabus';
 import type { Module as ModuleType } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
@@ -270,11 +270,10 @@ export default function AICourseGeneratorPage() {
                 <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">View platform analytics and reports (Placeholder UI Implemented).</strong> <Link href="/admin/analytics" className="text-xs text-primary hover:underline ml-1">(View)</Link></li>
                 <li><strong className="text-foreground">Broadcast messaging to user segments (Placeholder UI Implemented).</strong> <Link href="/admin/messaging" className="text-xs text-primary hover:underline ml-1">(Compose)</Link></li>
+                <li><strong className="text-foreground">Manage User Feedback. (Implemented)</strong> <Link href="/admin/feedback-management" className="text-xs text-primary hover:underline ml-1">(Review Feedback)</Link></li>
             </ul>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    

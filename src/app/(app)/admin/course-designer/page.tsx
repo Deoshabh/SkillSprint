@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCoursesForReview, getPublishedCourses, getRejectedCourses, updateCourseStatus, type Course } from '@/lib/placeholder-data';
 import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; 
-import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings, Users, Wand2, MessageSquareQuote, BarChartBig, SendHorizonal, Sparkles } from 'lucide-react'; 
+import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings, Users, Wand2, MessageSquareQuote, BarChartBig, SendHorizonal, Sparkles, Archive } from 'lucide-react'; 
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from 'date-fns';
@@ -261,11 +261,10 @@ export default function AdminCourseManagementPage() {
                 <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
                 <li><strong className="text-foreground">View platform analytics and reports (Placeholder UI Implemented).</strong> <Link href="/admin/analytics" className="text-xs text-primary hover:underline ml-1">(View)</Link></li>
                 <li><strong className="text-foreground">Broadcast messaging to user segments (Placeholder UI Implemented).</strong> <Link href="/admin/messaging" className="text-xs text-primary hover:underline ml-1">(Compose)</Link></li>
+                <li><strong className="text-foreground">Manage User Feedback. (Implemented)</strong> <Link href="/admin/feedback-management" className="text-xs text-primary hover:underline ml-1">(Review Feedback)</Link></li>
             </ul>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    

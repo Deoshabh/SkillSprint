@@ -16,7 +16,7 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users, BarChartBig, SendHorizonal, Sparkles } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users, BarChartBig, SendHorizonal, Sparkles, MessageSquarePlus, Archive } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { FloatingChatbot } from '@/components/chatbot/floating-chatbot'; 
@@ -33,6 +33,7 @@ const mainNavItems: NavItem[] = [
 
 const accountNavItems: NavItem[] = [
   { title: 'Profile', href: '/profile', icon: UserCircle2 },
+  { title: 'Submit Feedback', href: '/feedback', icon: MessageSquarePlus },
   // { title: 'Settings', href: '/settings', icon: Settings }, // Example for future
 ];
 
@@ -43,6 +44,7 @@ const adminNavItems: NavItem[] = [
    { title: 'User Management', href: '/admin/user-management', icon: Users },
    { title: 'Analytics', href: '/admin/analytics', icon: BarChartBig },
    { title: 'Messaging', href: '/admin/messaging', icon: SendHorizonal },
+   { title: 'Feedback Inbox', href: '/admin/feedback-management', icon: Archive },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -73,7 +75,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </>
             )}
 
-            {user && (user.role === 'educator' || user.role === 'admin') && ( 
+            {user && (user.role === 'admin') && ( 
               <>
                 <div className="my-2 px-4 group-data-[collapsible=icon]:px-2">
                   <hr className="border-sidebar-border group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-4/5" />
@@ -84,7 +86,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             )}
           </ScrollArea>
         </SidebarContent>
-        {/* Removed redundant Admin Panel button from footer as it's in the nav now */}
+        
       </Sidebar>
       <SidebarRail />
       <SidebarInset>
@@ -103,5 +105,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </SidebarProvider>
   );
 }
-
-    

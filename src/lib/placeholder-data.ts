@@ -1,5 +1,5 @@
 
-import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink, UserModuleVideos, TextNote, Sketch, DailyPlans } from './types';
+import type { Course, Module, DailyTask, Badge, UserProfile, UserProgress, VideoLink, UserModuleVideos, TextNote, Sketch, DailyPlans, FeedbackItem } from './types';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 import { format } from 'date-fns';
 
@@ -204,6 +204,48 @@ const initialDailyPlans: DailyPlans = {
   ]
 };
 
+export let placeholderFeedback: FeedbackItem[] = [
+    {
+        id: 'feedback-1',
+        userId: 'user-alex-johnson-123',
+        userName: 'Alex Johnson',
+        userEmail: 'alex.johnson@example.com',
+        type: 'bug',
+        subject: 'Video player glitches on mobile',
+        message: 'When I try to watch videos on my iPhone, the player sometimes freezes or the controls disappear. This happens mostly in the Advanced CSS module.',
+        courseId: 'skillify-fsdd-01',
+        courseTitle: 'Full-Stack, DSA & DevOps Mastery Program',
+        submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        status: 'new',
+    },
+    {
+        id: 'feedback-2',
+        userId: 'user-alex-johnson-123',
+        userName: 'Alex Johnson',
+        userEmail: 'alex.johnson@example.com',
+        type: 'feature_request',
+        subject: 'Offline download for course materials',
+        message: 'It would be great if we could download videos or PDF materials for offline viewing, especially when commuting.',
+        submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+        status: 'in_progress',
+        adminNotes: 'Assigned to dev team. Investigating feasibility for v2.',
+    },
+    {
+        id: 'feedback-3',
+        userId: 'user-alex-johnson-123', // Assuming another user for variety if a multi-user system was real
+        userName: 'Jamie Lee',
+        userEmail: 'jamie.lee@example.com',
+        type: 'course',
+        subject: 'More examples in English Communication course',
+        message: 'The English Communication course is good, but I would love more real-world examples for email writing.',
+        courseId: 'skillify-ec-01',
+        courseTitle: 'English Communication Excellence',
+        submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+        status: 'resolved',
+        adminNotes: 'Added 5 new email templates and examples to Module 3. User notified.',
+    },
+];
+
 
 export const placeholderUserProfile: UserProfile = {
   id: 'user-alex-johnson-123',
@@ -240,6 +282,7 @@ export const placeholderUserProfile: UserProfile = {
   ],
   dailyPlans: initialDailyPlans,
   profileSetupComplete: true,
+  submittedFeedback: [], // Initialize if not already there
 };
 
 // This is deprecated, use user.dailyPlans instead
@@ -355,14 +398,55 @@ export const saveOrUpdateCourse = (courseData: Partial<Course> & { authorId: str
       dataAiHint: courseData.dataAiHint || 'custom course',
       lastModified: new Date().toISOString(),
       submittedDate: courseData.status === 'pending_review' ? new Date().toISOString() : undefined,
-      suggestedSchedule: courseData.suggestedSchedule || '', // Ensure new field is handled
-      duration: courseData.duration, // Ensure duration is handled
+      suggestedSchedule: courseData.suggestedSchedule || '', 
+      duration: courseData.duration, 
     };
     placeholderCourses.push(newCourse);
     console.log("New course created:", newCourse.id);
     return newCourse;
   }
 };
+
+// --- Feedback System Functions ---
+export const submitFeedback = (
+  feedbackData: Omit<FeedbackItem, 'id' | 'submittedAt' | 'status' >
+): FeedbackItem => {
+  const newFeedback: FeedbackItem = {
+    ...feedbackData,
+    id: `feedback-${uuidv4()}`,
+    submittedAt: new Date().toISOString(),
+    status: 'new',
+  };
+  placeholderFeedback.unshift(newFeedback); // Add to the beginning for newest first
+  
+  // Optionally, update user's submittedFeedback list if user is available in this scope
+  // For now, this function just adds to the global list.
+  // If you call this from a component with user context, update user there.
+
+  return newFeedback;
+};
+
+export const getAllFeedback = (): FeedbackItem[] => {
+  // Sort by newest first
+  return [...placeholderFeedback].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+};
+
+export const updateFeedbackStatus = (
+  feedbackId: string, 
+  newStatus: FeedbackItem['status'], 
+  adminNotes?: string
+): boolean => {
+  const feedbackIndex = placeholderFeedback.findIndex(f => f.id === feedbackId);
+  if (feedbackIndex > -1) {
+    placeholderFeedback[feedbackIndex].status = newStatus;
+    if (adminNotes !== undefined) { // Allow clearing notes by passing empty string
+        placeholderFeedback[feedbackIndex].adminNotes = adminNotes;
+    }
+    return true;
+  }
+  return false;
+};
+
 
 // Initialize some videoLinks with unique IDs
 [...fullStackDsaDevOpsModules, ...englishCommModules, ...designAiModules, ...aptitudeModules].forEach(module => {
