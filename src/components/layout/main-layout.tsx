@@ -16,7 +16,7 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2 } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 
@@ -24,6 +24,7 @@ const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Courses', href: '/courses', icon: BookOpen },
   { title: 'Create Course', href: '/course-designer', icon: FilePlus2 },
+  { title: 'Notes & Draw', href: '/notes-and-draw', icon: SquarePen },
   { title: 'Daily Planner', href: '/planner', icon: CalendarDays },
   { title: 'Progress', href: '/progress', icon: BarChart3 },
   { title: 'Achievements', href: '/gamification', icon: Trophy },
