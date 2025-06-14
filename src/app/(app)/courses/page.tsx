@@ -22,12 +22,12 @@ export default function CoursesPage() {
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="relative flex-grow w-full md:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input placeholder="Search courses..." className="pl-10 w-full" />
+            <Input placeholder="Search courses..." className="pl-10 w-full" aria-label="Search courses" />
           </div>
           <div className="flex gap-4 w-full md:w-auto">
             <Select>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-full md:w-[180px]" aria-label="Filter by category">
+                <Filter className="h-4 w-4 mr-2" aria-hidden="true" />
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -40,8 +40,8 @@ export default function CoursesPage() {
               </SelectContent>
             </Select>
             <Select>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <ListRestart className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-full md:w-[180px]" aria-label="Sort by">
+                <ListRestart className="h-4 w-4 mr-2" aria-hidden="true" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -60,9 +60,11 @@ export default function CoursesPage() {
         ))}
       </div>
       
+      {/* Load More button removed as it's a placeholder for now 
       <div className="flex justify-center mt-8">
         <Button variant="outline" size="lg">Load More Courses</Button>
       </div>
+      */}
     </div>
   );
 }

@@ -40,8 +40,6 @@ export default function DashboardPage() {
   }
   
   if (!authUser) {
-     // This case should ideally be handled by route protection redirecting to /login
-     // For now, showing a message or a limited view.
      return (
        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)] text-center">
          <h1 className="text-2xl font-semibold mb-4">Welcome to SkillSprint!</h1>
@@ -60,7 +58,7 @@ export default function DashboardPage() {
         <Card className="bg-gradient-to-br from-primary via-accent to-primary/70 text-primary-foreground shadow-xl overflow-hidden">
           <CardHeader className="relative z-10">
             <div className="flex items-center space-x-3">
-              <Gem className="h-8 w-8" />
+              <Gem className="h-8 w-8" aria-hidden="true" />
               <CardTitle id="welcome-heading" className="text-3xl md:text-4xl font-headline">Welcome back, {user.name}!</CardTitle>
             </div>
             <CardDescription className="text-primary-foreground/90 text-lg mt-1">
@@ -71,11 +69,11 @@ export default function DashboardPage() {
             {currentCourse && (
                <div className="mt-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
                  <p className="text-sm font-medium text-primary-foreground/80">Continue Learning:</p>
-                 <Link href={`/courses/${currentCourse.id}/module/${currentCourseProgress?.currentModuleId || currentCourse.modules[0].id}`}>
+                 <Link href={`/courses/${currentCourse.id}/module/${currentCourseProgress?.currentModuleId || currentCourse.modules[0].id}`} aria-label={`Continue learning ${currentCourse.title}`}>
                   <h3 className="text-xl font-semibold hover:underline text-white">{currentCourse.title}</h3>
                  </Link>
                  <div className="mt-3 flex items-center space-x-3">
-                   <Progress value={overallProgress} className="w-full h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground rounded-full" />
+                   <Progress value={overallProgress} className="w-full h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground rounded-full" aria-label={`Progress for ${currentCourse.title}: ${overallProgress.toFixed(0)}%`} />
                    <span className="text-sm font-semibold text-white">{overallProgress.toFixed(0)}%</span>
                  </div>
                </div>
@@ -90,12 +88,12 @@ export default function DashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle id="daily-plan-heading" className="text-2xl font-headline flex items-center">
-                  <CalendarCheck className="h-6 w-6 mr-2 text-primary" /> Today&apos;s Sprint
+                  <CalendarCheck className="h-6 w-6 mr-2 text-primary" aria-hidden="true" /> Today&apos;s Sprint
                 </CardTitle>
                 <CardDescription>Your personalized plan for today.</CardDescription>
               </div>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/planner">View Full Plan <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                <Link href="/planner" aria-label="View full daily plan">View Full Plan <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></Link>
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -113,7 +111,7 @@ export default function DashboardPage() {
            <Card className="shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
             <CardHeader>
               <CardTitle id="gamification-heading" className="text-xl font-headline flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2 text-primary" /> My Badges
+                <CheckCircle className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> My Badges
               </CardTitle>
               <CardDescription>Your earned achievements.</CardDescription>
             </CardHeader>
@@ -126,7 +124,7 @@ export default function DashboardPage() {
             </CardContent>
             <CardContent className="pt-0">
                <Button variant="link" asChild className="p-0 h-auto text-sm">
-                <Link href="/gamification">View all badges <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                <Link href="/gamification" aria-label="View all badges">View all badges <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" /></Link>
               </Button>
             </CardContent>
           </Card>
@@ -137,7 +135,7 @@ export default function DashboardPage() {
         <Card className="shadow-lg transition-shadow hover:shadow-xl dark:hover:shadow-primary/20">
           <CardHeader>
              <CardTitle id="recommended-courses-heading" className="text-2xl font-headline flex items-center">
-                <BookMarked className="h-6 w-6 mr-2 text-primary" /> Explore Courses
+                <BookMarked className="h-6 w-6 mr-2 text-primary" aria-hidden="true" /> Explore Courses
               </CardTitle>
             <CardDescription>Discover new skills and knowledge.</CardDescription>
           </CardHeader>
@@ -148,8 +146,8 @@ export default function DashboardPage() {
           </CardContent>
            <CardContent className="text-center pt-4 pb-6">
              <Button variant="default" size="lg" asChild className="transform hover:scale-105 transition-transform duration-200">
-                <Link href="/courses">
-                  Browse All Courses <ArrowRight className="ml-2 h-4 w-4" />
+                <Link href="/courses" aria-label="Browse all courses">
+                  Browse All Courses <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>
            </CardContent>
