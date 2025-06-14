@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -16,6 +15,7 @@ import type { TextNote, Sketch } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function NotesAndDrawPage() {
   const { user, updateUserProfile, loading: authLoading } = useAuth();
@@ -185,7 +185,7 @@ export default function NotesAndDrawPage() {
   if (!user) {
     return (
       <div className="text-center py-10">
-        <p>Please log in to use the Notes & Sketchpad feature.</p>
+        <p>Please log in to use the Notes &amp; Sketchpad feature.</p>
       </div>
     );
   }
@@ -195,7 +195,7 @@ export default function NotesAndDrawPage() {
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
           <SquarePen className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
-          My Notes & Sketches
+          My Notes &amp; Sketches
         </h1>
         <p className="text-xl text-muted-foreground">
           Your personal space for ideas, drafts, and visual thoughts. Saved to your profile.
@@ -243,7 +243,10 @@ export default function NotesAndDrawPage() {
                 <h4 className="font-semibold mb-2 text-md flex items-center"><List className="mr-2 h-5 w-5" aria-hidden="true" /> My Notes ({textNotes.length})</h4>
                 <ScrollArea className="h-60 border rounded-md p-2 bg-background">
                   {textNotes.sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map(note => (
-                    <div key={note.id} className="mb-2 p-3 rounded-md hover:bg-muted/50 transition-colors border bg-card shadow-sm">
+                    <div key={note.id} className={cn(
+                        "mb-2 p-3 rounded-md hover:bg-muted/50 transition-colors border bg-card shadow-sm",
+                        currentNote?.id === note.id && "ring-2 ring-primary bg-primary/10"
+                        )}>
                       <div className="flex justify-between items-start">
                         <button className="flex-grow cursor-pointer text-left" onClick={() => handleSelectNote(note)} aria-label={`Select note ${note.title}`}>
                           <p className="font-medium text-sm truncate" title={note.title}>{note.title}</p>
@@ -324,7 +327,10 @@ export default function NotesAndDrawPage() {
                     <h4 className="font-semibold mb-2 text-md flex items-center"><List className="mr-2 h-5 w-5" aria-hidden="true" /> My Sketches ({sketches.length})</h4>
                     <ScrollArea className="h-60 border rounded-md p-2 bg-background">
                     {sketches.sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map(sketch => (
-                        <div key={sketch.id} className="mb-2 p-3 rounded-md hover:bg-muted/50 transition-colors border bg-card shadow-sm">
+                        <div key={sketch.id} className={cn(
+                            "mb-2 p-3 rounded-md hover:bg-muted/50 transition-colors border bg-card shadow-sm",
+                            currentSketch?.id === sketch.id && "ring-2 ring-primary bg-primary/10"
+                            )}>
                         <div className="flex justify-between items-start">
                             <button className="flex items-center gap-3 flex-grow cursor-pointer text-left" onClick={() => handleSelectSketch(sketch)} aria-label={`Select sketch ${sketch.title}`}>
                                 <img src={sketch.dataUrl} alt={sketch.title || "Sketch preview"} className="w-16 h-12 object-contain border rounded bg-white" data-ai-hint="user sketch drawing"/>

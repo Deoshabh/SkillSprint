@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type ChangeEvent, type FormEvent, useEffect, useCallback } from 'react';
@@ -31,6 +30,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger as AlertDialogTriggerPrimitive } from "@/components/ui/alert-dialog";
 
 
 interface ManualVideoFormState {
@@ -352,6 +352,7 @@ export default function MyCourseDesignerPage() {
     }
     setModules(updatedModules);
     setIsModuleEditorOpen(false);
+    setEditingModule(null); // Clear editing module after save
     toast({ title: "Module Saved", description: `Module "${currentModuleForm.title}" has been saved locally.` });
   };
 
@@ -608,7 +609,7 @@ export default function MyCourseDesignerPage() {
           <TabsTrigger value="settings">Course Settings</TabsTrigger>
           <TabsTrigger value="builder">Module Builder</TabsTrigger>
           <TabsTrigger value="schedule">Suggested Schedule (AI)</TabsTrigger>
-          <TabsTrigger value="ai-tools">Video Pool & AI</TabsTrigger>
+          <TabsTrigger value="ai-tools">Video Pool &amp; AI</TabsTrigger>
           <TabsTrigger value="import-export">Import/Export</TabsTrigger>
         </TabsList>
 
@@ -667,7 +668,7 @@ export default function MyCourseDesignerPage() {
                  </Badge>
               </div>
               <div className="flex justify-between items-center pt-4">
-                <Button onClick={handleSaveCourse}><Save className="h-4 w-4 mr-2" /> Save Course & Modules</Button>
+                <Button onClick={handleSaveCourse}><Save className="h-4 w-4 mr-2" /> Save Course &amp; Modules</Button>
                  {courseVisibility === 'public' && courseStatus === "draft" && currentCourseId && (
                     <Button variant="outline" onClick={handleSubmitForReview}><Send className="h-4 w-4 mr-2" /> Submit for Review</Button>
                  )}
@@ -693,24 +694,27 @@ export default function MyCourseDesignerPage() {
                  ) : (
                     <div className="space-y-3">
                         {modules.map((module, index) => (
-                            <Card key={module.id} className="bg-muted/30">
+                            <Card key={module.id} className={cn(
+                                "bg-muted/30 transition-all duration-200 ease-in-out hover:shadow-md",
+                                editingModule?.id === module.id && "ring-2 ring-primary shadow-lg"
+                                )}>
                                 <CardContent className="p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 flex-grow overflow-hidden">
                                         {renderModuleContentTypeIcon(module.contentType)}
-                                        <div>
-                                            <p className="font-semibold">{index + 1}. {module.title}</p>
-                                            <p className="text-xs text-muted-foreground">{module.description?.substring(0, 70) || 'No description'}...</p>
+                                        <div className="overflow-hidden">
+                                            <p className="font-semibold truncate" title={module.title}>{index + 1}. {module.title}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{module.description?.substring(0, 70) || 'No description'}...</p>
                                             <p className="text-xs text-muted-foreground">Type: {module.contentType} | Time: {module.estimatedTime}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" onClick={() => moveModule(index, 'up')} disabled={index === 0}><ChevronUp className="h-4 w-4"/></Button>
-                                        <Button variant="ghost" size="icon" onClick={() => moveModule(index, 'down')} disabled={index === modules.length - 1}><ChevronDown className="h-4 w-4"/></Button>
-                                        <Button variant="outline" size="sm" onClick={() => handleOpenModuleEditor(module)}><Edit className="mr-1 h-3 w-3"/>Edit</Button>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                        <Button variant="ghost" size="icon" onClick={() => moveModule(index, 'up')} disabled={index === 0} aria-label="Move module up"><ChevronUp className="h-4 w-4"/></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => moveModule(index, 'down')} disabled={index === modules.length - 1} aria-label="Move module down"><ChevronDown className="h-4 w-4"/></Button>
+                                        <Button variant="outline" size="sm" onClick={() => handleOpenModuleEditor(module)} aria-label={`Edit module ${module.title}`}><Edit className="mr-1 h-3 w-3"/>Edit</Button>
                                         <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" size="sm"><Trash2 className="mr-1 h-3 w-3"/>Delete</Button>
-                                            </AlertDialogTrigger>
+                                            <AlertDialogTriggerPrimitive asChild>
+                                                <Button variant="destructive" size="sm" aria-label={`Delete module ${module.title}`}><Trash2 className="mr-1 h-3 w-3"/>Delete</Button>
+                                            </AlertDialogTriggerPrimitive>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader><AlertDialogTitle>Delete Module?</AlertDialogTitle><AlertDialogDescription>Are you sure to delete "{module.title}"?</AlertDialogDescription></AlertDialogHeader>
                                                 <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteModule(module.id)}>Delete</AlertDialogAction></AlertDialogFooter>
@@ -722,7 +726,7 @@ export default function MyCourseDesignerPage() {
                         ))}
                     </div>
                  )}
-                 <Dialog open={isModuleEditorOpen} onOpenChange={setIsModuleEditorOpen}>
+                 <Dialog open={isModuleEditorOpen} onOpenChange={(isOpen) => { setIsModuleEditorOpen(isOpen); if (!isOpen) setEditingModule(null); }}>
                     <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
                       <ScrollArea className="max-h-[80vh] p-1">
                         <DialogHeader className="px-5 pt-5">
@@ -758,7 +762,7 @@ export default function MyCourseDesignerPage() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-xs text-muted-foreground mt-1">Select a primary video from the Course Video Pool (manage in 'Video Pool & AI' tab).</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Select a primary video from the Course Video Pool (manage in 'Video Pool &amp; AI' tab).</p>
                                 </div>
                             )}
                             {currentModuleForm.contentType === 'text' && (
@@ -830,7 +834,7 @@ export default function MyCourseDesignerPage() {
               <Separator className="my-6"/>
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" disabled><Eye className="h-4 w-4 mr-2" /> Preview Course</Button>
-                <Button onClick={handleSaveCourse}><Save className="h-4 w-4 mr-2" /> Save Course & Modules</Button>
+                <Button onClick={handleSaveCourse}><Save className="h-4 w-4 mr-2" /> Save Course &amp; Modules</Button>
               </div>
             </CardContent>
           </Card>
@@ -1001,5 +1005,3 @@ export default function MyCourseDesignerPage() {
     </div>
   );
 }
-
-    

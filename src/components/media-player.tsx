@@ -1,4 +1,3 @@
-
 "use client";
 import type { Module, VideoLink, PlaylistItemDetail } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -276,7 +275,7 @@ export function MediaPlayer({
                 </div>
             ) : (
                  <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg p-4 text-center aspect-video">
-                    <Video className="h-16 w-16 text-muted-foreground mb-2" aria-hidden="true" />
+                    <Video className="h-16 w-16 text-muted-foreground" aria-hidden="true" />
                     <p className="text-muted-foreground">Video could not be loaded or none selected.</p>
                  </div>
             )}
@@ -316,14 +315,18 @@ export function MediaPlayer({
             </div>
              {currentVideoIsPlaylist && (
               <Accordion type="single" collapsible className="w-full" defaultValue="playlist-items">
-                <AccordionItem value="playlist-items">
-                   <AccordionTrigger className="text-sm py-2 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground/90 rounded-md px-3 border border-primary/30 hover:no-underline hover:bg-primary/20">
+                <AccordionItem value="playlist-items" className="border border-primary/30 rounded-md">
+                   <AccordionTrigger className={cn(
+                       "text-sm py-3 px-4 rounded-t-md hover:no-underline",
+                       "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground/90 hover:bg-primary/20 dark:hover:bg-primary/30",
+                       !isLoadingPlaylistItems && !playlistItemsError && fetchedPlaylistItems && fetchedPlaylistItems.length > 0 && "rounded-b-md"
+                       )}>
                     <div className="flex items-center">
                       <ListChecks className="h-5 w-5 mr-2 flex-shrink-0" aria-hidden="true" />
                       <span className="font-medium">Playlist Content ({fetchedPlaylistItems?.length || 0} videos)</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-3 text-xs text-muted-foreground border border-t-0 rounded-b-md bg-background max-h-[450px] overflow-y-auto">
+                  <AccordionContent className="p-3 text-xs text-muted-foreground rounded-b-md bg-background max-h-[450px] overflow-y-auto">
                     {isLoadingPlaylistItems && (
                       <div className="flex items-center justify-center p-4">
                         <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" aria-label="Loading playlist items" /> Loading playlist videos...
@@ -347,6 +350,9 @@ export function MediaPlayer({
                               "flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors",
                               activeVideoIdFromPlaylist === item.videoId && "bg-muted font-semibold ring-2 ring-primary"
                             )}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePlaylistItemClick(item.videoId)}
                           >
                             <span className="text-xs w-6 text-center text-muted-foreground">{(playlistCurrentPage - 1) * PLAYLIST_ITEMS_PER_PAGE + index + 1}.</span>
                             <div className="relative w-20 h-12 rounded overflow-hidden flex-shrink-0">
@@ -464,6 +470,3 @@ export function MediaPlayer({
     </Card>
   );
 }
-
-
-      
