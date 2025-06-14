@@ -14,21 +14,23 @@ export interface Course {
   duration?: string;
   rating?: number;
   enrollmentCount?: number;
-  authorId?: string; 
+  authorId?: string;
   visibility?: 'private' | 'shared' | 'public';
-  status?: 'draft' | 'pending_review' | 'published' | 'rejected';
+  status?: 'draft' | 'pending_review' | 'published' | 'rejected' | 'archived'; // Added archived
+  submittedDate?: string; // For moderation queue
+  lastModified?: string;
 }
 
 export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment' | 'text';
 
 export interface VideoLink {
-  id?: string; 
-  langCode: string; 
-  langName: string; 
+  id?: string;
+  langCode: string;
+  langName: string;
   youtubeEmbedUrl: string;
   title: string;
-  creator?: string; 
-  notes?: string; 
+  creator?: string;
+  notes?: string;
   isPlaylist?: boolean;
 }
 
@@ -37,9 +39,9 @@ export interface Module {
   title: string;
   description?: string;
   contentType: ModuleContentType;
-  contentUrl?: string; 
-  videoLinks?: VideoLink[]; 
-  contentData?: string; 
+  contentUrl?: string;
+  videoLinks?: VideoLink[];
+  contentData?: string;
   estimatedTime: string;
   isCompleted?: boolean;
   subtopics?: string[];
@@ -81,21 +83,21 @@ export interface UserModuleVideos {
 }
 
 export interface UserProfile {
-  id: string; 
+  id: string;
   name: string;
   email: string;
   avatarUrl?: string;
-  dataAiHint?: string; 
+  dataAiHint?: string;
   points: number;
   earnedBadges: Badge[];
   enrolledCourses: string[];
   role?: 'learner' | 'educator' | 'admin';
   learningPreferences?: {
     tracks: string[];
-    language: string; 
+    language: string;
   };
-  customVideoLinks?: VideoLink[]; 
-  userModuleVideos?: UserModuleVideos; 
+  customVideoLinks?: VideoLink[];
+  userModuleVideos?: UserModuleVideos;
   profileSetupComplete?: boolean;
 }
 
@@ -114,4 +116,3 @@ export interface PlaylistItemDetail {
   title: string;
   thumbnailUrl: string;
 }
-
