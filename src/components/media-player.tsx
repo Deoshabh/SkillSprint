@@ -12,7 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 interface MediaPlayerProps {
   module: Module;
   aiFetchedVideos?: VideoLink[];
-  userSessionVideos?: VideoLink[]; // New prop for user-added session videos
+  userSessionVideos?: VideoLink[]; 
   onSearchWithAI?: () => void;
   isAISearching?: boolean;
   userPreferredLanguage?: string;
@@ -21,7 +21,7 @@ interface MediaPlayerProps {
 export function MediaPlayer({ 
   module, 
   aiFetchedVideos = [], 
-  userSessionVideos = [], // Initialize new prop
+  userSessionVideos = [], 
   onSearchWithAI, 
   isAISearching = false,
   userPreferredLanguage 
@@ -52,7 +52,7 @@ export function MediaPlayer({
       if (aiFetchedVideos) {
         videos = videos.concat(aiFetchedVideos.map(v => ({...v, title: v.title || "AI Suggested Video"})));
       }
-      if (userSessionVideos) { // Merge user-added session videos
+      if (userSessionVideos) { 
         videos = videos.concat(userSessionVideos.map(v => ({...v, title: v.title || "User Added Video" })));
       }
       
@@ -66,7 +66,7 @@ export function MediaPlayer({
       return Array.from(uniqueVideosMap.values());
     }
     return [];
-  }, [module, aiFetchedVideos, userSessionVideos]); // Add userSessionVideos to dependencies
+  }, [module, aiFetchedVideos, userSessionVideos]); 
 
   useEffect(() => {
     if (module.contentType === 'video' && allAvailableVideos.length > 0) {
@@ -87,10 +87,10 @@ export function MediaPlayer({
         if (!videoToSelect) {
           videoToSelect = allAvailableVideos.find(v => v.langCode === 'en' || v.langName.toLowerCase().includes('english'));
         }
-        if (!videoToSelect && module.contentUrl && module.contentUrl.includes('youtube.com/embed/')) { // Check module default if not specific lang match
+        if (!videoToSelect && module.contentUrl && module.contentUrl.includes('youtube.com/embed/')) { 
             videoToSelect = allAvailableVideos.find(v => v.langCode === 'module');
         }
-        if (!videoToSelect) { // Fallback to the very first video if no other match
+        if (!videoToSelect) { 
           videoToSelect = allAvailableVideos[0];
         }
         
@@ -177,14 +177,15 @@ export function MediaPlayer({
             {currentVideoIsPlaylist && (
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="playlist-info">
-                  <AccordionTrigger className="text-sm py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md px-3 border border-blue-200 dark:border-blue-700 hover:no-underline">
+                  <AccordionTrigger className="text-sm py-2 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground/90 rounded-md px-3 border border-primary/30 hover:no-underline hover:bg-primary/20">
                     <div className="flex items-center">
-                      <ListVideo className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span>This is a playlist. Use YouTube controls to navigate. (Detailed breakdown coming soon)</span>
+                      <ListVideo className="h-5 w-5 mr-2 flex-shrink-0" />
+                      <span className="font-medium">This is a YouTube Playlist: How to Navigate</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-3 text-xs text-muted-foreground border border-t-0 rounded-b-md">
-                    To view individual videos within this playlist, please use the navigation controls provided by the YouTube player (e.g., "Next", "Previous", or the playlist menu icon within the player). A feature to display a clickable list of all videos in this playlist directly here is planned for a future update.
+                  <AccordionContent className="p-3 text-xs text-muted-foreground border border-t-0 rounded-b-md bg-background">
+                    <p className="mb-1">You are currently viewing a YouTube playlist. To see all videos in this series and navigate between them, please use the controls available **within the YouTube player itself** (usually an icon showing a list or "1/X" videos).</p>
+                    <p>A feature to display a clickable list of all videos in this playlist directly on this page is planned for a future update. For now, rely on the YouTube player's interface for playlist navigation.</p>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
