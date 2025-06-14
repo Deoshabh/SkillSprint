@@ -7,3 +7,4 @@ import '@/ai/flows/auto-generate-quiz-mock-tests.ts';
 import '@/ai/flows/auto-generate-course-syllabus.ts';
 import '@/ai/flows/find-youtube-videos-flow.ts';
 import '@/ai/flows/suggest-youtube-videos-for-topic-flow.ts';
+import '@/ai/flows/fetch-youtube-playlist-items-flow.ts';

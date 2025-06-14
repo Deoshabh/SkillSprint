@@ -22,7 +22,7 @@ export interface Course {
 export type ModuleContentType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment' | 'text';
 
 export interface VideoLink {
-  id?: string; // Optional unique ID for user-added videos for easier removal
+  id?: string; 
   langCode: string; 
   langName: string; 
   youtubeEmbedUrl: string;
@@ -76,7 +76,6 @@ export interface Badge {
   color?: string;
 }
 
-// Key will be "courseId-moduleId"
 export interface UserModuleVideos {
   [moduleKey: string]: VideoLink[];
 }
@@ -95,8 +94,8 @@ export interface UserProfile {
     tracks: string[];
     language: string; 
   };
-  customVideoLinks?: VideoLink[]; // For Course Designer's "My Library"
-  userModuleVideos?: UserModuleVideos; // For user-added videos per module
+  customVideoLinks?: VideoLink[]; 
+  userModuleVideos?: UserModuleVideos; 
   profileSetupComplete?: boolean;
 }
 
@@ -108,5 +107,11 @@ export interface NavItem {
   disabled?: boolean;
   external?: boolean;
   children?: NavItem[];
+}
+
+export interface PlaylistItemDetail {
+  videoId: string;
+  title: string;
+  thumbnailUrl: string;
 }
 
