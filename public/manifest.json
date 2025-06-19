@@ -1,5 +1,5 @@
 {
-  "name": "SkillSprint - Accelerate Your Learning Journey",
+  "name": "SkillSprint",
   "short_name": "SkillSprint",
   "description": "Accelerate Your Learning Journey with personalized courses, AI-powered tools, and interactive features.",
   "start_url": "/",
@@ -63,11 +63,19 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["education", "productivity", "learning"],
+  "categories": [
+    "education",
+    "productivity",
+    "learning"
+  ],
   "lang": "en",
   "dir": "ltr",
   "prefer_related_applications": false,
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
@@ -80,21 +88,36 @@
       "short_name": "Dashboard",
       "description": "View your learning dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Courses",
       "short_name": "Courses",
       "description": "Browse available courses",
       "url": "/courses",
-      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Create Course",
       "short_name": "Create",
       "description": "Create a new course",
       "url": "/course-designer",
-      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ],
   "screenshots": [

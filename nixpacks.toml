@@ -1,0 +1,15 @@
+[variables]
+NIXPACKS_BUILD_CMD = "npm run build"
+NIXPACKS_START_CMD = "npm start"
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "npm-9_x"]
+
+[phases.install]
+cmd = "npm ci --only=production"
+
+[phases.build]
+cmd = "npm run build"
+
+[start]
+cmd = "npm start"
