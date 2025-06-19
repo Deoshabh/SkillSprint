@@ -14,8 +14,12 @@ export const contentType = 'image/svg+xml'
 export default function Icon() {
   return new Response(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-      <rect width="32" height="32" rx="6" fill="#3b82f6"/>
-      <text x="16" y="22" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">S</text>
+      <rect width="32" height="32" fill="#ffffff"/>
+      <g transform="translate(4,4) scale(0.75,0.75)">
+        <path d="M8 6L18 12L8 22L4 18L12 12L4 6L8 6Z" fill="#000000"/>
+        <path d="M18 6L22 6L22 18L18 22L18 12L18 6Z" fill="#000000"/>
+        <path d="M4 18L12 18L18 22L4 22L4 18Z" fill="#000000"/>
+      </g>
     </svg>`,
     {
       headers: {

@@ -6,53 +6,16 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
-  "orientation": "portrait-primary",
-  "scope": "/",
+  "orientation": "portrait-primary",  "scope": "/",
   "icons": [
     {
       "src": "/favicon.ico",
-      "sizes": "16x16 32x32",
+      "sizes": "16x16 32x32 48x48",
       "type": "image/x-icon"
     },
     {
       "src": "/logo.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
@@ -60,7 +23,19 @@
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": [
@@ -81,8 +56,7 @@
   },
   "edge_side_panel": {
     "preferred_width": 400
-  },
-  "shortcuts": [
+  },  "shortcuts": [
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
@@ -91,7 +65,7 @@
       "icons": [
         {
           "src": "/logo.png",
-          "sizes": "96x96"
+          "sizes": "192x192"
         }
       ]
     },
@@ -103,7 +77,7 @@
       "icons": [
         {
           "src": "/logo.png",
-          "sizes": "96x96"
+          "sizes": "192x192"
         }
       ]
     },
@@ -115,7 +89,7 @@
       "icons": [
         {
           "src": "/logo.png",
-          "sizes": "96x96"
+          "sizes": "192x192"
         }
       ]
     }
