@@ -7,6 +7,9 @@ import { withApiHandler, createApiResponse, RequestContext } from '@/lib/api-uti
 import { changePasswordSchema } from '@/lib/validation-utils';
 import { rateLimitByUser } from '@/lib/security-utils';
 
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 export const POST = withApiHandler(async (context: RequestContext) => {
   const { request, user } = context;
   

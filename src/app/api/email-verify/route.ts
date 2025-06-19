@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initiateEmailVerification, completeEmailVerification } from '@/lib/password-reset';
 import { addSecurityHeaders } from '@/lib/auth-utils';
 
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/email-verify
  * Resend email verification

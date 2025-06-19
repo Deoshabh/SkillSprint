@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initiatePasswordReset, validateResetToken, completePasswordReset } from '@/lib/password-reset';
 import { addSecurityHeaders } from '@/lib/auth-utils';
 
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/password-reset
  * Initiate password reset by sending email with reset link

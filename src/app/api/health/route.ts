@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check database connectivity
+    let dbStatus = 'ok';
+    try {
+      const { conn } = await connectToDatabase();
+      if (!conn) {
+        dbStatus = 'unavailable';
+      }
+    } catch (error) {
+      dbStatus = 'error';
+    }
+
     const healthCheck = {
       timestamp: new Date().toISOString(),
-      status: 'healthy',
+      status: dbStatus === 'ok' ? 'healthy' : 'degraded',
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
+      runtime: process.env.RUNTIME || 'false',
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       checks: {
-        database: 'ok', // Add actual DB health check if needed
-        redis: 'ok',     // Add actual Redis health check if needed
+        database: dbStatus,
         api: 'ok'
       }
     };
 
-    return NextResponse.json(healthCheck, { status: 200 });
+    const responseStatus = dbStatus === 'ok' ? 200 : 503;
+    return NextResponse.json(healthCheck, { status: responseStatus });
   } catch (error) {
     return NextResponse.json(
       { 

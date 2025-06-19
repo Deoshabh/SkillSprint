@@ -5,6 +5,9 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Course } from '@/lib/mongodb';
 import jwt from 'jsonwebtoken';
 
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 // Import modes
 type ImportMode = 'create' | 'update' | 'createOrUpdate';
 

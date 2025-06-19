@@ -30,6 +30,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV RUNTIME=true
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs

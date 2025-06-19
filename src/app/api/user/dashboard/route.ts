@@ -3,6 +3,9 @@ import { connectToDatabase, User, Course } from '@/lib/mongodb';
 import { withApiHandler, createApiResponse, RequestContext } from '@/lib/api-utils';
 import { rateLimitByUser } from '@/lib/security-utils';
 
+// Mark this route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 export const GET = withApiHandler(async (context: RequestContext) => {
   const { user } = context;
   

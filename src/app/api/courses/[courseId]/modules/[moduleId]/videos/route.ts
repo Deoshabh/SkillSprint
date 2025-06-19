@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth-config';
 import { VideoService } from '@/lib/video-service';
 import { connectToDatabase, User } from '@/lib/mongodb';
 
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { courseId: string; moduleId: string } }

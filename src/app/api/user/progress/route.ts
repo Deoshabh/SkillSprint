@@ -8,6 +8,9 @@ import {
 } from '@/lib/api-utils';
 import { z } from 'zod';
 
+// Mark this route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 // Progress update schema
 const progressUpdateSchema = z.object({
   completedModules: z.record(z.array(z.string())).optional(),

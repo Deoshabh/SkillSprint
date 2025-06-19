@@ -4,6 +4,9 @@ import { validateRequest } from '@/lib/auth-utils';
 import { profileUpdateSchema } from '@/lib/validation-utils';
 import { createApiResponse } from '@/lib/api-utils';
 
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: NextRequest) {
   try {
     // Validate authentication

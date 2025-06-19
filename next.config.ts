@@ -139,8 +139,7 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  
-  // PWA support and optimizations
+    // PWA support and optimizations
   experimental: {
     webpackBuildWorker: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
@@ -149,6 +148,14 @@ const nextConfig: NextConfig = {
       dynamic: 0, // No cache for dynamic routes
       static: 300, // 5 minutes for static routes
     },
+  },
+
+  // Skip build-time static analysis for API routes that require runtime environment
+  staticPageGenerationTimeout: 60,
+  
+  // Environment configuration
+  env: {
+    SKIP_BUILD_STATIC_GENERATION: process.env.NODE_ENV === 'production' ? 'true' : 'false'
   },
 };
 

@@ -2,9 +2,16 @@ import mongoose from 'mongoose';
 
 import type { UserProfile } from './types';
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
+// During build time, MONGODB_URI might not be available
+// This is okay because we're just building the app, not running it
+// We only throw an error during actual runtime, not during build
+const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.RUNTIME;
+
+if (!MONGODB_URI && !isBuildTime) {
+  console.warn('MONGODB_URI is not defined. Database operations will fail at runtime.');
+} else if (!MONGODB_URI && process.env.RUNTIME === 'true') {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
 
@@ -15,6 +22,20 @@ if (!cached) {
 }
 
 export async function connectToDatabase() {
+  // During build time, just return a mock connection to prevent build failures
+  if (!MONGODB_URI && !process.env.RUNTIME) {
+    console.warn('[MongoDB] Build time: returning mock connection');
+    return { 
+      conn: null, 
+      db: null 
+    };
+  }
+
+  // Check if MONGODB_URI is available at runtime
+  if (!MONGODB_URI) {
+    throw new Error('Please define the MONGODB_URI environment variable');
+  }
+
   if (cached.conn) {
     // Ensure the connection and db are both available
     if (cached.conn.connection && cached.conn.connection.db) {

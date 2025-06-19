@@ -4,6 +4,9 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { validateFileUpload } from '@/lib/import-utils';
 
+// Mark this route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 // Document model interface
 interface Document {
   _id?: string;

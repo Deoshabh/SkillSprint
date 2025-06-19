@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 
-
 import { connectToDatabase, Feedback } from '@/lib/mongodb';
 import { 
   withApiHandler, 
@@ -12,6 +11,9 @@ import {
 } from '@/lib/api-utils';
 import { auditLog } from '@/lib/auth-utils';
 import { z } from 'zod';
+
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
 
 // Enhanced feedback schema
 const feedbackSchema = z.object({

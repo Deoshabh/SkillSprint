@@ -5,6 +5,9 @@ import { authOptions } from '@/lib/auth-config';
 import { VideoService } from '@/lib/video-service';
 import { connectToDatabase, User } from '@/lib/mongodb';
 
+// Force dynamic rendering to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 // Temporary fallback function for AI video search
 const findYoutubeVideosForModule = async (input: {
   moduleTitle: string;

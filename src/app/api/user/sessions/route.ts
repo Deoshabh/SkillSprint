@@ -6,6 +6,9 @@ import { withApiHandler, createApiResponse, RequestContext } from '@/lib/api-uti
 import { sessionValidationSchema } from '@/lib/validation-utils';
 import { rateLimitByUser } from '@/lib/security-utils';
 
+// Mark this route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 // Mock session data - in a real app, this would come from a session store (Redis, database, etc.)
 const mockSessions = [
   {
