@@ -1,0 +1,58 @@
+/* Simple and robust collapsible panel styles */
+
+/* Basic styles for both states */
+.video-list-panel {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* Collapsed state */
+.video-list-panel.collapsed .video-sections {
+  height: 0;
+  overflow: hidden;
+  margin-top: 0;
+  padding-top: 0;
+  opacity: 0;
+}
+
+/* Search area is always visible */
+.search-area {
+  padding-bottom: 12px;
+  background-color: rgba(0,0,200,0.03); /* Add a slight background to verify changes */
+}
+
+/* Improve spacing in collapsed mode */
+.video-list-panel.collapsed .search-area {
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Dark mode support */
+.dark .video-list-panel.collapsed .search-area {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Spacing between search and video sections */
+.video-sections {
+  margin-top: 16px;
+  transition: all 0.3s ease;
+  height: auto;
+  opacity: 1;
+}
+
+/* Toggle button styling */
+.collapse-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.collapse-toggle:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.dark .collapse-toggle:hover {
+  background-color: rgba(255,255,255,0.05);
+}

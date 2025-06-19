@@ -1,0 +1,14 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /email-verify/
+Disallow: /password-reset/
+Disallow: /test/
+
+# Host
+Host: http://localhost:9002
+
+# Sitemaps
+Sitemap: http://localhost:9002/sitemap.xml

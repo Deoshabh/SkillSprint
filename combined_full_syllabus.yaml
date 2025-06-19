@@ -1,0 +1,441 @@
+Overview:
+- Course: Full-Stack & DSA & DevOps
+  Duration (Weeks): 24
+  Modules: 24
+- Course: English Communication
+  Duration (Weeks): 12
+  Modules: 12
+- Course: Design & AI Tools
+  Duration (Weeks): 15
+  Modules: 15
+- Course: Aptitude Prep
+  Duration (Weeks): 8
+  Modules: 8
+Full-Stack & DSA:
+- Week: 1
+  Tech Topic: HTML5 & CSS3
+  Subtopics: HTML structure, CSS selectors, box model
+  Hinglish Resource Link: https://www.youtube.com/playlist?list=PLu0W_9lII9agiCUZYRsvtGTXdxkzPyItg
+  English Resource Link: https://www.youtube.com/watch?v=UB1O30fR-EE
+  Practice Task: Build a responsive portfolio homepage
+- Week: 2
+  Tech Topic: Advanced CSS (Flexbox & Grid)
+  Subtopics: Flexbox properties, Grid layout, responsive media queries
+  Hinglish Resource Link: https://www.youtube.com/watch?v=RGOj5yH7evk
+  English Resource Link: https://www.youtube.com/watch?v=EFafSYg-PkI
+  Practice Task: Clone a blog layout using Flexbox & Grid
+- Week: 3
+  Tech Topic: JavaScript Basics (ES6)
+  Subtopics: Variables, functions, arrays, ES6 syntax
+  Hinglish Resource Link: https://www.youtube.com/playlist?list=PLu0W_9lII9agyB6rvIBaAmKX6cFpvLRSU
+  English Resource Link: https://www.youtube.com/watch?v=upDLs1sn7g4
+  Practice Task: Create a JS to-do list or calculator
+- Week: 4
+  Tech Topic: JavaScript Advanced (DOM & Async)
+  Subtopics: DOM manipulation, events, fetch API, Promises/async-await
+  Hinglish Resource Link: https://www.youtube.com/watch?v=kgwb6VhfpUs
+  English Resource Link: https://www.youtube.com/watch?v=PoRJizFvM7s
+  Practice Task: Build a weather app using fetch() API
+- Week: 5
+  Tech Topic: React Fundamentals
+  Subtopics: Components, JSX, state, props, useState/useEffect
+  Hinglish Resource Link: https://www.youtube.com/watch?v=Ka8iSS7Sl3E
+  English Resource Link: https://www.youtube.com/watch?v=w7ejDZ8SWv8
+  Practice Task: Develop a React to-do or note-taking app
+- Week: 6
+  Tech Topic: React Hooks & Routing
+  Subtopics: React Router, Context API, advanced hooks
+  Hinglish Resource Link: https://www.youtube.com/watch?v=O6P86uwfdR0
+  English Resource Link: https://www.youtube.com/watch?v=Law7wfdg_ls
+  Practice Task: Add React Router & Context to your app
+- Week: 7
+  Tech Topic: Node.js & Express.js
+  Subtopics: Express routing, middleware, REST API basics
+  Hinglish Resource Link: https://www.youtube.com/watch?v=RLtyhwFtXQA
+  English Resource Link: https://www.youtube.com/watch?v=Oe421EPjeBE
+  Practice Task: Implement CRUD REST API with Express
+- Week: 8
+  Tech Topic: 'Backend: DB & Auth'
+  Subtopics: MongoDB setup, Mongoose, JWT auth
+  Hinglish Resource Link: https://www.youtube.com/watch?v=XBMLGnYwKhg
+  English Resource Link: https://www.youtube.com/watch?v=ENrzD9HAZK4
+  Practice Task: Add JWT-based auth and DB persistence
+- Week: 9
+  Tech Topic: SQL Fundamentals
+  Subtopics: Table creation, SELECT/JOIN queries
+  Hinglish Resource Link: https://www.youtube.com/watch?v=7S_tz1z_5bA
+  English Resource Link: https://www.youtube.com/watch?v=HXV3zeQKqGY
+  Practice Task: Design a SQL schema & write JOIN queries
+- Week: 10
+  Tech Topic: NoSQL & GraphQL/Redis
+  Subtopics: Redis caching, GraphQL query/mutation basics
+  Hinglish Resource Link: https://www.youtube.com/watch?v=Y0lDGjwRYKw
+  English Resource Link: https://www.youtube.com/watch?v=ed8SzALpx1Q
+  Practice Task: Integrate Redis caching or GraphQL endpoint
+- Week: 11
+  Tech Topic: Full-Stack MERN Project
+  Subtopics: Integrate React, Node, MongoDB, deployment
+  Hinglish Resource Link: https://www.youtube.com/watch?v=7CqJlxBYj-M
+  English Resource Link: https://www.youtube.com/watch?v=ngc9gnGgUdA
+  Practice Task: Deploy a MERN app end-to-end
+- Week: 12
+  Tech Topic: Front-End Tools (Tailwind/Next.js)
+  Subtopics: Tailwind CSS utilities, Next.js pages/API routes
+  Hinglish Resource Link: https://www.youtube.com/watch?v=UBOj6rqRUME
+  English Resource Link: https://www.youtube.com/watch?v=mTz0GXj8NN0
+  Practice Task: Convert project to Next.js / use Tailwind CSS
+- Week: 13
+  Tech Topic: 'DSA: Arrays & Strings'
+  Subtopics: Two-pointer, sliding window, string ops
+  Hinglish Resource Link: https://www.youtube.com/watch?v=8hly31xKli0
+  English Resource Link: https://www.youtube.com/watch?v=RBSGKlAvoiM
+  Practice Task: Solve 10 array & string LeetCode problems
+- Week: 14
+  Tech Topic: 'DSA: Stacks, Queues, Linked Lists'
+  Subtopics: Stack/queue ops, linked list insertion/deletion
+  Hinglish Resource Link: https://www.youtube.com/watch?v=njTh_OwMljA
+  English Resource Link: https://www.youtube.com/watch?v=wjI1WNcIntg
+  Practice Task: Solve 10 stack/queue/linked list problems
+- Week: 15
+  Tech Topic: 'DSA: Trees & Graphs'
+  Subtopics: Tree traversal (DFS/BFS), BST operations
+  Hinglish Resource Link: https://www.youtube.com/watch?v=oSWTXtMglKE
+  English Resource Link: https://www.youtube.com/watch?v=09_LlHjoEiY
+  Practice Task: Solve 10 tree & graph LeetCode problems
+- Week: 16
+  Tech Topic: 'DSA: Dynamic Programming'
+  Subtopics: 1D/2D DP, memoization/tabulation patterns
+  Hinglish Resource Link: https://www.youtube.com/watch?v=oBt53YbR9Kk
+  English Resource Link: https://www.youtube.com/watch?v=oBt53YbR9Kk
+  Practice Task: Solve 5 dynamic programming problems
+- Week: 17
+  Tech Topic: Coding Interview Practice
+  Subtopics: Timed problem solving, mock interview format
+  Hinglish Resource Link: https://www.youtube.com/watch?v=jDhml3Fqj-0
+  English Resource Link: https://www.youtube.com/playlist?list=PLWKjhJtqVAbkArDMazoARtNz1aMwNWmvC
+  Practice Task: Complete 20 timed LeetCode interview problems
+- Week: 18
+  Tech Topic: System Design Fundamentals
+  Subtopics: Load balancing, caching, CDNs, CAP theorem
+  Hinglish Resource Link: https://www.youtube.com/watch?v=qs83ILxS92o
+  English Resource Link: https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo
+  Practice Task: Draw & explain architecture for a sample system
+- Week: 19
+  Tech Topic: System Design Patterns
+  Subtopics: Microservices, message queues, database scaling
+  Hinglish Resource Link: https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo
+  English Resource Link: https://www.youtube.com/playlist?list=PLMCXHnjXnTnvo6alSjVkgxV-VH6EPyuzo
+  Practice Task: Design two system case studies with diagrams
+- Week: 20
+  Tech Topic: System Design Mocks
+  Subtopics: Mock system design interviews, feedback
+  Hinglish Resource Link: https://www.youtube.com/watch?v=3D0l2bIa8y4
+  English Resource Link: https://www.youtube.com/watch?v=6H26G0d-oys
+  Practice Task: Conduct 2 mock system design interviews & debrief
+- Week: 21
+  Tech Topic: DevOps & CI/CD
+  Subtopics: Git workflows, Jenkins/GitHub Actions
+  Hinglish Resource Link: https://www.youtube.com/watch?v=Ic6BEYBz6SY
+  English Resource Link: https://www.youtube.com/watch?v=SZ09eoFhx1k
+  Practice Task: Configure CI/CD for a project & automate tests
+- Week: 22
+  Tech Topic: Docker & Kubernetes
+  Subtopics: Dockerfiles, containers, Kubernetes basics
+  Hinglish Resource Link: https://www.youtube.com/watch?v=HcwK0Y0wnIM
+  English Resource Link: https://www.youtube.com/watch?v=on18UmlXx0s
+  Practice Task: Dockerize full-stack app & deploy on local K8s
+- Week: 23
+  Tech Topic: AWS & Cloud Basics
+  Subtopics: EC2, S3, RDS, Lambda, IAM
+  Hinglish Resource Link: https://www.youtube.com/watch?v=ulprqHHWlng
+  English Resource Link: https://www.youtube.com/watch?v=Ia-UEYYR44s
+  Practice Task: Deploy full-stack app on AWS (S3 + EC2 + Lambda)
+- Week: 24
+  Tech Topic: Soft Skills & Interview Prep
+  Subtopics: STAR method, resume polish, behavioral Q&A
+  Hinglish Resource Link: https://www.youtube.com/watch?v=2nI4i2pTlPQ
+  English Resource Link: https://www.youtube.com/watch?v=Q6QXyq9Iqyk
+  Practice Task: Prepare & record 5 STAR method behavioral answers
+English Communication:
+- Week: 1
+  Topic: Self-Introduction & Daily Conversation
+  Subtopics: Introductions, greetings, basic Q&A
+  Hinglish Creator: Learnex
+  Hinglish Resource Link: https://www.youtube.com/playlist?list=PL1XYZ_hindi_intro
+  English Creator: Learn English Lab
+  English Resource Link: https://www.youtube.com/watch?v=english_intro_eng
+  Practice Task: Record self-intro; get feedback
+- Week: 2
+  Topic: Listening Comprehension & Pronunciation
+  Subtopics: Listening to short audio, minimal pairs
+  Hinglish Creator: Angrezi Sikho
+  Hinglish Resource Link: https://www.youtube.com/watch?v=audio_pron_hindi
+  English Creator: Learn English Lab
+  English Resource Link: https://www.youtube.com/watch?v=pronunciation_eng
+  Practice Task: Shadow 5-min news clip; summarize
+- Week: 3
+  Topic: Speaking Fluency – Everyday Topics
+  Subtopics: Role-play common scenarios
+  Hinglish Creator: CodeWithHarry
+  Hinglish Resource Link: https://www.youtube.com/watch?v=speaking_fluency_hindi
+  English Creator: FluentU
+  English Resource Link: https://www.youtube.com/watch?v=speaking_fluency_eng
+  Practice Task: Role-play conversation; fluency drill
+- Week: 4
+  Topic: Business Vocabulary & Formal Expressions
+  Subtopics: Formal vs. casual tone, email phrases
+  Hinglish Creator: Angrezi Sikho
+  Hinglish Resource Link: https://www.youtube.com/watch?v=business_vocab_hindi
+  English Creator: British Council
+  English Resource Link: https://www.youtube.com/watch?v=business_vocab_eng
+  Practice Task: Write 3 formal email sentences
+- Week: 5
+  Topic: Grammar Refresher – Common Structures
+  Subtopics: Tenses, conditionals, modals
+  Hinglish Creator: Learnex
+  Hinglish Resource Link: https://www.youtube.com/watch?v=grammar_refresher_hindi
+  English Creator: Khan Academy
+  English Resource Link: https://www.youtube.com/watch?v=grammar_refresher_eng
+  Practice Task: Complete tense fill worksheet
+- Week: 6
+  Topic: Writing Emails & Professional Messages
+  Subtopics: Email structure and templates
+  Hinglish Creator: Apna College
+  Hinglish Resource Link: https://www.youtube.com/watch?v=email_writing_hindi
+  English Creator: Indeed
+  English Resource Link: https://www.youtube.com/watch?v=email_writing_eng
+  Practice Task: Draft a professional email
+- Week: 7
+  Topic: Resume/CV Writing
+  Subtopics: Resume sections and formatting
+  Hinglish Creator: Career Guides
+  Hinglish Resource Link: https://www.youtube.com/watch?v=resume_writing_hindi
+  English Creator: Indeed
+  English Resource Link: https://www.youtube.com/watch?v=resume_writing_eng
+  Practice Task: Create and peer-review resume
+- Week: 8
+  Topic: Essay & Report Writing Basics
+  Subtopics: Paragraph structure, linking words
+  Hinglish Creator: Angrezi Sikho
+  Hinglish Resource Link: https://www.youtube.com/watch?v=essay_writing_hindi
+  English Creator: Khan Academy
+  English Resource Link: https://www.youtube.com/watch?v=essay_writing_eng
+  Practice Task: Write 200-word essay; peer edit
+- Week: 9
+  Topic: Advanced Speaking – Interviews & Presentations
+  Subtopics: Interview Q&A, presentation phrases
+  Hinglish Creator: Learn English Lab
+  Hinglish Resource Link: https://www.youtube.com/watch?v=interview_speaking_hindi
+  English Creator: Learn English Lab
+  English Resource Link: https://www.youtube.com/watch?v=interview_speaking_eng
+  Practice Task: Deliver 3-min tech topic presentation
+- Week: 10
+  Topic: Behavioral Interviews & STAR Method
+  Subtopics: STAR framework for behavioral answers
+  Hinglish Creator: Hindi tutorial
+  Hinglish Resource Link: https://www.youtube.com/watch?v=star_method_hindi
+  English Creator: MIT Career Guide
+  English Resource Link: https://www.youtube.com/watch?v=star_method_eng
+  Practice Task: Outline 3 STAR stories
+- Week: 11
+  Topic: Mock Interviews & Feedback
+  Subtopics: Full mock interviews, peer feedback
+  Hinglish Creator: Career Guides
+  Hinglish Resource Link: https://www.youtube.com/watch?v=mock_interview_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=mock_interview_eng
+  Practice Task: Conduct & review 2 mock interviews
+- Week: 12
+  Topic: Review & Advanced Practice
+  Subtopics: Industry vocabulary, negotiation phrases
+  Hinglish Creator: Angrezi Sikho
+  Hinglish Resource Link: https://www.youtube.com/watch?v=advanced_practice_hindi
+  English Creator: TheMuse
+  English Resource Link: https://www.youtube.com/watch?v=advanced_practice_eng
+  Practice Task: Learn 10 vocab + role-play scenarios
+Design & AI Tools:
+- Week: 1
+  Topic: UI/UX Design with Figma
+  Subtopics: Frames, shapes, prototyping
+  Hinglish Creator: CodeWithHarry
+  Hinglish Resource Link: https://www.youtube.com/watch?v=figma_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=figma_eng
+  Practice Task: Recreate login screen in Figma
+- Week: 2
+  Topic: Advanced Figma & Framer AI
+  Subtopics: AI-driven design generation
+  Hinglish Creator: CodeWithHarry
+  Hinglish Resource Link: https://www.youtube.com/watch?v=framer_ai_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=framer_ai_eng
+  Practice Task: Generate UI via Framer AI and refine
+- Week: 3
+  Topic: Project Management with Notion
+  Subtopics: Databases, templates, AI summaries
+  Hinglish Creator: Stephen Simon
+  Hinglish Resource Link: https://www.youtube.com/watch?v=notion_hindi
+  English Creator: Notion
+  English Resource Link: https://www.youtube.com/watch?v=notion_eng
+  Practice Task: Set up Notion project board
+- Week: 4
+  Topic: Video Editing with Adobe Premiere Pro
+  Subtopics: Timeline editing, transitions
+  Hinglish Creator: XOMultimedia
+  Hinglish Resource Link: https://www.youtube.com/watch?v=premiere_hindi
+  English Creator: Adobe
+  English Resource Link: https://www.youtube.com/watch?v=premiere_eng
+  Practice Task: Edit 30-sec video
+- Week: 5
+  Topic: ChatGPT & Prompt Engineering
+  Subtopics: Effective prompts, examples
+  Hinglish Creator: Harshit Vaidya
+  Hinglish Resource Link: https://www.youtube.com/watch?v=chatgpt_prompt_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=chatgpt_prompt_eng
+  Practice Task: Refine ChatGPT prompt
+- Week: 6
+  Topic: GitHub Copilot & VS Code
+  Subtopics: Copilot setup, VS Code extensions
+  Hinglish Creator: CodeWithHarry
+  Hinglish Resource Link: https://www.youtube.com/watch?v=copilot_hindi
+  English Creator: GitHub
+  English Resource Link: https://www.youtube.com/watch?v=copilot_eng
+  Practice Task: Use Copilot for function
+- Week: 7
+  Topic: Tailwind CSS Basics
+  Subtopics: Utility classes, responsive design
+  Hinglish Creator: CodeWithHarry
+  Hinglish Resource Link: https://www.youtube.com/watch?v=tailwind_hindi
+  English Creator: Traversy Media
+  English Resource Link: https://www.youtube.com/watch?v=tailwind_eng
+  Practice Task: Build page with Tailwind
+- Week: 8
+  Topic: Bootstrap Basics
+  Subtopics: Grid system, components
+  Hinglish Creator: CodeWithHarry
+  Hinglish Resource Link: https://www.youtube.com/watch?v=bootstrap_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=bootstrap_eng
+  Practice Task: Clone Bootstrap landing
+- Week: 9
+  Topic: Next.js Introduction
+  Subtopics: Pages, routing, CSS modules
+  Hinglish Creator: Apna College
+  Hinglish Resource Link: https://www.youtube.com/watch?v=nextjs_hindi
+  English Creator: Vercel
+  English Resource Link: https://www.youtube.com/watch?v=nextjs_eng
+  Practice Task: Create Next.js site
+- Week: 10
+  Topic: Design-to-Code Integration
+  Subtopics: Convert Figma designs to code
+  Hinglish Creator: CodeWithHarry
+  Hinglish Resource Link: https://www.youtube.com/watch?v=figma_to_code_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=figma_to_code_eng
+  Practice Task: Implement design in code
+- Week: 11
+  Topic: ML Basics
+  Subtopics: Supervised vs unsupervised learning
+  Hinglish Creator: Generic ML Hindi
+  Hinglish Resource Link: https://www.youtube.com/watch?v=ml_basics_hindi
+  English Creator: Fullstack Academy
+  English Resource Link: https://www.youtube.com/watch?v=ml_basics_eng
+  Practice Task: Describe ML use-case
+- Week: 12
+  Topic: LLM Fundamentals
+  Subtopics: Transformers, GPT overview
+  Hinglish Creator: Generic AI Hindi
+  Hinglish Resource Link: https://www.youtube.com/watch?v=llm_hindi
+  English Creator: OpenAI
+  English Resource Link: https://www.youtube.com/watch?v=llm_eng
+  Practice Task: Summarize LLM workings
+- Week: 13
+  Topic: API & AI Tools Workshop
+  Subtopics: HTTP, Postman, OpenAI API
+  Hinglish Creator: Harshit Vaidya
+  Hinglish Resource Link: https://www.youtube.com/watch?v=api_ai_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=api_ai_eng
+  Practice Task: Call OpenAI API
+- Week: 14
+  Topic: AI Productivity Tools
+  Subtopics: Notion AI, DALL·E demos
+  Hinglish Creator: XOMultimedia
+  Hinglish Resource Link: https://www.youtube.com/watch?v=ai_tools_hindi
+  English Creator: Industry Blogs
+  English Resource Link: https://www.youtube.com/watch?v=ai_tools_eng
+  Practice Task: Use Notion AI summary
+- Week: 15
+  Topic: Integrated Capstone Project
+  Subtopics: Design & build demo app
+  Hinglish Creator: Multiple
+  Hinglish Resource Link: https://www.youtube.com/watch?v=capstone_hindi
+  English Creator: Multiple
+  English Resource Link: https://www.youtube.com/watch?v=capstone_eng
+  Practice Task: Build & demo project
+Aptitude Prep:
+- Week: 1
+  Topic: Arithmetic & Number Concepts
+  Subtopics: Percentages, ratios, speed/time
+  Hinglish Creator: Adda247
+  Hinglish Resource Link: https://www.youtube.com/watch?v=quant_hindi1
+  English Creator: KhanAcademy
+  English Resource Link: https://www.youtube.com/watch?v=quant_eng
+  Practice Task: Solve 10 arithmetic problems
+- Week: 2
+  Topic: Algebra & Series
+  Subtopics: Quadratics, sequences
+  Hinglish Creator: FacePrep
+  Hinglish Resource Link: https://www.youtube.com/watch?v=algebra_hindi
+  English Creator: freeCodeCamp
+  English Resource Link: https://www.youtube.com/watch?v=algebra_eng
+  Practice Task: Solve 5 quadratic puzzles
+- Week: 3
+  Topic: Probability & Data Interpretation
+  Subtopics: Basic probability, charts
+  Hinglish Creator: Examrace
+  Hinglish Resource Link: https://www.youtube.com/watch?v=prob_data_hindi
+  English Creator: KhanAcademy
+  English Resource Link: https://www.youtube.com/watch?v=prob_data_eng
+  Practice Task: Answer 5 probability questions
+- Week: 4
+  Topic: Logical Series & Patterns
+  Subtopics: Numeric/alpha series
+  Hinglish Creator: MeraPlacementHoga
+  Hinglish Resource Link: https://www.youtube.com/watch?v=series_hindi
+  English Creator: Britannica
+  English Resource Link: https://www.youtube.com/watch?v=series_eng
+  Practice Task: Solve 8 series problems
+- Week: 5
+  Topic: Coding/Decoding & Puzzles
+  Subtopics: Letter codes, seating puzzles
+  Hinglish Creator: HandaKaFunda
+  Hinglish Resource Link: https://www.youtube.com/watch?v=code_decode_hindi
+  English Creator: MBA_Rendezvous
+  English Resource Link: https://www.youtube.com/watch?v=code_decode_eng
+  Practice Task: Crack 5 coding-decoding puzzles
+- Week: 6
+  Topic: Grammar & Vocabulary
+  Subtopics: Sentence correction, flashcards
+  Hinglish Creator: Learnex
+  Hinglish Resource Link: https://www.youtube.com/watch?v=grammar_vocab_hindi
+  English Creator: GrammarlyBlog
+  English Resource Link: https://www.youtube.com/watch?v=grammar_vocab_eng
+  Practice Task: Complete 10 grammar MCQs
+- Week: 7
+  Topic: Reading Comprehension
+  Subtopics: Passage analysis, summary
+  Hinglish Creator: StudyIQ
+  Hinglish Resource Link: https://www.youtube.com/watch?v=comp_hindi
+  English Creator: BritishCouncil
+  English Resource Link: https://www.youtube.com/watch?v=comp_eng
+  Practice Task: Answer 5 comprehension questions
+- Week: 8
+  Topic: Full-Length Mock Tests
+  Subtopics: Mixed quant, logical, verbal timed test
+  Hinglish Creator: Adda247
+  Hinglish Resource Link: https://www.youtube.com/watch?v=mock_test_hindi
+  English Creator: Indiabix
+  English Resource Link: https://www.youtube.com/watch?v=mock_test_eng
+  Practice Task: Take a 60-question timed mock test

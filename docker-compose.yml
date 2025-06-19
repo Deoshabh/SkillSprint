@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  skillsprint:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skillsprint-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_BASE_URL=http://localhost:3000
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: MongoDB for data persistence
+  # mongodb:
+  #   image: mongo:6.0
+  #   container_name: skillsprint-mongo
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: admin
+  #     MONGO_INITDB_ROOT_PASSWORD: password
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   restart: unless-stopped
+
+  # Optional: Redis for caching
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: skillsprint-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  redis_data:

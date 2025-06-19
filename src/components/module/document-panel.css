@@ -1,0 +1,74 @@
+.document-list-panel {
+  transition: all 0.3s ease;
+}
+
+.document-list-panel.collapsed {
+  max-height: 64px;
+  overflow: hidden;
+}
+
+.document-list-panel:not(.collapsed) {
+  max-height: 800px;
+  overflow-y: auto;
+}
+
+/* Highlight animation for new documents */
+@keyframes highlight {
+  0% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.document-highlight-animation {
+  animation: highlight 2s ease-in-out;
+}
+
+/* Note indicator styling */
+.document-note-indicator {
+  position: relative;
+}
+
+.document-note-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #FFC107;
+  border-radius: 50%;
+}
+
+/* Highlight indicator styling */
+.document-highlight-indicator {
+  position: relative;
+}
+
+.document-highlight-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #8BC34A;
+  border-radius: 50%;
+}
+
+/* Enhanced document controls */
+.document-enhanced-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.document-enhanced-controls button {
+  flex: 1;
+  font-size: 0.75rem;
+}

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Video Persistence Debug Console</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; font-size: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .status { font-weight: bold; padding: 5px 10px; border-radius: 3px; }
+        .status.pass { background: #28a745; color: white; }
+        .status.fail { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Video Persistence Debug Console</h1>
+        <p>This tool helps debug the video persistence issue by testing the entire flow.</p>
+        
+        <div class="debug-section info">
+            <h3>Quick Actions</h3>
+            <button onclick="runFullDiagnostic()">🚀 Run Full Diagnostic</button>
+            <button onclick="testVideoPersistence()">🧪 Test Video Persistence</button>
+            <button onclick="checkAuthState()">👤 Check Auth State</button>
+            <button onclick="clearTestData()" class="danger">🧹 Clear Test Data</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            console.log(message);
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = `<pre>${message}</pre>`;
+            resultsDiv.appendChild(div);
+        }
+
+        function status(test, passed) {
+            return `<span class="status ${passed ? 'pass' : 'fail'}">${passed ? 'PASS' : 'FAIL'}</span> ${test}`;
+        }
+
+        async function checkAuthState() {
+            log('🔍 Checking Authentication State...', 'info');
+            
+            try {
+                // Check session
+                const sessionResponse = await fetch('/api/auth/session');
+                const sessionData = await sessionResponse.json();
+                
+                log(`Session Status: ${sessionResponse.ok ? 'Active' : 'Inactive'}`, sessionResponse.ok ? 'success' : 'error');
+                log(`Session Data: ${JSON.stringify(sessionData, null, 2)}`, 'info');
+                
+                // Check user progress
+                const progressResponse = await fetch('/api/user/progress');
+                const progressData = await progressResponse.json();
+                
+                log(`Progress API Status: ${progressResponse.ok ? 'OK' : 'Error'}`, progressResponse.ok ? 'success' : 'error');
+                
+                if (progressResponse.ok) {
+                    log(`User Progress Data: ${JSON.stringify(progressData.progress, null, 2)}`, 'info');
+                }
+                
+                return progressResponse.ok && sessionResponse.ok;
+            } catch (error) {
+                log(`Auth Check Failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testVideoPersistence() {
+            log('🧪 Testing Video Persistence...', 'info');
+            
+            const authOk = await checkAuthState();
+            if (!authOk) {
+                log('❌ Authentication failed - cannot test persistence', 'error');
+                return;
+            }
+            
+            try {
+                // Get current progress
+                const currentResponse = await fetch('/api/user/progress');
+                const currentData = await currentResponse.json();
+                
+                const testCourseId = 'course-1750005300488-j4bgf6kkv';
+                const testModuleId = 'module-1';
+                const moduleKey = `${testCourseId}-${testModuleId}`;
+                const timestamp = Date.now();
+                
+                log(`Testing with module key: ${moduleKey}`, 'info');
+                
+                // Create test data
+                const testData = {
+                    ...currentData.progress,
+                    userModuleVideos: {
+                        ...currentData.progress.userModuleVideos,
+                        [moduleKey]: [
+                            {
+                                id: `test-video-${timestamp}`,
+                                title: `Test Video ${timestamp}`,
+                                url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                                type: 'custom',
+                                language: 'English',
+                                creator: 'Debug Test',
+                                addedAt: new Date().toISOString()
+                            }
+                        ]
+                    },
+                    userAIVideos: {
+                        ...currentData.progress.userAIVideos,
+                        [moduleKey]: [
+                            {
+                                id: `test-ai-${timestamp}`,
+                                title: `Test AI Video ${timestamp}`,
+                                url: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
+                                type: 'ai',
+                                addedAt: new Date().toISOString()
+                            }
+                        ]
+                    },
+                    userAISearchUsage: {
+                        ...currentData.progress.userAISearchUsage,
+                        [moduleKey]: 1
+                    }
+                };
+                
+                log(`Saving test data...`, 'info');
+                log(`Test Data: ${JSON.stringify(testData, null, 2)}`, 'info');
+                
+                // Save test data
+                const saveResponse = await fetch('/api/user/progress', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (!saveResponse.ok) {
+                    throw new Error(`Save failed: ${saveResponse.status} ${saveResponse.statusText}`);
+                }
+                
+                const saveResult = await saveResponse.json();
+                log(`Save Response: ${JSON.stringify(saveResult, null, 2)}`, 'success');
+                
+                // Wait a moment then verify
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                log('Verifying persistence...', 'info');
+                const verifyResponse = await fetch('/api/user/progress');
+                const verifyData = await verifyResponse.json();
+                
+                const persistedModuleVideos = verifyData.progress.userModuleVideos?.[moduleKey];
+                const persistedAIVideos = verifyData.progress.userAIVideos?.[moduleKey];
+                const persistedSearchUsage = verifyData.progress.userAISearchUsage?.[moduleKey];
+                
+                log('Verification Results:', 'info');
+                log(status('Custom videos persisted', !!persistedModuleVideos && persistedModuleVideos.length > 0), 'info');
+                log(status('AI videos persisted', !!persistedAIVideos && persistedAIVideos.length > 0), 'info');
+                log(status('Search usage persisted', persistedSearchUsage === 1), 'info');
+                
+                log(`Persisted Data: ${JSON.stringify({
+                    userModuleVideos: verifyData.progress.userModuleVideos,
+                    userAIVideos: verifyData.progress.userAIVideos,
+                    userAISearchUsage: verifyData.progress.userAISearchUsage
+                }, null, 2)}`, 'info');
+                
+                const allPassed = persistedModuleVideos?.length > 0 && persistedAIVideos?.length > 0 && persistedSearchUsage === 1;
+                
+                if (allPassed) {
+                    log('🎉 SUCCESS: Video persistence is working correctly!', 'success');
+                } else {
+                    log('❌ FAILURE: Video persistence has issues', 'error');
+                }
+                
+                return allPassed;
+                
+            } catch (error) {
+                log(`Persistence test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function runFullDiagnostic() {
+            document.getElementById('results').innerHTML = '';
+            log('🚀 Running Full Video Persistence Diagnostic...', 'info');
+            
+            // Test 1: Auth state
+            log('\n📋 Test 1: Authentication State', 'info');
+            const authOk = await checkAuthState();
+            
+            // Test 2: Video persistence
+            log('\n📋 Test 2: Video Persistence', 'info');
+            const persistenceOk = await testVideoPersistence();
+            
+            // Test 3: Check browser state
+            log('\n📋 Test 3: Browser State', 'info');
+            try {
+                // Check if we're on the module page
+                const currentUrl = window.location.href;
+                log(`Current URL: ${currentUrl}`, 'info');
+                
+                // Check if auth context is available
+                if (typeof window.authContext !== 'undefined') {
+                    log(`Auth context available: YES`, 'success');
+                    log(`Auth context: ${JSON.stringify(window.authContext, null, 2)}`, 'info');
+                } else {
+                    log(`Auth context available: NO`, 'warning');
+                }
+                
+                // Check if we can access React components
+                const reactFiber = document.querySelector('[data-reactroot]');
+                log(`React app detected: ${reactFiber ? 'YES' : 'NO'}`, reactFiber ? 'success' : 'warning');
+                
+            } catch (error) {
+                log(`Browser state check failed: ${error.message}`, 'error');
+            }
+            
+            // Final summary
+            log('\n📋 Diagnostic Summary', 'info');
+            log(status('Authentication', authOk), authOk ? 'success' : 'error');
+            log(status('Video Persistence', persistenceOk), persistenceOk ? 'success' : 'error');
+        }
+
+        async function clearTestData() {
+            log('🧹 Clearing test data...', 'info');
+            
+            try {
+                const currentResponse = await fetch('/api/user/progress');
+                const currentData = await currentResponse.json();
+                
+                const testCourseId = 'course-1750005300488-j4bgf6kkv';
+                const testModuleId = 'module-1';
+                const moduleKey = `${testCourseId}-${testModuleId}`;
+                
+                const cleanData = {
+                    ...currentData.progress,
+                    userModuleVideos: {
+                        ...currentData.progress.userModuleVideos
+                    },
+                    userAIVideos: {
+                        ...currentData.progress.userAIVideos
+                    },
+                    userAISearchUsage: {
+                        ...currentData.progress.userAISearchUsage
+                    }
+                };
+                
+                // Remove test data
+                if (cleanData.userModuleVideos[moduleKey]) {
+                    cleanData.userModuleVideos[moduleKey] = cleanData.userModuleVideos[moduleKey].filter(
+                        video => !video.id?.includes('test-video-') && !video.title?.includes('Test Video')
+                    );
+                    if (cleanData.userModuleVideos[moduleKey].length === 0) {
+                        delete cleanData.userModuleVideos[moduleKey];
+                    }
+                }
+                
+                if (cleanData.userAIVideos[moduleKey]) {
+                    cleanData.userAIVideos[moduleKey] = cleanData.userAIVideos[moduleKey].filter(
+                        video => !video.id?.includes('test-ai-') && !video.title?.includes('Test AI Video')
+                    );
+                    if (cleanData.userAIVideos[moduleKey].length === 0) {
+                        delete cleanData.userAIVideos[moduleKey];
+                    }
+                }
+                
+                if (cleanData.userAISearchUsage[moduleKey] === 1) {
+                    delete cleanData.userAISearchUsage[moduleKey];
+                }
+                
+                const saveResponse = await fetch('/api/user/progress', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(cleanData)
+                });
+                
+                if (saveResponse.ok) {
+                    log('✅ Test data cleared successfully', 'success');
+                } else {
+                    throw new Error('Failed to clear test data');
+                }
+            } catch (error) {
+                log(`❌ Failed to clear test data: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run diagnostic on page load
+        window.addEventListener('load', () => {
+            log('🔧 Debug console loaded. Click "Run Full Diagnostic" to start testing.', 'info');
+        });
+    </script>
+</body>
+</html>

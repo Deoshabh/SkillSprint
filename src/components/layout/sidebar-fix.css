@@ -1,0 +1,383 @@
+/* Complete sidebar reset and fix */
+:root {
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 60px; /* Set collapsed width to exactly 60px */
+}
+
+/* Base sidebar styling */
+.bg-sidebar {
+  background-color: var(--background);
+  border-right: 1px solid var(--border);
+}
+
+/* Core sidebar visibility and positioning fixes */
+[data-sidebar="sidebar"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: fixed !important;
+  height: 100vh !important;
+  z-index: 50 !important;
+  transition: width 0.3s ease !important;
+}
+
+/* Add smooth transitions to all sidebar elements */
+[data-sidebar="sidebar"] * {
+  transition-property: opacity, width, transform, background-color;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* Desktop styling */
+@media (min-width: 768px) {
+  /* Force sidebar visibility */
+  [data-sidebar="sidebar"] {
+    left: 0 !important;
+    transform: translateX(0) !important;
+  }
+  
+  /* Ensure proper width based on state */
+  [data-state="expanded"] [data-sidebar="sidebar"] {
+    width: var(--sidebar-width) !important;
+  }
+  
+  [data-state="collapsed"] [data-sidebar="sidebar"] {
+    width: var(--sidebar-width-icon) !important;
+  }
+  
+  /* Content margins */
+  [data-state="expanded"] ~ div main {
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    transition: margin 0.3s ease, width 0.3s ease !important;
+  }
+  
+  [data-state="collapsed"] ~ div main {
+    margin-left: var(--sidebar-width-icon) !important;
+    width: calc(100% - var(--sidebar-width-icon)) !important;
+    transition: margin 0.3s ease, width 0.3s ease !important;
+  }
+}
+
+/* Make the toggle button always visible */
+.sidebar-trigger {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Sidebar items in collapsed state */
+[data-state="collapsed"] [data-sidebar="sidebar"] .nav-item {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important; /* Ensure vertical centering */
+  padding: 0.75rem 0 !important;
+  height: 40px !important; /* Fixed height for consistent spacing */
+  margin: 4px 0 !important; /* Add margin between items */
+  border-radius: 4px !important; /* Add rounded corners for better visual */
+}
+
+/* Icon styling */
+[data-state="collapsed"] [data-sidebar="sidebar"] .nav-item svg {
+  margin: 0 auto !important;
+  height: 1.5rem !important;
+  width: 1.5rem !important;
+}
+
+/* Hide text in collapsed state */
+[data-state="collapsed"] [data-sidebar="sidebar"] .nav-item span,
+[data-state="collapsed"] [data-sidebar="sidebar"] .nav-item badge,
+[data-state="collapsed"] [data-sidebar="sidebar"] h3,
+[data-state="collapsed"] [data-sidebar="sidebar"] p {
+  display: none !important;
+}
+
+/* Show tooltips on hover */
+[data-state="collapsed"] [data-sidebar="sidebar"] .nav-item {
+  position: relative;
+}
+
+[data-state="collapsed"] [data-sidebar="sidebar"] .nav-item:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--background);
+  color: var(--foreground);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  z-index: 100;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+  border: 1px solid var(--border);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-50%) translateX(-5px); }
+  to { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* Logo container in collapsed state */
+[data-state="collapsed"] .sidebar-header {
+  padding: 1rem 0 !important;
+  justify-content: center !important;
+}
+
+[data-state="collapsed"] [data-sidebar="sidebar"] [data-sidebar="header"] a {
+  justify-content: center !important;
+}
+
+[data-state="collapsed"] .sidebar-logo-text {
+  display: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+
+[data-state="expanded"] .sidebar-logo-text {
+  display: block !important;
+  opacity: 1 !important;
+  width: auto !important;
+}
+
+/* Section styling */
+.sidebar-section {
+  position: relative;
+}
+
+[data-state="collapsed"] .sidebar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Section indicators */
+[data-state="collapsed"] .sidebar-section-divider {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0;
+}
+
+[data-state="collapsed"] .sidebar-section-divider .h-px {
+  width: 30%;
+}
+
+/* Sidebar toggle button styling and animation */
+.sidebar-collapse-button {
+  position: relative;
+}
+
+.sidebar-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease !important;
+}
+
+.sidebar-trigger:hover {
+  background-color: var(--primary-light, rgba(var(--primary), 0.15)) !important;
+  transform: scale(1.05);
+}
+
+.sidebar-trigger:active {
+  transform: scale(0.95);
+}
+
+/* Rotate icon based on sidebar state */
+[data-state="expanded"] .sidebar-trigger svg {
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+[data-state="collapsed"] .sidebar-trigger svg {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+/* Active state indicator */
+[data-state="collapsed"] [data-sidebar="sidebar"] .active {
+  background: var(--primary-light, rgba(var(--primary), 0.15));
+  border-radius: 4px;
+  position: relative;
+}
+
+/* Left border indicator for active items */
+[data-state="collapsed"] [data-sidebar="sidebar"] .active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 3px;
+  background: var(--primary);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Ensure active icons are more prominent */
+[data-state="collapsed"] [data-sidebar="sidebar"] .active svg {
+  color: var(--primary) !important;
+  transform: scale(1.1);
+}
+
+/* Footer spacing in collapsed state */
+[data-state="collapsed"] [data-sidebar="sidebar"] [data-sidebar="footer"] {
+  padding: 0.75rem 0 !important;
+}
+
+[data-state="collapsed"] .sidebar-footer-container {
+  justify-content: center !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* Make sure we have a smooth transition in the footer */
+.sidebar-footer-container {
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+/* Hide user navigation text in collapsed state */
+[data-state="collapsed"] [data-sidebar="sidebar"] [data-sidebar="footer"] .dropdown-menu-label,
+[data-state="collapsed"] [data-sidebar="sidebar"] [data-sidebar="footer"] .dropdown-menu-text {
+  display: none !important;
+}
+
+/* User navigation styling for collapsed state */
+[data-state="collapsed"] .user-nav-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Ensure the avatar stays centered in collapsed state */
+[data-state="collapsed"] [data-sidebar="sidebar"] [data-sidebar="footer"] .user-nav-container button {
+  margin: 0 auto;
+}
+
+/* Enhance sidebar hover effects */
+.nav-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-item:hover {
+  background-color: var(--hover-light, rgba(0, 0, 0, 0.05));
+}
+
+/* Clean up spacing in collapsed state */
+[data-state="collapsed"] [data-sidebar="content"] {
+  padding: 1rem 0.5rem !important;
+}
+
+/* Ensure clear separation between sections */
+.sidebar-section {
+  margin-bottom: 0.75rem;
+}
+
+/* Ensure proper spacing in scroll area */
+[data-state="collapsed"] [data-sidebar="content"] .h-full > div {
+  align-items: center;
+}
+
+/* Override any dropdown menu styling to ensure it looks good in collapsed state */
+[data-state="collapsed"] [data-sidebar="sidebar"] .dropdown-menu {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Ensure buttons in collapsed sidebar footer are centered */
+[data-state="collapsed"] [data-sidebar="sidebar"] [data-sidebar="footer"] button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+/* Add a slight vertical spacing between elements in collapsed footer */
+[data-state="collapsed"] [data-sidebar="sidebar"] [data-sidebar="footer"] > div > * + * {
+  margin-top: 0.5rem;
+}
+
+/* Sidebar bottom controls styling */
+.sidebar-bottom-controls {
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+/* Styling for bottom controls in collapsed state */
+[data-state="collapsed"] .sidebar-footer-container {
+  justify-content: center !important;
+}
+
+[data-state="collapsed"] .sidebar-bottom-controls {
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+[data-state="collapsed"] .sidebar-user-avatar {
+  position: relative;
+}
+
+[data-state="collapsed"] .sidebar-theme-toggle-container {
+  position: relative;
+}
+
+/* Tooltips for avatar and theme toggle in collapsed mode */
+[data-state="collapsed"] .sidebar-user-avatar::after,
+[data-state="collapsed"] .sidebar-theme-toggle-container::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--background);
+  color: var(--foreground);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  z-index: 100;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+  border: 1px solid var(--border);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+[data-state="collapsed"] .sidebar-user-avatar:hover::after,
+[data-state="collapsed"] .sidebar-theme-toggle-container:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Enhance the avatar's appearance */
+.sidebar-avatar {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-avatar:hover {
+  transform: scale(1.05);
+}
+
+/* Theme toggle button styling */
+.sidebar-theme-toggle {
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-theme-toggle:hover {
+  background-color: var(--primary-light, rgba(var(--primary), 0.15));
+  transform: scale(1.05);
+}
