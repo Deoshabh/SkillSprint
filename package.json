@@ -11,7 +11,7 @@
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "seed:admin": "tsx scripts/seed-db.ts",
-    "postbuild": "next-sitemap",
+    "sitemap": "next-sitemap",
     "analyze": "cross-env ANALYZE=true next build",
     "clean": "rimraf .next out",
     "export": "next export"
