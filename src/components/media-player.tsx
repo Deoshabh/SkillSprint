@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { fetchYoutubePlaylistItems } from '@/ai/flows/fetch-youtube-playlist-items-flow';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useProgressTracker } from '@/hooks/useProgressTracker';
 import ReactMarkdown from 'react-markdown';
 
 
@@ -21,6 +22,8 @@ interface MediaPlayerProps {
   isAISearching?: boolean;
   userPreferredLanguage?: string;
   onRemoveUserVideo?: (videoId: string) => void; 
+  courseId?: string;
+  courseName?: string;
 }
 
 const PLAYLIST_ITEMS_PER_PAGE = 10;
@@ -32,9 +35,12 @@ export function MediaPlayer({
   onSearchWithAI, 
   isAISearching = false,
   userPreferredLanguage,
-  onRemoveUserVideo
+  onRemoveUserVideo,
+  courseId,
+  courseName
 }: MediaPlayerProps) {
   const { toast } = useToast();
+  const { markVideoWatched } = useProgressTracker();
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const [selectedVideoKey, setSelectedVideoKey] = useState<string>('');
   const [currentVideoIsPlaylist, setCurrentVideoIsPlaylist] = useState<boolean>(false);
@@ -48,11 +54,51 @@ export function MediaPlayer({
   const [activeVideoIdFromPlaylist, setActiveVideoIdFromPlaylist] = useState<string | null>(null);
   const [playlistCurrentPage, setPlaylistCurrentPage] = useState<number>(1);
 
+  // Video tracking for xAPI
+  const [videoStartTime, setVideoStartTime] = useState<number | null>(null);
+  const [hasTrackedVideoStart, setHasTrackedVideoStart] = useState<boolean>(false);
+
+  const trackVideoStart = useCallback(async (videoId: string, videoTitle: string) => {
+    if (!hasTrackedVideoStart) {
+      setVideoStartTime(Date.now());
+      setHasTrackedVideoStart(true);
+      
+      // Track video started
+      await markVideoWatched(
+        videoId,
+        videoTitle,
+        undefined, // duration unknown at start
+        module.id,
+        module.title
+      );
+    }
+  }, [hasTrackedVideoStart, markVideoWatched, module.id, module.title]);
+
+  const trackVideoCompletion = useCallback(async (videoId: string, videoTitle: string, watchedDuration?: number) => {
+    if (videoStartTime) {
+      const actualWatchTime = watchedDuration || (Date.now() - videoStartTime) / 1000;
+      
+      // Track video completion
+      await markVideoWatched(
+        videoId,
+        videoTitle,
+        actualWatchTime,
+        module.id,
+        module.title
+      );
+    }
+  }, [videoStartTime, markVideoWatched, module.id, module.title]);
+
+  // Reset tracking when video changes
+  useEffect(() => {
+    setHasTrackedVideoStart(false);
+    setVideoStartTime(null);
+  }, [currentVideoUrl]);
+
 
   const allAvailableVideos = useMemo(() => {
     let videos: VideoLink[] = [];
-    if (module.contentType === 'video') {
-      if (module.contentUrl && module.contentUrl.includes('youtube.com/embed/')) {
+    if (module.contentType === 'video') {      if (module.contentUrl && module.contentUrl.includes('youtube.com/embed/')) {
         videos.push({
           id: `module-default-${module.id}`,
           langCode: 'module', 
@@ -261,8 +307,7 @@ export function MediaPlayer({
         }
         
         return (
-          <div className="space-y-4">
-            {iframeSrc ? (
+          <div className="space-y-4">            {iframeSrc ? (
                 <div className="aspect-video w-full">
                     <iframe
                     src={iframeSrc}
@@ -271,6 +316,13 @@ export function MediaPlayer({
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     className="w-full h-full rounded-lg shadow-md"
+                    onLoad={() => {
+                      const videoId = activeVideoIdFromPlaylist || currentVideoUrl || 'unknown';
+                      const videoTitle = activeVideoIdFromPlaylist 
+                        ? fetchedPlaylistItems?.find(item => item.videoId === activeVideoIdFromPlaylist)?.title || 'Unknown Video'
+                        : currentVideoTitle || module.title;
+                      trackVideoStart(videoId, videoTitle);
+                    }}
                     ></iframe>
                 </div>
             ) : (
@@ -286,10 +338,9 @@ export function MediaPlayer({
                     <Select value={selectedVideoKey} onValueChange={handleVideoSelectionChange} disabled={allAvailableVideos.length === 0}>
                     <SelectTrigger className="truncate" aria-label="Select video version">
                         <SelectValue placeholder="Select a video version" />
-                    </SelectTrigger>
-                    <SelectContent>
+                    </SelectTrigger>                    <SelectContent>
                         {allAvailableVideos.map((video) => (
-                        <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl} className="text-sm">
+                        <SelectItem key={video.id || video.youtubeEmbedUrl} value={video.youtubeEmbedUrl} className="text-sm">
                             <span className="truncate" title={video.title}>
                                 {userAddedModuleVideos.some(uv => uv.youtubeEmbedUrl === video.youtubeEmbedUrl) && '👤 '}
                                 {video.title || 'Untitled Video'} ({video.langName}) {video.isPlaylist ? " (Playlist)" : ""}
@@ -413,13 +464,15 @@ export function MediaPlayer({
         );
       case 'pdf':
         return (
-           <div className="flex flex-col items-center justify-center h-[60vh] min-h-[400px] bg-muted rounded-lg p-1 text-center">
-            {module.contentUrl ? (
+           <div className="flex flex-col items-center justify-center h-[60vh] min-h-[400px] bg-muted rounded-lg p-1 text-center">            {module.contentUrl ? (
                 <iframe 
                     src={module.contentUrl} 
                     className="w-full h-full border-none rounded-md" 
                     title={`PDF viewer for ${module.title}`} 
                     aria-label={`PDF content for module: ${module.title}`}
+                    onLoad={() => {
+                      trackVideoStart(module.id, module.title);
+                    }}
                 />
             ) : (
               <>

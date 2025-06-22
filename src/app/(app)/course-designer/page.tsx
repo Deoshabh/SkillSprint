@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent, useEffect, useCallback } from 'react';
+import { useState, type ChangeEvent, type FormEvent, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import { suggestModulePracticeTask, type SuggestModulePracticeTaskInput } from '
 import { generateCourseSchedule, type GenerateCourseScheduleInput } from '@/ai/flows/generate-course-schedule-flow';
 
 import type { VideoLink, Course as CourseType, Module as ModuleType, ModuleContentType } from '@/lib/types';
-import { saveOrUpdateCourse, submitCourseForReview, getCourseById } from '@/lib/placeholder-data';
+import { useCourseStore } from '@/lib/course-store';
 import ReactMarkdown from 'react-markdown';
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
@@ -24,13 +24,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger as AlertDialogTriggerPrimitive } from "@/components/ui/alert-dialog";
+import * as YAML from 'js-yaml';
+import * as XLSX from 'xlsx';
+import { CourseImporter } from '@/lib/course-importer';
 
 
 interface ManualVideoFormState {
@@ -42,6 +45,93 @@ interface ManualVideoFormState {
 }
 
 type CourseVisibility = "private" | "shared" | "public";
+
+// Export functions
+const exportAsJSON = (courseTitle: string, courseCategory: string, courseDescriptionText: string, coverImageUrl: string, courseVisibility: CourseVisibility, estimatedDurationWeeks: number, modules: ModuleType[], suggestedSchedule: string, toast: any) => {
+  if (!courseTitle.trim()) {
+    toast({
+      title: "Export Error",
+      description: "Please provide a course title before exporting.",
+      variant: "destructive"
+    });
+    return;
+  }
+  
+  const courseData = {
+    title: courseTitle,
+    category: courseCategory,
+    description: courseDescriptionText,
+    coverImage: coverImageUrl,
+    visibility: courseVisibility,
+    estimatedDuration: estimatedDurationWeeks,
+    modules: modules.map((module, index) => ({
+      week: index + 1,
+      title: module.title,
+      description: module.description,
+      contentType: module.contentType,
+      estimatedTime: module.estimatedTime,
+      subtopics: module.subtopics,
+      practiceTask: module.practiceTask,
+      videoLinks: module.videoLinks
+    })),
+    schedule: suggestedSchedule,
+    exportedAt: new Date().toISOString()
+  };
+  
+  const blob = new Blob([JSON.stringify(courseData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${courseTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_course.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  toast({
+    title: "Export Successful",
+    description: `Course exported as JSON: ${a.download}`
+  });
+};
+
+const exportAsCSV = (courseTitle: string, modules: ModuleType[], toast: any) => {
+  if (!courseTitle.trim() || modules.length === 0) {
+    toast({
+      title: "Export Error", 
+      description: "Please provide a course title and at least one module before exporting.",
+      variant: "destructive"
+    });
+    return;
+  }
+  
+  const headers = ['Week', 'Module Title', 'Description', 'Content Type', 'Estimated Time', 'Subtopics', 'Practice Task'];
+  const rows = modules.map((module, index) => [
+    (index + 1).toString(),
+    `"${module.title.replace(/"/g, '""')}"`,
+    `"${(module.description || '').replace(/"/g, '""')}"`,
+    module.contentType,
+    module.estimatedTime,
+    `"${(module.subtopics || []).join('; ').replace(/"/g, '""')}"`,
+    `"${(module.practiceTask || '').replace(/"/g, '""')}"`
+  ]);
+  
+  const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${courseTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_modules.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  toast({
+    title: "Export Successful",
+    description: `Course modules exported as CSV: ${a.download}`
+  });
+};
 
 const initialModuleState: ModuleType = {
   id: '',
@@ -56,12 +146,12 @@ const initialModuleState: ModuleType = {
 };
 
 
-export default function MyCourseDesignerPage() {
+function CourseDesignerContent() {
   const { toast } = useToast();
   const { user, updateUserProfile } = useAuth();
+  const { addCourse, updateCourse, getCourseById, submitForReview } = useCourseStore();
   const searchParams = useSearchParams();
   const router = useRouter();
-
   // Course Data State
   const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
   const [courseTitle, setCourseTitle] = useState('');
@@ -70,6 +160,11 @@ export default function MyCourseDesignerPage() {
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [courseVisibility, setCourseVisibility] = useState<CourseVisibility>("private");
   const [courseStatus, setCourseStatus] = useState<CourseType['status']>("draft");
+
+  // Memoized callback to prevent infinite re-renders
+  const handleCourseVisibilityChange = useCallback((value: CourseVisibility) => {
+    setCourseVisibility(value);
+  }, []);
   const [modules, setModules] = useState<ModuleType[]>([]);
   const [originalAuthorId, setOriginalAuthorId] = useState<string | null>(null);
   const [suggestedSchedule, setSuggestedSchedule] = useState<string>('');
@@ -102,12 +197,85 @@ export default function MyCourseDesignerPage() {
   const [moduleSubtopicSuggestions, setModuleSubtopicSuggestions] = useState<string[]>([]);
   const [modulePracticeTaskSuggestion, setModulePracticeTaskSuggestion] = useState<string>('');
   const [moduleVideoSuggestions, setModuleVideoSuggestions] = useState<VideoLink[]>([]);
-
   const [loadingCourseSchedule, setLoadingCourseSchedule] = useState(false);
   const [errorCourseSchedule, setErrorCourseSchedule] = useState<string | null>(null);
+  const [isLoadingCourse, setIsLoadingCourse] = useState(false);  // Handle file import with multi-course support
+  const [importedCourses, setImportedCourses] = useState<CourseType[]>([]);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
+  const handleImportCourses = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-  const [isLoadingCourse, setIsLoadingCourse] = useState(false);
+    try {
+      // Use the new CourseImporter to process files
+      const importedCourses = await CourseImporter.processFiles(files);
+      
+      if (importedCourses.length === 0) {
+        toast({
+          title: "No Courses Found",
+          description: "No valid course data found in the uploaded files.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Store imported courses and show selection dialog
+      setImportedCourses(importedCourses);
+      setShowImportDialog(true);
+
+      // Reset the file input
+      (event.target as HTMLInputElement).value = '';
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: "Import Failed",
+        description: error instanceof Error ? error.message : "Failed to import courses",
+        variant: "destructive"
+      });
+    }
+  };
+  const handleSelectImportedCourse = (course: CourseType) => {
+    // Load the selected course into the designer
+    setModules(course.modules);
+    setCourseTitle(course.title);
+    setCourseCategory(course.category);
+    setCourseDescriptionText(course.description || '');
+    setCoverImageUrl(course.imageUrl || '');
+    setEstimatedDurationWeeks(parseInt(course.duration?.replace(/\D/g, '') || '12'));
+    setSuggestedSchedule(course.suggestedSchedule || '');
+    
+    // Set default visibility to "shared" for imported courses so they're visible in the catalog
+    setCourseVisibility('shared');
+    setCourseStatus('draft');
+    
+    // Also set the course video pool with all video links from modules (deduplicated)
+    const allVideoLinks: VideoLink[] = [];
+    const seenUrls = new Set<string>();
+    
+    course.modules.forEach(module => {
+      if (module.videoLinks) {
+        module.videoLinks.forEach(video => {
+          if (!seenUrls.has(video.youtubeEmbedUrl)) {
+            seenUrls.add(video.youtubeEmbedUrl);
+            allVideoLinks.push({
+              ...video,
+              id: video.id || uuidv4() // Ensure each video has a unique ID
+            });
+          }
+        });
+      }
+    });
+    setCourseVideoPool(allVideoLinks);
+
+    setShowImportDialog(false);
+    setImportedCourses([]);
+
+    toast({
+      title: "Course Loaded",
+      description: `Successfully loaded "${course.title}" with ${course.modules.length} modules. Please save to make it visible in the course catalog.`
+    });
+  };
 
   const resetCourseForm = useCallback(() => {
     setCurrentCourseId(null);
@@ -131,9 +299,7 @@ export default function MyCourseDesignerPage() {
     setEstimatedDurationWeeks(12);
     setErrorCourseSchedule(null);
     router.replace('/course-designer', {scroll: false});
-  }, [router]);
-
-  const loadCourseForEditing = useCallback((courseId: string) => {
+  }, [router]);  const loadCourseForEditing = useCallback((courseId: string) => {
     if (!user) {
         toast({ title: "Login Required", description: "You need to be logged in.", variant: "destructive" });
         router.push('/login');
@@ -162,8 +328,7 @@ export default function MyCourseDesignerPage() {
         setSuggestedSchedule(courseToEdit.suggestedSchedule || '');
         setEstimatedDurationWeeks(courseToEdit.duration ? parseInt(courseToEdit.duration.split(" ")[0]) : (courseToEdit.modules?.length || 12));
 
-        
-        const existingCourseVideos = new Map<string, VideoLink>();
+          const existingCourseVideos = new Map<string, VideoLink>();
         (courseToEdit.modules || []).forEach(module => {
             if(module.contentUrl && module.contentType === 'video'){
                  const mainVideoFromModule: VideoLink = { 
@@ -180,7 +345,10 @@ export default function MyCourseDesignerPage() {
             }
             (module.videoLinks || []).forEach(video => {
                 if (!existingCourseVideos.has(video.youtubeEmbedUrl)) {
-                    existingCourseVideos.set(video.youtubeEmbedUrl, video);
+                    existingCourseVideos.set(video.youtubeEmbedUrl, {
+                        ...video,
+                        id: video.id || uuidv4() // Ensure unique ID
+                    });
                 }
             });
         });
@@ -330,14 +498,12 @@ export default function MyCourseDesignerPage() {
     const { name, value } = e.target;
     setCurrentModuleForm(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleModuleContentTypeChange = (value: ModuleContentType) => {
+    const handleModuleContentTypeChange = useCallback((value: ModuleContentType) => {
      setCurrentModuleForm(prev => ({ ...prev, contentType: value, contentUrl: '' })); 
-  };
-
-  const handleModuleContentUrlChange = (value: string) => { 
-     setCurrentModuleForm(prev => ({ ...prev, contentUrl: value }));
-  };
+  }, []);
+  const handleModuleContentUrlChange = useCallback((value: string) => { 
+     setCurrentModuleForm(prev => ({ ...prev, contentUrl: value === "none" ? "" : value }));
+  }, []);
 
   const handleSaveModule = () => {
     if (!currentModuleForm.title.trim()) {
@@ -385,11 +551,11 @@ export default function MyCourseDesignerPage() {
       return;
     }
     setLoadingModuleSuggestions('subtopics');
-    try {
-      const input: SuggestModuleSubtopicsInput = {
+    try {      const input: SuggestModuleSubtopicsInput = {
         moduleTitle: currentModuleForm.title,
         moduleDescription: currentModuleForm.description,
         courseTopic: courseTitle,
+        numberOfSuggestions: 5,
       };
       const result = await suggestModuleSubtopics(input);
       setModuleSubtopicSuggestions(result.subtopics);
@@ -473,7 +639,15 @@ export default function MyCourseDesignerPage() {
         }));
         setModulePracticeTaskSuggestion(''); 
         toast({description: "Suggested practice task used."});
-    }
+    }  };
+
+  // --- Export Handlers ---
+  const handleExportAsJSON = () => {
+    exportAsJSON(courseTitle, courseCategory, courseDescriptionText, coverImageUrl, courseVisibility, estimatedDurationWeeks, modules, suggestedSchedule, toast);
+  };
+
+  const handleExportAsCSV = () => {
+    exportAsCSV(courseTitle, modules, toast);
   };
 
 
@@ -501,19 +675,20 @@ export default function MyCourseDesignerPage() {
       duration: `${estimatedDurationWeeks} Weeks`, 
     };
 
-    const savedCourse = saveOrUpdateCourse(courseDataToSave);
-
-    if (savedCourse) {
+    const savedCourse = currentCourseId ? updateCourse(courseDataToSave) : addCourse(courseDataToSave);    if (savedCourse) {
       setCurrentCourseId(savedCourse.id); 
       setCourseStatus(savedCourse.status || 'draft'); 
       setOriginalAuthorId(savedCourse.authorId || null); 
-      toast({ title: "Course Saved", description: `"${savedCourse.title}" has been saved with all module changes.` });
+      toast({ 
+        title: "Course Saved", 
+        description: `"${savedCourse.title}" has been saved with all module changes. ${savedCourse.visibility === 'private' ? 'Set visibility to "Shared" or "Public" to make it visible in the course catalog.' : 'It is now visible in the course catalog!'}` 
+      });
     } else {
       toast({ title: "Save Failed", description: "Could not save the course. Please try again.", variant: "destructive"});
     }
   };
   
-  const handleSubmitForReview = () => {
+  const handleSubmitForReview = async () => {
     if (!currentCourseId) {
         toast({ title: "Save Course First", description: "Please save the course before submitting for review.", variant: "destructive" });
         return;
@@ -527,7 +702,7 @@ export default function MyCourseDesignerPage() {
         return;
     }
 
-    const success = submitCourseForReview(currentCourseId);
+    const success = await submitForReview(currentCourseId);
     if (success) {
         setCourseStatus('pending_review');
         toast({ title: "Course Submitted", description: "Your course has been submitted for admin review." });
@@ -548,11 +723,11 @@ export default function MyCourseDesignerPage() {
     setLoadingCourseSchedule(true);
     setErrorCourseSchedule(null);
     try {
-      const moduleTitles = modules.map(m => m.title);
-      const input: GenerateCourseScheduleInput = {
+      const moduleTitles = modules.map(m => m.title);      const input: GenerateCourseScheduleInput = {
         courseTitle,
         moduleTitles,
-        estimatedCourseDurationWeeks,
+        estimatedCourseDurationWeeks: estimatedDurationWeeks,
+        studyHoursPerWeek: 10,
       };
       const result = await generateCourseSchedule(input);
       setSuggestedSchedule(result.scheduleText);
@@ -640,10 +815,9 @@ export default function MyCourseDesignerPage() {
                 <Label htmlFor="coverImage">Cover Image URL</Label>
                 <Input id="coverImage" type="url" placeholder="https://placehold.co/600x400.png" value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} />
               </div>
-              <Separator />
-               <div className="space-y-3">
+              <Separator />               <div className="space-y-3">
                 <Label className="text-base font-medium">Visibility</Label>
-                <RadioGroup value={courseVisibility} onValueChange={(value: CourseVisibility) => setCourseVisibility(value)} className="space-y-2">
+                <RadioGroup value={courseVisibility} onValueChange={handleCourseVisibilityChange} className="space-y-2">
                   <div className="flex items-center space-x-2"><RadioGroupItem value="private" id="vis-private" /><Label htmlFor="vis-private" className="font-normal">Private</Label></div>
                   <div className="flex items-center space-x-2"><RadioGroupItem value="shared" id="vis-shared" /><Label htmlFor="vis-shared" className="font-normal">Shared (Link)</Label></div>
                   <div className="flex items-center space-x-2"><RadioGroupItem value="public" id="vis-public" /><Label htmlFor="vis-public" className="font-normal">Public</Label></div>
@@ -750,15 +924,14 @@ export default function MyCourseDesignerPage() {
                                     </Select>
                                 </div>
                             </div>
-                             {currentModuleForm.contentType === 'video' && (
-                                <div>
-                                    <Label htmlFor="moduleContentUrl">Primary Video</Label>
-                                    <Select value={currentModuleForm.contentUrl} onValueChange={handleModuleContentUrlChange}>
+                             {currentModuleForm.contentType === 'video' && (                                <div>                                    <Label htmlFor="moduleContentUrl">Primary Video</Label>
+                                    <Select value={currentModuleForm.contentUrl || "none"} onValueChange={handleModuleContentUrlChange}>
                                         <SelectTrigger id="moduleContentUrl"><SelectValue placeholder="Select video from pool" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">None</SelectItem>
-                                            {courseVideoPool.map(video => (
-                                                <SelectItem key={video.youtubeEmbedUrl} value={video.youtubeEmbedUrl}>{video.title} {video.isPlaylist ? "(Playlist)" : ""}</SelectItem>
+                                            <SelectItem value="none">None</SelectItem>                                            {courseVideoPool
+                                              .filter(video => video.youtubeEmbedUrl && video.youtubeEmbedUrl.trim() !== '')
+                                              .map(video => (
+                                                <SelectItem key={video.id || video.youtubeEmbedUrl} value={video.youtubeEmbedUrl}>{video.title} {video.isPlaylist ? "(Playlist)" : ""}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -785,7 +958,7 @@ export default function MyCourseDesignerPage() {
                                                         <ul className="list-disc list-inside pl-2 text-xs">
                                                             {moduleSubtopicSuggestions.map((s, i) => <li key={i}>{s}</li>)}
                                                         </ul>
-                                                        <Button size="xs" variant="link" onClick={addSuggestedSubtopicsToModule}>Add to Module</Button>
+                                                        <Button size="sm" variant="link" onClick={addSuggestedSubtopicsToModule}>Add to Module</Button>
                                                     </div>
                                                 )}
                                             </div>
@@ -797,7 +970,7 @@ export default function MyCourseDesignerPage() {
                                                     <div className="p-2 border rounded-md bg-muted/50 text-sm space-y-1">
                                                         <p className="font-medium text-xs">Suggested Practice Task:</p>
                                                         <p className="text-xs">{modulePracticeTaskSuggestion}</p>
-                                                        <Button size="xs" variant="link" onClick={useSuggestedPracticeTask}>Use this Task</Button>
+                                                        <Button size="sm" variant="link" onClick={useSuggestedPracticeTask}>Use this Task</Button>
                                                     </div>
                                                 )}
                                             </div>
@@ -810,7 +983,7 @@ export default function MyCourseDesignerPage() {
                                                     {moduleVideoSuggestions.map(v => (
                                                         <div key={v.youtubeEmbedUrl} className="text-xs border-b last:border-b-0 py-1">
                                                             <p className="truncate" title={v.title}>{v.title} ({v.langName})</p>
-                                                            <Button size="xs" variant="link" onClick={() => handleAddVideoToPool(v)}>Add to Course Pool</Button>
+                                                            <Button size="sm" variant="link" onClick={() => handleAddVideoToPool(v)}>Add to Course Pool</Button>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -936,7 +1109,7 @@ export default function MyCourseDesignerPage() {
                                        <p className="font-medium truncate" title={video.title}>{video.title}{video.isPlaylist && " (Playlist)"}</p>
                                        <p className="text-xs text-muted-foreground">Creator: {video.creator || 'N/A'} - Lang: {video.langName}</p>
                                     </div>
-                                    <Button variant="ghost" size="icon-sm" onClick={() => handleRemoveVideoFromPool(video.youtubeEmbedUrl)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                    <Button variant="ghost" size="sm" onClick={() => handleRemoveVideoFromPool(video.youtubeEmbedUrl)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                 </Card>
                             ))}
                              {courseVideoPool.length === 0 && <p className="text-xs text-center py-4">Pool is empty. Add videos from AI suggestions or your library.</p>}
@@ -980,9 +1153,9 @@ export default function MyCourseDesignerPage() {
                                         {video.creator && <p className="text-xs text-muted-foreground">Creator: {video.creator}</p>}
                                         <p className="text-xs text-muted-foreground">Language: {video.langName}</p>
                                         {video.notes && <p className="text-xs text-muted-foreground italic truncate" title={video.notes}>Notes: {video.notes}</p>}
-                                        <Button variant="outline" size="xs" className="mt-2 w-full text-xs" onClick={() => handleAddVideoToPool(video)}><ListPlus className="h-3 w-3 mr-1" /> Add to Course Pool</Button>
+                                        <Button variant="outline" size="sm" className="mt-2 w-full text-xs" onClick={() => handleAddVideoToPool(video)}><ListPlus className="h-3 w-3 mr-1" /> Add to Course Pool</Button>
                                     </div>
-                                    <Button variant="ghost" size="icon-sm" onClick={() => handleRemoveFromUserPicks(video.youtubeEmbedUrl)} className="flex-shrink-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    <Button variant="ghost" size="sm" onClick={() => handleRemoveFromUserPicks(video.youtubeEmbedUrl)} className="flex-shrink-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                 </Card>
                             ))}
                         </ScrollArea>
@@ -991,17 +1164,157 @@ export default function MyCourseDesignerPage() {
             </CardContent>
           </Card>
         </div>
-        </TabsContent>
-
-        <TabsContent value="import-export">
-          <Card className="shadow-xl"><CardHeader><CardTitle className="text-2xl">Import / Export Course Content</CardTitle><CardDescription>Manage your course data. (Coming soon)</CardDescription></CardHeader>
-            <CardContent className="space-y-6"><div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-background"><CardHeader><CardTitle className="text-lg">Import Course</CardTitle></CardHeader><CardContent className="space-y-3"><Input type="file" disabled /><Button className="w-full" variant="outline" disabled><Upload className="h-4 w-4 mr-2" />Import</Button></CardContent></Card>
-                <Card className="bg-background"><CardHeader><CardTitle className="text-lg">Export Course</CardTitle></CardHeader><CardContent className="space-y-3"><p className="text-sm text-muted-foreground">Select format.</p><div className="flex gap-2"><Button className="flex-1" variant="outline" disabled>CSV</Button><Button className="flex-1" variant="outline" disabled>YAML</Button><Button className="flex-1" variant="outline" disabled>JSON</Button></div><Button className="w-full" disabled><Download className="h-4 w-4 mr-2" />Download</Button></CardContent></Card>
-            </div></CardContent>
-          </Card>
+        </TabsContent>        <TabsContent value="import-export">
+          <Card className="shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-2xl">Import / Export Course Content</CardTitle>
+              <CardDescription>
+                Import courses from YAML/Excel files or export your current course data.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-background">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <Upload className="h-5 w-5 mr-2 text-primary" />
+                      Import Courses
+                    </CardTitle>
+                    <CardDescription>
+                      Upload YAML (.yml, .yaml) or Excel (.xlsx) files to import course content.
+                      Supports both overview and detail files.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="course-files">Course Files</Label>
+                      <Input 
+                        id="course-files"
+                        type="file" 
+                        multiple
+                        accept=".yml,.yaml,.xlsx"
+                        onChange={handleImportCourses}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Select multiple YAML or Excel files. Overview files should contain duration and module counts.
+                        Detail files should contain module information.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-background">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <Download className="h-5 w-5 mr-2 text-primary" />
+                      Export Course
+                    </CardTitle>
+                    <CardDescription>
+                      Export your current course as JSON or CSV for backup or sharing.
+                    </CardDescription>
+                  </CardHeader>                  <CardContent className="space-y-3">
+                    <Button variant="outline" onClick={handleExportAsJSON} className="w-full">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export as JSON
+                    </Button>
+                    <Button variant="outline" onClick={handleExportAsCSV} className="w-full">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export as CSV
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="mt-6 p-4 border rounded-md bg-muted/30">
+                <h4 className="font-medium mb-2">File Format Examples:</h4>
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p><strong>YAML Overview:</strong> Contains "Overview" key with course duration and module counts</p>
+                  <p><strong>YAML Details:</strong> Contains course sections with module arrays</p>
+                  <p><strong>Excel Overview:</strong> First row has "Duration (Weeks)" and "Modules" columns</p>
+                  <p><strong>Excel Details:</strong> Rows with module information (Week, Topic, Subtopics, etc.)</p>
+                </div>
+              </div>
+            </CardContent>          </Card>
         </TabsContent>
       </Tabs>
-    </div>
+
+      {/* Multi-Course Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Select Course to Import</DialogTitle>
+            <DialogDescription>
+              Found {importedCourses.length} course(s) in the uploaded file(s). Select one to load into the designer.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[50vh] p-1">
+            <div className="space-y-3">
+              {importedCourses.map((course, index) => (
+                <Card key={course.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-lg">{course.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{course.description}</p>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <CalendarClock className="h-3 w-3" />
+                            {course.duration || '12 weeks'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <LayoutGrid className="h-3 w-3" />
+                            {course.modules.length} modules
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <VideoIcon className="h-3 w-3" />
+                            {course.modules.reduce((sum, m) => sum + (m.videoLinks?.length || 0), 0)} videos
+                          </span>
+                        </div>
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-muted-foreground">Sample modules:</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {course.modules.slice(0, 3).map((module, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {module.title}
+                              </Badge>
+                            ))}
+                            {course.modules.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{course.modules.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => handleSelectImportedCourse(course)}
+                        className="ml-4"
+                      >
+                        Select
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>  );
+}
+
+export default function MyCourseDesignerPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <CourseDesignerContent />
+    </Suspense>
   );
 }

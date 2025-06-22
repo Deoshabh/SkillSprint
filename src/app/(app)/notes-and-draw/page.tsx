@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { DrawingCanvas, type DrawingCanvasRef } from '@/components/drawing-canva
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SquarePen, FileText, Image as ImageIcon, PlusCircle, Save, Trash2, Edit2, Loader2, List, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import type { TextNote, Sketch } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
@@ -34,29 +34,31 @@ export default function NotesAndDrawPage() {
   const [isCanvasVisible, setIsCanvasVisible] = useState(false);
   const drawingCanvasRef = useRef<DrawingCanvasRef>(null);
 
+  // Memoize textNotes and sketches from user to prevent unnecessary re-renders
+  const userTextNotes = useMemo(() => user?.textNotes || [], [user?.textNotes]);
+  const userSketches = useMemo(() => user?.sketches || [], [user?.sketches]);
 
   useEffect(() => {
-    if (user) {
-      setTextNotes(user.textNotes || []);
-      setSketches(user.sketches || []);
-    }
-  }, [user]);
+    setTextNotes(userTextNotes);
+  }, [userTextNotes]);
 
-  const handleNewNote = () => {
+  useEffect(() => {
+    setSketches(userSketches);
+  }, [userSketches]);
+  const handleNewNote = useCallback(() => {
     setCurrentNote(null);
     setNoteTitleInput('');
     setNoteBodyInput('');
     setIsEditingNote(true); 
-  };
+  }, []);
 
-  const handleSelectNote = (note: TextNote) => {
+  const handleSelectNote = useCallback((note: TextNote) => {
     setCurrentNote(note);
     setNoteTitleInput(note.title);
     setNoteBodyInput(note.body);
     setIsEditingNote(true);
-  };
-
-  const handleSaveNote = () => {
+  }, []);
+  const handleSaveNote = useCallback(() => {
     if (!noteTitleInput.trim()) {
       toast({ title: "Error", description: "Note title cannot be empty.", variant: "destructive" });
       return;
@@ -87,9 +89,8 @@ export default function NotesAndDrawPage() {
         const refreshedNote = updatedNotes.find(n => n.id === currentNote.id);
         if (refreshedNote) setCurrentNote(refreshedNote);
     }
-  };
-
-  const handleDeleteNote = (noteId: string) => {
+  }, [noteTitleInput, noteBodyInput, currentNote, textNotes, updateUserProfile, toast]);
+  const handleDeleteNote = useCallback((noteId: string) => {
     const updatedNotes = textNotes.filter(n => n.id !== noteId);
     setTextNotes(updatedNotes);
     updateUserProfile({ textNotes: updatedNotes });
@@ -98,25 +99,24 @@ export default function NotesAndDrawPage() {
       handleNewNote(); 
       setIsEditingNote(false);
     }
-  };
-
-  const handleNewSketch = () => {
+  }, [textNotes, updateUserProfile, toast, currentNote, handleNewNote]);
+  const handleNewSketch = useCallback(() => {
     setCurrentSketch(null);
     setSketchTitleInput('');
     setIsEditingSketch(true);
     setIsCanvasVisible(true);
     drawingCanvasRef.current?.clearAndLoadDataUrl(null); 
-  };
+  }, []);
 
-  const handleSelectSketch = (sketch: Sketch) => {
+  const handleSelectSketch = useCallback((sketch: Sketch) => {
     setCurrentSketch(sketch);
     setSketchTitleInput(sketch.title);
     setIsEditingSketch(true);
     setIsCanvasVisible(true);
     drawingCanvasRef.current?.clearAndLoadDataUrl(sketch.dataUrl);
-  };
+  }, []);
 
-  const handleSaveSketch = () => {
+  const handleSaveSketch = useCallback(() => {
     if (!sketchTitleInput.trim()) {
       toast({ title: "Error", description: "Sketch title cannot be empty.", variant: "destructive" });
       return;
@@ -152,9 +152,8 @@ export default function NotesAndDrawPage() {
         const refreshedSketch = updatedSketches.find(s => s.id === currentSketch.id);
         if (refreshedSketch) setCurrentSketch(refreshedSketch);
     }
-  };
-
-  const handleDeleteSketch = (sketchId: string) => {
+  }, [sketchTitleInput, currentSketch, sketches, updateUserProfile, toast, handleSelectSketch]);
+  const handleDeleteSketch = useCallback((sketchId: string) => {
     const updatedSketches = sketches.filter(s => s.id !== sketchId);
     setSketches(updatedSketches);
     updateUserProfile({ sketches: updatedSketches });
@@ -163,7 +162,7 @@ export default function NotesAndDrawPage() {
       handleNewSketch();
       setIsEditingSketch(false);
     }
-  };
+  }, [sketches, updateUserProfile, toast, currentSketch, handleNewSketch]);
   
   const getRelativeTime = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -254,10 +253,10 @@ export default function NotesAndDrawPage() {
                           <p className="text-xs text-muted-foreground mt-1">Updated: {getRelativeTime(note.updatedAt)}</p>
                         </button>
                         <div className="flex gap-1 flex-shrink-0 ml-2">
-                           <Button variant="ghost" size="icon-sm" onClick={() => handleSelectNote(note)} title="Edit Note" aria-label={`Edit note ${note.title}`}><Edit2 className="h-4 w-4" aria-hidden="true" /></Button>
+                           <Button variant="ghost" size="sm" onClick={() => handleSelectNote(note)} title="Edit Note" aria-label={`Edit note ${note.title}`}><Edit2 className="h-4 w-4" aria-hidden="true" /></Button>
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon-sm" title="Delete Note" aria-label={`Delete note ${note.title}`}><Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" /></Button>
+                              <Button variant="ghost" size="sm" title="Delete Note" aria-label={`Delete note ${note.title}`}><Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" /></Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader><AlertDialogTitle>Delete Note?</AlertDialogTitle><AlertDialogDescription>Are you sure you want to delete the note titled "{note.title}"? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
@@ -340,10 +339,10 @@ export default function NotesAndDrawPage() {
                                 </div>
                             </button>
                             <div className="flex gap-1 flex-shrink-0 ml-2">
-                                <Button variant="ghost" size="icon-sm" onClick={() => handleSelectSketch(sketch)} title="Edit Sketch" aria-label={`Edit sketch ${sketch.title}`}><Edit2 className="h-4 w-4" aria-hidden="true" /></Button>
+                                <Button variant="ghost" size="sm" onClick={() => handleSelectSketch(sketch)} title="Edit Sketch" aria-label={`Edit sketch ${sketch.title}`}><Edit2 className="h-4 w-4" aria-hidden="true" /></Button>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon-sm" title="Delete Sketch" aria-label={`Delete sketch ${sketch.title}`}><Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" /></Button>
+                                    <Button variant="ghost" size="sm" title="Delete Sketch" aria-label={`Delete sketch ${sketch.title}`}><Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" /></Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                     <AlertDialogHeader><AlertDialogTitle>Delete Sketch?</AlertDialogTitle><AlertDialogDescription>Are you sure you want to delete the sketch titled "{sketch.title}"? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>

@@ -1,15 +1,55 @@
 
-import { placeholderUserProfile, placeholderBadges } from '@/lib/placeholder-data';
+"use client";
+
+import { useAuth } from '@/context/auth-context';
 import { PointsDisplay } from '@/components/points-display';
 import { BadgeIcon } from '@/components/badge-icon';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, ShieldAlert, Star } from 'lucide-react';
+import { Trophy, ShieldAlert, Star, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { Badge } from '@/lib/types';
 
 export default function GamificationPage() {
-  const user = placeholderUserProfile;
-  const allBadges = placeholderBadges; // Simulating a list of all possible badges
+  const { user, loading } = useAuth();
+  const [allBadges, setAllBadges] = useState<Badge[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const earnedBadgeIds = new Set(user.earnedBadges.map(b => b.id));
+  useEffect(() => {
+    fetchBadges();
+  }, []);
+
+  const fetchBadges = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/badges');
+      if (response.ok) {
+        const data = await response.json();
+        setAllBadges(data.badges || []);
+      }
+    } catch (error) {
+      console.error('Error fetching badges:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (loading || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Please sign in to view your achievements.</p>
+      </div>
+    );
+  }
+
+  const earnedBadgeIds = new Set(user.earnedBadges.map((b: any) => b.id));
 
   return (
     <div className="space-y-8">
@@ -42,11 +82,10 @@ export default function GamificationPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline">My Badge Collection</CardTitle>
           <CardDescription>Hover over a badge to see its details.</CardDescription>
-        </CardHeader>
-        <CardContent>
+        </CardHeader>        <CardContent>
           {user.earnedBadges.length > 0 ? (
             <div className="flex flex-wrap gap-6">
-              {user.earnedBadges.map(badge => (
+              {user.earnedBadges.map((badge: any) => (
                 <div key={badge.id} className="flex flex-col items-center text-center">
                   <BadgeIcon badge={badge} size="lg" />
                   <p className="mt-2 text-sm font-medium">{badge.name}</p>

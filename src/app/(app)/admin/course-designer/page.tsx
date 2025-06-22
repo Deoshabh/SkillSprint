@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label'; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCoursesForReview, getPublishedCourses, getRejectedCourses, updateCourseStatus, type Course } from '@/lib/placeholder-data';
+import { useCourseStore } from '@/lib/course-store';
+import type { Course } from '@/lib/types';
 import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; 
 import { CheckCircle, XCircle, Eye, ShieldCheck, Clock, Loader2, RefreshCw, ArchiveRestore, SendToBack, Edit, Settings, Users, Wand2, MessageSquareQuote, BarChartBig, SendHorizonal, Sparkles, Archive } from 'lucide-react'; 
 import Link from 'next/link';
@@ -18,35 +19,45 @@ import { Badge } from '@/components/ui/badge';
 type CourseStatusType = Course['status'];
 
 export default function AdminCourseManagementPage() {
-  const [pendingCourses, setPendingCourses] = useState<Course[]>([]);
-  const [publishedCourses, setPublishedCourses] = useState<Course[]>([]);
-  const [rejectedCourses, setRejectedCourses] = useState<Course[]>([]);
+  const { courses, refreshCourses } = useCourseStore();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("pending");
   const { toast } = useToast();
 
+  const pendingCourses = courses.filter(course => course.status === 'pending_review');
+  const publishedCourses = courses.filter(course => course.status === 'published');
+  const rejectedCourses = courses.filter(course => course.status === 'rejected');
+
   const fetchAllCoursesByStatus = useCallback(async () => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    setPendingCourses(getCoursesForReview());
-    setPublishedCourses(getPublishedCourses());
-    setRejectedCourses(getRejectedCourses());
+    await refreshCourses();
     setIsLoading(false);
-  }, []);
+  }, [refreshCourses]);
 
   useEffect(() => {
     fetchAllCoursesByStatus();
   }, [fetchAllCoursesByStatus]);
-
-  const handleUpdateStatus = (courseId: string, newStatus: CourseStatusType, currentList: CourseStatusType | 'all' = 'all') => {
-    const success = updateCourseStatus(courseId, newStatus);
-    if (success) {
-      toast({
-        title: "Status Updated",
-        description: `Course ${courseId} status changed to ${newStatus?.replace("_", " ")}.`,
+  const handleUpdateStatus = async (courseId: string, newStatus: CourseStatusType, currentList: CourseStatusType | 'all' = 'all') => {
+    try {
+      const response = await fetch(`/api/courses/${courseId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
       });
-      fetchAllCoursesByStatus(); 
-    } else {
+
+      if (response.ok) {
+        toast({
+          title: "Status Updated",
+          description: `Course ${courseId} status changed to ${newStatus?.replace("_", " ")}.`,
+        });
+        await fetchAllCoursesByStatus(); 
+      } else {
+        throw new Error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating course status:', error);
       toast({
         title: "Update Failed",
         description: `Could not update status for course ${courseId}.`,

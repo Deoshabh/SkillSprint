@@ -1,107 +1,134 @@
-
 "use client";
 
-import type { UserProfile, VideoLink, UserModuleVideos, TextNote, Sketch, DailyPlans, FeedbackItem } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { useState, useEffect } from 'react';
+import type { UserProfile } from '@/lib/types';
 
 interface AuthContextType {
   user: UserProfile | null;
-  login: (userData: UserProfile) => void;
-  logout: () => void;
-  updateUserProfile: (profileData: Partial<UserProfile>) => void;
   loading: boolean;
+  updateUserProfile: (profileData: Partial<UserProfile>) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
+export function useAuth(): AuthContextType {
+  const { user: clerkUser, isLoaded } = useUser();
+  const [dbUser, setDbUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); 
+
+  const fetchUserFromDB = async () => {
+    if (!clerkUser) {
+      setDbUser(null);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/users');
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // Convert database user to UserProfile format
+        const userProfile: UserProfile = {
+          id: userData.clerkId,
+          name: userData.name || clerkUser.fullName || clerkUser.firstName || 'User',
+          email: userData.email || clerkUser.primaryEmailAddress?.emailAddress || '',
+          avatarUrl: userData.avatarUrl || clerkUser.imageUrl,
+          points: userData.points || 0,
+          earnedBadges: userData.earnedBadges || [],
+          enrolledCourses: userData.enrollments?.map((e: any) => e.courseId) || [],
+          role: userData.role?.toLowerCase() || 'learner',
+          learningPreferences: {
+            tracks: userData.learningTracks || [],
+            language: userData.language || 'English'
+          },
+          customVideoLinks: [],
+          userModuleVideos: {},
+          textNotes: [],
+          sketches: [],
+          dailyPlans: {},
+          profileSetupComplete: userData.profileSetupComplete || false,
+          submittedFeedback: [],
+        };
+        
+        setDbUser(userProfile);
+      } else {
+        console.error('Failed to fetch user from database');
+        setDbUser(null);
+      }
+    } catch (error) {
+      console.error('Error fetching user from database:', error);
+      setDbUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('skillSprintUser');
-    if (storedUser) {
-      try {
-        const parsedUser: UserProfile = JSON.parse(storedUser);
-        // Ensure new fields have defaults if not present in older stored data
-        if (!parsedUser.customVideoLinks) {
-          parsedUser.customVideoLinks = [];
-        }
-        if (!parsedUser.userModuleVideos) {
-          parsedUser.userModuleVideos = {};
-        }
-        if (!parsedUser.textNotes) {
-          parsedUser.textNotes = [];
-        }
-        if (!parsedUser.sketches) {
-          parsedUser.sketches = [];
-        }
-        if (!parsedUser.dailyPlans) {
-          parsedUser.dailyPlans = {};
-        }
-        if (!parsedUser.submittedFeedback) {
-          parsedUser.submittedFeedback = [];
-        }
-        setUser(parsedUser);
-      } catch (e) {
-        console.error("Failed to parse stored user data", e);
-        localStorage.removeItem('skillSprintUser');
+    if (isLoaded) {
+      fetchUserFromDB();
+    }
+  }, [clerkUser, isLoaded]);
+
+  const updateUserProfile = async (profileData: Partial<UserProfile>) => {
+    if (!clerkUser || !dbUser) return;
+
+    try {
+      setLoading(true);
+      
+      // Convert UserProfile updates to database format
+      const dbUpdateData: any = {};
+      
+      if (profileData.role) {
+        dbUpdateData.role = profileData.role.toUpperCase();
       }
-    }
-    setLoading(false);
-  }, []);
+      
+      if (profileData.learningPreferences) {
+        if (profileData.learningPreferences.tracks) {
+          dbUpdateData.learningTracks = profileData.learningPreferences.tracks;
+        }
+        if (profileData.learningPreferences.language) {
+          dbUpdateData.language = profileData.learningPreferences.language;
+        }
+      }
+      
+      if (profileData.profileSetupComplete !== undefined) {
+        dbUpdateData.profileSetupComplete = profileData.profileSetupComplete;
+      }
 
-  const login = (userData: UserProfile) => {
-    const userToStore: UserProfile = {
-      ...userData,
-      customVideoLinks: userData.customVideoLinks || [],
-      userModuleVideos: userData.userModuleVideos || {},
-      textNotes: userData.textNotes || [],
-      sketches: userData.sketches || [],
-      dailyPlans: userData.dailyPlans || {},
-      submittedFeedback: userData.submittedFeedback || [],
-    };
-    setUser(userToStore);
-    localStorage.setItem('skillSprintUser', JSON.stringify(userToStore));
-  };
+      if (profileData.points !== undefined) {
+        dbUpdateData.points = profileData.points;
+      }
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('skillSprintUser');
-    router.push('/'); 
-  };
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dbUpdateData),
+      });
 
-  const updateUserProfile = (profileData: Partial<UserProfile>) => {
-    if (user) {
-      const updatedUser: UserProfile = { 
-        ...user, 
-        ...profileData,
-        customVideoLinks: profileData.customVideoLinks !== undefined ? profileData.customVideoLinks : user.customVideoLinks || [],
-        userModuleVideos: profileData.userModuleVideos !== undefined ? profileData.userModuleVideos : user.userModuleVideos || {},
-        textNotes: profileData.textNotes !== undefined ? profileData.textNotes : user.textNotes || [],
-        sketches: profileData.sketches !== undefined ? profileData.sketches : user.sketches || [],
-        dailyPlans: profileData.dailyPlans !== undefined ? profileData.dailyPlans : user.dailyPlans || {},
-        submittedFeedback: profileData.submittedFeedback !== undefined ? profileData.submittedFeedback : user.submittedFeedback || [],
-        profileSetupComplete: profileData.profileSetupComplete !== undefined ? profileData.profileSetupComplete : user.profileSetupComplete,
-      };
-      setUser(updatedUser);
-      localStorage.setItem('skillSprintUser', JSON.stringify(updatedUser));
+      if (response.ok) {
+        await fetchUserFromDB(); // Refresh user data
+      } else {
+        throw new Error('Failed to update user profile');
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, updateUserProfile, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  const refreshUser = async () => {
+    await fetchUserFromDB();
+  };
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return {
+    user: dbUser,
+    loading: loading || !isLoaded,
+    updateUserProfile,
+    refreshUser,
+  };
 }

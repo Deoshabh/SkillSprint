@@ -1,19 +1,20 @@
 
 "use client";
 
-import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, UserCircle2, Edit3, Mail, Briefcase, BookOpen, Languages, ShieldCheck, LayoutGrid, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
-import { placeholderCourses } from '@/lib/placeholder-data';
+import { useAuth } from '@/context/auth-context';
+import { useCourseStore } from '@/lib/course-store';
 import type { Course } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function UserProfilePage() {
   const { user, loading } = useAuth();
+  const { courses } = useCourseStore();
 
   if (loading) {
     return (
@@ -30,16 +31,18 @@ export default function UserProfilePage() {
           <CardTitle>Access Denied</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>Please log in to view your profile.</p>
-          <Button asChild className="mt-4">
-            <Link href="/login">Login</Link>
-          </Button>
+          <p>Please sign in to view your profile.</p>
         </CardContent>
       </Card>
     );
   }
 
-  const myCreatedCourses = placeholderCourses.filter(course => course.authorId === user.id);
+  const myCreatedCourses = courses.filter(course => course.authorId === user.id);
+  // Get user data from profile or set defaults
+  const userRole = user.role || 'learner';
+  const learningTracks = user.learningPreferences?.tracks || [];
+  const preferredLanguage = user.learningPreferences?.language || 'Not set';
+  const profileSetupComplete = user.profileSetupComplete ?? false;
 
   return (
     <div className="space-y-8">
@@ -54,14 +57,12 @@ export default function UserProfilePage() {
       </header>
 
       <Card className="shadow-xl">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20 border-2 border-primary">
-              <AvatarImage src={user.avatarUrl} alt={`${user.name}'s avatar`} data-ai-hint={user.dataAiHint || "profile person"} />
-              <AvatarFallback className="text-2xl">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">          <div className="flex items-center gap-4">            <Avatar className="h-20 w-20 border-2 border-primary">
+              <AvatarImage src={user.avatarUrl} alt={`${user.name}'s avatar`} />
+              <AvatarFallback className="text-2xl">{(user.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-3xl font-headline">{user.name}</CardTitle>
+              <CardTitle className="text-3xl font-headline">{user.name || 'User'}</CardTitle>
               <CardDescription className="flex items-center mt-1">
                 <Mail className="h-4 w-4 mr-2 text-muted-foreground" aria-hidden="true" /> {user.email}
               </CardDescription>
@@ -91,12 +92,11 @@ export default function UserProfilePage() {
                   <Briefcase className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> Role
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="capitalize text-lg">{user.role || 'Not set'}</p>
-                {user.role === 'educator' && (
+              <CardContent>                <p className="capitalize text-lg">{userRole || 'Not set'}</p>
+                {userRole === 'educator' && (
                   <Badge variant="secondary" className="mt-2">Educator Tools Enabled</Badge>
                 )}
-                 {user.role === 'admin' && (
+                 {userRole === 'admin' && (
                   <Badge variant="default" className="mt-2">Administrator Access</Badge>
                 )}
               </CardContent>
@@ -107,11 +107,10 @@ export default function UserProfilePage() {
                 <CardTitle className="text-lg flex items-center">
                   <BookOpen className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> Learning Tracks
                 </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {user.learningPreferences?.tracks && user.learningPreferences.tracks.length > 0 ? (
+              </CardHeader>              <CardContent>
+                {learningTracks && learningTracks.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {user.learningPreferences.tracks.map(track => (
+                    {learningTracks.map((track: string) => (
                       <Badge key={track} variant="outline">{track}</Badge>
                     ))}
                   </div>
@@ -130,7 +129,7 @@ export default function UserProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-lg">{user.learningPreferences?.language || 'Not set'}</p>
+                <p className="text-lg">{preferredLanguage || 'Not set'}</p>
               </CardContent>
             </Card>
             <Card className="bg-background/50">
@@ -139,9 +138,8 @@ export default function UserProfilePage() {
                   <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" /> Account Status
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-lg">
-                  {user.profileSetupComplete ? 
+              <CardContent>                <p className="text-lg">
+                  {profileSetupComplete ? 
                     <span className="text-green-600 font-medium">Profile Setup Complete</span> : 
                     <span className="text-orange-500 font-medium">Profile Setup Incomplete</span>
                   }

@@ -1,71 +1,119 @@
 
 "use client";
 
-import { useState, type FormEvent, useEffect } from 'react';
+import { useState, type FormEvent, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
+import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { placeholderCourses } from '@/lib/placeholder-data';
 import { useToast } from "@/hooks/use-toast";
 import { UserCog, Save, Loader2 } from 'lucide-react';
-import type { UserProfile } from '@/lib/types';
 
-const availableTracks = Array.from(new Set(placeholderCourses.map(course => course.category)));
+// Available tracks for users to choose from
+const availableTracks = [
+  'Web Development',
+  'Mobile Development', 
+  'Data Science',
+  'Machine Learning',
+  'AI & Robotics',
+  'Cybersecurity',
+  'Cloud Computing',
+  'DevOps',
+  'UI/UX Design',
+  'Digital Marketing',
+  'Business',
+  'Language Learning',
+  'Photography',
+  'Music Production',
+  'Creative Writing',
+  'Finance',
+  'Health & Fitness',
+  'Cooking',
+  'Art & Craft',
+  'Personal Development'
+];
 const availableLanguages = ['English', 'Hindi', 'Spanish', 'French', 'German'];
 
 export default function ProfileSetupPage() {
   const router = useRouter();
-  const { user, updateUserProfile, loading: authLoading } = useAuth();
+  const { user, isLoaded } = useUser();
   const { toast } = useToast();
-
-  const [role, setRole] = useState<'learner' | 'educator' | undefined>(user?.role || 'learner');
-  const [selectedTracks, setSelectedTracks] = useState<string[]>(user?.learningPreferences?.tracks || []);
-  const [preferredLanguage, setPreferredLanguage] = useState<string>(user?.learningPreferences?.language || 'English');
+  const [role, setRole] = useState<'learner' | 'educator'>('learner');
+  const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
+  const [preferredLanguage, setPreferredLanguage] = useState<string>('English');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
+  // Track if we've already initialized the form to prevent infinite loops
+  const hasInitialized = useRef(false);
+  
+  // Memoized callback to prevent infinite re-renders
+  const handleRoleChange = useCallback((value: 'learner' | 'educator') => {
+    setRole(value);
+  }, []);
+  
+  const handleLanguageChange = useCallback((value: string) => {
+    setPreferredLanguage(value);
+  }, []);
   useEffect(() => {
-    if (!authLoading && user?.profileSetupComplete) {
-      // If profile is already complete, redirect to dashboard.
-      // This prevents accessing this page directly if setup is done.
+    if (!isLoaded) return; // Wait for user data to load
+    
+    if (!user) {
+      // No user found, redirect to home
+      router.push('/');
+      return;
+    }
+    
+    // Check if profile setup is already complete
+    const isComplete = user.unsafeMetadata?.profileSetupComplete as boolean;
+    if (isComplete) {
       router.replace('/dashboard');
+      return;
     }
-     // Pre-fill form if user data exists but setup isn't complete
-    if (user) {
-        setRole(user.role || 'learner');
-        setSelectedTracks(user.learningPreferences?.tracks || []);
-        setPreferredLanguage(user.learningPreferences?.language || 'English');
+      // Only initialize form data once to prevent infinite loops
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      
+      // Pre-fill form if user data exists but setup isn't complete
+      const existingRole = user.unsafeMetadata?.role as 'learner' | 'educator';
+      const existingPrefs = user.unsafeMetadata?.learningPreferences as any;
+      
+      if (existingRole) {
+        setRole(existingRole);
+      }
+      if (existingPrefs?.tracks) {
+        setSelectedTracks(existingPrefs.tracks);
+      }
+      if (existingPrefs?.language) {
+        setPreferredLanguage(existingPrefs.language);
+      }
     }
-  }, [user, authLoading, router]);
+  }, [isLoaded, user?.id, user?.unsafeMetadata?.profileSetupComplete, router]);
 
 
   const handleTrackChange = (track: string) => {
     setSelectedTracks(prev =>
       prev.includes(track) ? prev.filter(t => t !== track) : [...prev, track]
     );
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  };  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!role) {
-      toast({ title: "Validation Error", description: "Please select a role.", variant: "destructive" });
-      return;
-    }
     setIsSubmitting(true);
     try {
-      const profileData: Partial<UserProfile> = {
-        role,
-        learningPreferences: {
-          tracks: selectedTracks,
-          language: preferredLanguage,
-        },
-        profileSetupComplete: true,
-      };
-      await updateUserProfile(profileData); // updateUserProfile is not async, but we can await if it were
+      // Update user's public metadata in Clerk
+      await user?.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          role,
+          learningPreferences: {
+            tracks: selectedTracks,
+            language: preferredLanguage,
+          },
+          profileSetupComplete: true,
+        }
+      });
       
       toast({
         title: "Profile Setup Complete!",
@@ -83,23 +131,21 @@ export default function ProfileSetupPage() {
       setIsSubmitting(false);
     }
   };
-  
-  if (authLoading || (!authLoading && user?.profileSetupComplete && user)) { // Added user check here
+    if (!isLoaded) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-  
-  if (!user && !authLoading) {
-     router.push('/login'); // Should not happen if routes are protected, but as a safeguard
-     return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-            <p>Redirecting to login...</p>
-            <Loader2 className="h-12 w-12 animate-spin text-primary ml-2" />
-        </div>
-     );
+
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+        <p>Redirecting...</p>
+        <Loader2 className="h-12 w-12 animate-spin text-primary ml-2" />
+      </div>
+    );
   }
 
 
@@ -114,10 +160,9 @@ export default function ProfileSetupPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-2">
-              <Label className="text-lg font-semibold">What is your primary role?</Label>
-              <RadioGroup
+              <Label className="text-lg font-semibold">What is your primary role?</Label>              <RadioGroup
                 value={role}
-                onValueChange={(value: 'learner' | 'educator') => setRole(value)}
+                onValueChange={handleRoleChange}
                 className="flex flex-col sm:flex-row gap-4 pt-2"
               >
                 <div className="flex items-center space-x-2 p-4 border rounded-md flex-1 hover:bg-accent/50 cursor-pointer data-[state=checked]:bg-accent data-[state=checked]:border-primary">
@@ -150,7 +195,7 @@ export default function ProfileSetupPage() {
 
             <div className="space-y-2">
               <Label htmlFor="language" className="text-lg font-semibold">Preferred Language for Content</Label>
-              <Select value={preferredLanguage} onValueChange={setPreferredLanguage}>
+              <Select value={preferredLanguage} onValueChange={handleLanguageChange}>
                 <SelectTrigger id="language">
                   <SelectValue placeholder="Select a language" />
                 </SelectTrigger>

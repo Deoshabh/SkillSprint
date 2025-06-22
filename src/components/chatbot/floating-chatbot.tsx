@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageCircle, Send, X, Loader2, Bot, User } from 'lucide-react';
 import { doubtSolver, type DoubtSolverInput } from '@/ai/flows/doubt-solver-flow';
 import type { ChatMessage } from '@/lib/types';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 

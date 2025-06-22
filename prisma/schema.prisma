@@ -1,0 +1,389 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId   String   @unique // Clerk user ID
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  role      UserRole @default(LEARNER)
+  points    Int      @default(0)
+  
+  // Learning preferences
+  learningTracks String[] // Array of track names
+  language       String   @default("English")
+  
+  // Profile status
+  profileSetupComplete Boolean @default(false)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  createdCourses Course[] @relation("CourseAuthor")
+  enrollments    Enrollment[]
+  userProgress   UserProgress[]
+  earnedBadges   UserBadge[]
+  textNotes      TextNote[]
+  sketches       Sketch[]
+  dailyPlans     DailyPlan[]
+  customVideos   CustomVideo[]
+  moduleVideos   ModuleVideo[]
+  feedback       Feedback[]
+  xapiStatements XAPIStatement[]
+}
+
+model Course {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  instructor  String?
+  category    String
+  icon        String        @default("Brain")
+  imageUrl    String?
+  dataAiHint  String?
+  duration    String?
+  status      CourseStatus  @default(DRAFT)
+  visibility  CourseVisibility @default(PRIVATE)
+  
+  // Schedule and metadata
+  suggestedSchedule String?
+  
+  // Author information
+  authorId    String        @db.ObjectId
+  author      User          @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  
+  // Submission details
+  submittedDate DateTime?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastModified DateTime @default(now())
+  
+  // Relations
+  modules     Module[]
+  enrollments Enrollment[]
+  userProgress UserProgress[]
+  videoPool   CourseVideo[]
+}
+
+model Module {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String?
+  contentType   ContentType @default(VIDEO)
+  contentUrl    String?
+  estimatedTime String      @default("1 hour")
+  order         Int         // Order within the course
+  
+  // AI-generated content
+  subtopics     String[]
+  practiceTask  String?
+  
+  // Course relation
+  courseId      String      @db.ObjectId
+  course        Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  videoLinks    VideoLink[]
+  userProgress  ModuleProgress[]
+  moduleVideos  ModuleVideo[]
+  quizzes       Quiz[]
+}
+
+model VideoLink {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  youtubeEmbedUrl String
+  language        String @default("English")
+  creator         String?
+  notes           String?
+  isPlaylist      Boolean @default(false)
+  
+  // Module relation
+  moduleId        String? @db.ObjectId
+  module          Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations to junction tables
+  courseVideos    CourseVideo[]
+  customVideos    CustomVideo[]
+  moduleVideos    ModuleVideo[]
+}
+
+model CourseVideo {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  courseId String @db.ObjectId
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  videoId  String @db.ObjectId
+  video    VideoLink @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([courseId, videoId])
+}
+
+model CustomVideo {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  videoId String @db.ObjectId
+  video   VideoLink @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, videoId])
+}
+
+model ModuleVideo {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  moduleId String @db.ObjectId
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  videoId  String @db.ObjectId
+  video    VideoLink @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, moduleId, videoId])
+}
+
+model Enrollment {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  courseId String @db.ObjectId
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  enrolledAt DateTime @default(now())
+  
+  @@unique([userId, courseId])
+}
+
+model UserProgress {
+  id               String @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String @db.ObjectId
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  courseId         String @db.ObjectId
+  course           Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  totalModules     Int    @default(0)
+  currentModuleId  String?
+  isCompleted      Boolean @default(false)
+  completedAt      DateTime?
+  
+  // Timestamps
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  moduleProgress   ModuleProgress[]
+  
+  @@unique([userId, courseId])
+}
+
+model ModuleProgress {
+  id             String @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String @db.ObjectId
+  moduleId       String @db.ObjectId
+  module         Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  userProgressId String @db.ObjectId
+  userProgress   UserProgress @relation(fields: [userProgressId], references: [id], onDelete: Cascade)
+  
+  isCompleted    Boolean @default(false)
+  completedAt    DateTime?
+  timeSpent      Int     @default(0) // in seconds
+  
+  // Quiz results
+  quizAttempts   Int     @default(0)
+  bestQuizScore  Float?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@unique([userId, moduleId])
+}
+
+model Badge {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  name        String @unique
+  description String
+  icon        String
+  color       String
+  
+  // Earning criteria
+  criteria    Json? // Flexible criteria storage
+  
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  badgeId  String @db.ObjectId
+  badge    Badge  @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  earnedAt DateTime @default(now())
+  
+  @@unique([userId, badgeId])
+}
+
+model TextNote {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  title    String
+  content  String
+  
+  userId   String @db.ObjectId
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sketch {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  title    String
+  data     String // JSON string of sketch data
+  
+  userId   String @db.ObjectId
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DailyPlan {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  date        String // YYYY-MM-DD format
+  title       String
+  description String?
+  completed   Boolean @default(false)
+  
+  userId      String @db.ObjectId
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, date, title])
+}
+
+model Quiz {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  questions   Json   // Array of question objects
+  passingScore Float  @default(70)
+  
+  moduleId    String @db.ObjectId
+  module      Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Feedback {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  type        FeedbackType
+  subject     String
+  message     String
+  courseId    String?       @db.ObjectId // Optional course reference
+  status      FeedbackStatus @default(NEW)
+  adminNotes  String?
+  
+  userId      String @db.ObjectId
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// xAPI Analytics tables
+model XAPIStatement {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  actor     Json   // Actor object
+  verb      Json   // Verb object  
+  object    Json   // Object being acted upon
+  result    Json?  // Optional result
+  context   Json?  // Optional context
+  timestamp DateTime @default(now())
+  
+  userId    String @db.ObjectId
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Enums
+enum UserRole {
+  LEARNER
+  EDUCATOR
+  ADMIN
+}
+
+enum CourseStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum CourseVisibility {
+  PRIVATE
+  SHARED
+  PUBLIC
+}
+
+enum ContentType {
+  VIDEO
+  MARKDOWN
+  PDF
+  QUIZ
+  INTERACTIVE
+}
+
+enum FeedbackType {
+  GENERAL
+  COURSE
+  BUG
+  FEATURE_REQUEST
+  SUPPORT
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}

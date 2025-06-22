@@ -1,7 +1,8 @@
 
 "use client"; 
 
-import { placeholderUserProfile, placeholderDailyPlan, placeholderCourses, placeholderUserProgress } from '@/lib/placeholder-data';
+import { useCourseStore } from '@/lib/course-store';
+import { useAuth } from '@/context/auth-context';
 import { DailyPlanItem } from '@/components/daily-plan-item';
 import { CourseCard } from '@/components/course-card';
 import { PointsDisplay } from '@/components/points-display';
@@ -11,46 +12,79 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowRight, BookMarked, CalendarCheck, CheckCircle, Gem, Loader2 } from 'lucide-react';
-import { useAuth } from '@/context/auth-context'; 
-import type { UserProfile as UserProfileType } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import type { UserProfile as UserProfileType, DailyTask, UserProgress } from '@/lib/types';
 
 export default function DashboardPage() {
-  const { user: authUser, loading: authLoading } = useAuth(); 
+  const { user, loading } = useAuth();
+  const { courses: allCourses } = useCourseStore();
+  const [dailyPlan, setDailyPlan] = useState<DailyTask[]>([]);
+  const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const user: UserProfileType = authUser || placeholderUserProfile;
+  // Filter to only show visible courses in dashboard
+  const courses = allCourses.filter(course => 
+    course.visibility === 'shared' || 
+    course.visibility === 'public' || 
+    course.status === 'published'
+  );
   
-  const todayPlan = placeholderDailyPlan.slice(0, 3); 
-  const currentCourseId = user.enrolledCourses.length > 0 ? user.enrolledCourses[0] : placeholderCourses[0]?.id; 
-  const currentCourseProgress = placeholderUserProgress.find(p => p.courseId === currentCourseId);
-  const currentCourse = placeholderCourses.find(c => c.id === currentCourseId);
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch daily plan
+      const dailyPlanResponse = await fetch('/api/daily-plans');
+      if (dailyPlanResponse.ok) {
+        const dailyPlanData = await dailyPlanResponse.json();
+        const today = new Date().toISOString().split('T')[0];
+        setDailyPlan(dailyPlanData.dailyPlans?.[today] || []);
+      }
+      
+      // Fetch user progress
+      const progressResponse = await fetch('/api/progress');
+      if (progressResponse.ok) {
+        const progressData = await progressResponse.json();
+        setUserProgress(progressData.progress || []);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  if (loading || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Please sign in to view your dashboard.</p>
+      </div>
+    );
+  }
+
+  const todayPlan = dailyPlan.slice(0, 3); 
+  const currentCourseId = user.enrolledCourses.length > 0 ? user.enrolledCourses[0] : courses[0]?.id; 
+  const currentCourseProgress = userProgress.find(p => p.courseId === currentCourseId);
+  const currentCourse = courses.find(c => c.id === currentCourseId);
 
   const calculateOverallProgress = () => {
     if (!currentCourseProgress || !currentCourse) return 0;
     return (currentCourseProgress.completedModules.length / currentCourseProgress.totalModules) * 100;
-  };
-  const overallProgress = calculateOverallProgress();
-
-  if (authLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <span className="ml-4 text-muted-foreground">Loading dashboard...</span>
-      </div>
-    );
-  }
-  
-  if (!authUser) {
-     return (
-       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)] text-center">
-         <h1 className="text-2xl font-semibold mb-4">Welcome to SkillSprint!</h1>
-         <p className="text-muted-foreground mb-6">Please log in to access your dashboard and courses.</p>
-         <Button asChild>
-           <Link href="/login">Go to Login</Link>
-         </Button>
-       </div>
-     );
-  }
-
+  };  const overallProgress = calculateOverallProgress();
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -98,7 +132,15 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {todayPlan.length > 0 ? (
-                todayPlan.map(task => <DailyPlanItem key={task.id} task={task} />)
+                todayPlan.map((task: DailyTask) => (
+                  <DailyPlanItem 
+                    key={task.id} 
+                    task={task} 
+                    onToggleCompletion={() => {}} 
+                    onEdit={() => {}} 
+                    onDelete={() => {}} 
+                  />
+                ))
               ) : (
                 <p className="text-muted-foreground">No tasks scheduled for today. Enjoy your break or explore new courses!</p>
               )}
@@ -115,9 +157,8 @@ export default function DashboardPage() {
               </CardTitle>
               <CardDescription>Your earned achievements.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-3">
-              {user.earnedBadges.length > 0 ? (
-                user.earnedBadges.map(badge => <BadgeIcon key={badge.id} badge={badge} size="md" />)
+            <CardContent className="flex flex-wrap gap-3">              {user.earnedBadges.length > 0 ? (
+                user.earnedBadges.map((badge: any) => <BadgeIcon key={badge.id} badge={badge} size="md" />)
               ) : (
                 <p className="text-sm text-muted-foreground">No badges earned yet. Keep learning!</p>
               )}
@@ -138,11 +179,23 @@ export default function DashboardPage() {
                 <BookMarked className="h-6 w-6 mr-2 text-primary" aria-hidden="true" /> Explore Courses
               </CardTitle>
             <CardDescription>Discover new skills and knowledge.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {placeholderCourses.slice(0, 3).map(course => (
-              <CourseCard key={course.id} course={course} />
-            ))}
+          </CardHeader>          <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {courses.length > 0 ? (
+              courses.slice(0, 3).map(course => (
+                <CourseCard key={course.id} course={course} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <BookMarked className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Courses Available</h3>
+                <p className="text-muted-foreground mb-4">
+                  Get started by creating your own courses or importing existing ones.
+                </p>
+                <Button asChild>
+                  <Link href="/course-designer">Create Your First Course</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
            <CardContent className="text-center pt-4 pb-6">
              <Button variant="default" size="lg" asChild className="transform hover:scale-105 transition-transform duration-200">

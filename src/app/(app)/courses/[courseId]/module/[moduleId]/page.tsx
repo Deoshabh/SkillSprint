@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, type FormEvent, use, type ChangeEvent } from 'react';
-import { getCourseById, getModuleById } from '@/lib/placeholder-data';
+import { getModuleById } from '@/lib/placeholder-data';
+import { useCourseStore } from '@/lib/course-store';
 import type { Course, Module as ModuleType, VideoLink } from '@/lib/types';
 import { MediaPlayer } from '@/components/media-player';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { generateQuiz, type GenerateQuizInput } from '@/ai/flows/ai-quiz-generator';
 import { findYoutubeVideosForModule, type FindYoutubeVideosInput } from '@/ai/flows/find-youtube-videos-flow';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
+import { useProgressTracker } from '@/hooks/useProgressTracker';
 import { Separator } from '@/components/ui/separator';
 import { USER_MODULE_VIDEO_LIMIT } from '@/lib/platform-config'; // Import the centralized limit
 
@@ -32,9 +34,10 @@ interface ModuleVideoFormState {
 
 export default function ModulePage({ params: paramsPromise }: { params: Promise<{ courseId: string; moduleId: string }> }) {
   const params = use(paramsPromise); 
-
   const { toast } = useToast();
   const { user, updateUserProfile } = useAuth(); 
+  const { getCourseById } = useCourseStore();
+  const { markModuleComplete, recordQuizResult, markVideoWatched, markCourseStarted } = useProgressTracker();
   const [course, setCourse] = useState<Course | null | undefined>(null);
   const [module, setModule] = useState<ModuleType | null | undefined>(null);
   
@@ -49,9 +52,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
   const [userAddedModuleVideos, setUserAddedModuleVideos] = useState<VideoLink[]>([]);
   const [moduleVideoForm, setModuleVideoForm] = useState<ModuleVideoFormState>({ url: '', language: 'English', creator: '', title: '', isPlaylist: false });
   const [showAddModuleVideoForm, setShowAddModuleVideoForm] = useState(false);
-
   const moduleKey = params.courseId && params.moduleId ? `${params.courseId}-${params.moduleId}` : '';
-
   useEffect(() => {
     setCourse(getCourseById(params.courseId));
     setModule(getModuleById(params.courseId, params.moduleId));
@@ -68,7 +69,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
       setUserAddedModuleVideos([]);
     }
 
-  }, [params.courseId, params.moduleId, user, moduleKey]); 
+  }, [params.courseId, params.moduleId, user, moduleKey, getCourseById]);
 
   if (course === undefined || module === undefined) { 
     return (
@@ -106,17 +107,38 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
     }
     setLoadingQuiz(true);
     setErrorQuiz(null);
-    setQuizQuestionsResult(null);
-    try {
+    setQuizQuestionsResult(null);    try {
       const input: GenerateQuizInput = { courseModuleContent: contentForQuiz, numberOfQuestions: 5 };
       const result = await generateQuiz(input);
       setQuizQuestionsResult(result.quizQuestions);
+      
+      // Track quiz generation with xAPI
+      if (course && module) {
+        await recordQuizResult(
+          `quiz-${module.id}-${Date.now()}`,
+          `${module.title} Practice Quiz`,
+          0, // Initial score, would be updated when user completes
+          result.quizQuestions.length,
+          false, // Not completed yet
+          module.id,
+          module.title
+        );
+      }
     } catch (err) {
       console.error("Error generating quiz:", err);
       setErrorQuiz(err instanceof Error ? err.message : "An unknown error occurred.");
-       toast({ title: "AI Quiz Generation Failed", description: "Could not generate the quiz. Please try again.", variant: "destructive" });
-    } finally {
+       toast({ title: "AI Quiz Generation Failed", description: "Could not generate the quiz. Please try again.", variant: "destructive" });    } finally {
       setLoadingQuiz(false);
+    }
+  };
+
+  const handleMarkModuleComplete = async () => {
+    if (course && module) {
+      await markModuleComplete(module.id, module.title, course.id, course.title);
+      toast({
+        title: "Module Completed",
+        description: `Great job! You've completed "${module.title}".`,
+      });
     }
   };
 
@@ -256,9 +278,7 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
            <div className="text-sm text-muted-foreground">
             Module {currentModuleIndex + 1} of {course.modules.length}
           </div>
-        </div>
-
-        <MediaPlayer 
+        </div>        <MediaPlayer 
           module={module} 
           aiFetchedVideos={aiFetchedVideos}
           userAddedModuleVideos={userAddedModuleVideos}
@@ -266,6 +286,8 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
           isAISearching={loadingAIVideos}
           userPreferredLanguage={user?.learningPreferences?.language}
           onRemoveUserVideo={handleRemoveUserModuleVideo}
+          courseId={course.id}
+          courseName={course.title}
         />
         {errorAIVideos && (
             <Alert variant="destructive" className="mt-4">
@@ -273,6 +295,31 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
                 <AlertTitle>AI Video Search Error</AlertTitle>
                 <AlertDescription>{errorAIVideos}</AlertDescription>
             </Alert>
+        )}
+
+        {/* Module Content and Additional Resources */}
+        {module.contentData && module.contentData.trim() && (
+          <Card className="mt-4 shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BookOpen className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
+                Module Content & Resources
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div 
+                className="prose prose-sm dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ 
+                  __html: module.contentData
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>')
+                    .replace(/^(.*)$/, '<p>$1</p>')
+                    .replace(/- \[(.*?)\]\((.*?)\) \((.*?)\)/g, '• <a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a> <span class="text-xs text-muted-foreground">($3)</span>')
+                }}
+              />
+            </CardContent>
+          </Card>
         )}
         
         {module.contentType === 'video' && (
@@ -418,9 +465,26 @@ export default function ModulePage({ params: paramsPromise }: { params: Promise<
             </Button>
           )}
         </div>
-      </div>
+      </div>      <aside className="lg:w-1/4 space-y-6 lg:sticky lg:top-20 self-start">
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-xl font-headline">Module Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleMarkModuleComplete}
+              className="w-full"
+              variant="default"
+            >
+              <CheckSquare className="h-4 w-4 mr-2" aria-hidden="true" />
+              Mark as Complete
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Track your learning progress with xAPI
+            </p>
+          </CardContent>
+        </Card>
 
-      <aside className="lg:w-1/4 space-y-6 lg:sticky lg:top-20 self-start">
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="text-xl font-headline">Course Outline</CardTitle>

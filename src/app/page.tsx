@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Gem, Library, Settings, BarChart3, Zap, Users, ArrowRight, Brain, Palette, Mic, type LucideIcon } from 'lucide-react';
+import { SignInButton, SignUpButton, SignedIn, SignedOut } from '@clerk/nextjs';
 
 interface Feature {
   icon: LucideIcon;
@@ -50,14 +51,20 @@ export default function PublicHomePage() {
           <Link href="/" className="flex items-center space-x-2" aria-label="SkillSprint Home">
             <Gem className="h-7 w-7 text-primary" aria-hidden="true" />
             <span className="font-bold text-2xl font-headline">SkillSprint</span>
-          </Link>
-          <nav className="flex items-center space-x-2">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">Sign Up</Link>
-            </Button>
+          </Link>          <nav className="flex items-center space-x-2">
+            <SignedOut>
+              <SignInButton>
+                <Button variant="ghost">Sign In</Button>
+              </SignInButton>
+              <SignUpButton>
+                <Button>Sign Up</Button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <Button asChild>
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            </SignedIn>
           </nav>
         </div>
       </header>
@@ -70,11 +77,19 @@ export default function PublicHomePage() {
             </h1>
             <p className="mt-6 text-lg leading-8 text-muted-foreground max-w-3xl mx-auto">
               SkillSprint is your adaptive learning co-pilot, designed to help you master new skills faster with AI-powered course generation, personalized plans, and engaging content.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-x-6">
-              <Button size="lg" asChild className="w-full sm:w-auto text-lg py-7 px-8">
-                <Link href="/signup">Get Started Free</Link>
-              </Button>
+            </p>            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-x-6">
+              <SignedOut>
+                <SignUpButton>
+                  <Button size="lg" className="w-full sm:w-auto text-lg py-7 px-8">
+                    Get Started Free
+                  </Button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <Button size="lg" asChild className="w-full sm:w-auto text-lg py-7 px-8">
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
+              </SignedIn>
               <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-lg py-7 px-8">
                 <Link href="#features">
                   Explore Features <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
@@ -111,11 +126,19 @@ export default function PublicHomePage() {
                 </h2>
                 <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
                     Join SkillSprint today and unlock a smarter way to learn.
-                </p>
-                <div className="mt-8">
-                    <Button size="lg" asChild className="text-lg py-7 px-10">
-                        <Link href="/signup">Start Your Free Trial Now</Link>
-                    </Button>
+                </p>                <div className="mt-8">
+                    <SignedOut>
+                      <SignUpButton>
+                        <Button size="lg" className="text-lg py-7 px-10">
+                          Start Your Free Trial Now
+                        </Button>
+                      </SignUpButton>
+                    </SignedOut>
+                    <SignedIn>
+                      <Button size="lg" asChild className="text-lg py-7 px-10">
+                        <Link href="/dashboard">Go to Dashboard</Link>
+                      </Button>
+                    </SignedIn>
                 </div>
             </div>
         </section>

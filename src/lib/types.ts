@@ -1,4 +1,3 @@
-
 import type { LucideIcon } from 'lucide-react';
 
 export interface TextNote {
@@ -168,4 +167,76 @@ export interface ChatMessage {
   parts: ChatMessagePart[];
   timestamp?: Date;
   id?: string;
+}
+
+// Quiz and Assessment Types
+export interface QuizQuestion {
+  id: string;
+  type: 'multiple-choice' | 'true-false' | 'short-answer' | 'coding';
+  question: string;
+  options?: string[]; // For multiple choice
+  correctAnswer: string | string[];
+  explanation?: string;
+  points: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+export interface Quiz {
+  id: string;
+  moduleId: string;
+  title: string;
+  description?: string;
+  questions: QuizQuestion[];
+  totalPoints: number;
+  passingScore: number; // Percentage required to pass
+  timeLimit?: number; // In minutes
+  maxAttempts?: number;
+  isRandomized?: boolean;
+  createdBy: 'ai' | 'manual';
+  estimatedTime: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuizAttempt {
+  id: string;
+  quizId: string;
+  userId: string;
+  answers: { [questionId: string]: string | string[] };
+  score: number;
+  totalPoints: number;
+  percentage: number;
+  passed: boolean;
+  timeSpent: number; // In minutes
+  submittedAt: string;
+  feedback?: string;
+}
+
+export interface ModuleProgress {
+  moduleId: string;
+  isUnlocked: boolean;
+  isCompleted: boolean;
+  quizAttempts: QuizAttempt[];
+  bestScore?: number;
+  completedAt?: string;
+}
+
+export interface CourseProgress {
+  courseId: string;
+  userId: string;
+  moduleProgress: { [moduleId: string]: ModuleProgress };
+  overallProgress: number; // Percentage
+  isCompleted: boolean;
+  completedAt?: string;
+  currentModuleId?: string;
+}
+
+// Enhanced Module type with quiz support
+export interface ModuleWithQuiz extends Module {
+  quiz?: Quiz;
+  isLocked?: boolean;
+  unlockRequirements?: {
+    previousModuleId?: string;
+    minimumQuizScore?: number;
+  };
 }

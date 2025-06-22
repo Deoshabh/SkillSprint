@@ -10,14 +10,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { getAllFeedback, updateFeedbackStatus as updatePlaceholderFeedbackStatus, type FeedbackItem } from '@/lib/placeholder-data';
+import { getAllFeedback, updateFeedbackStatus as updatePlaceholderFeedbackStatus } from '@/lib/placeholder-data';
+import type { FeedbackItem } from '@/lib/types';
 import { Archive as ArchiveIcon, MessageSquareText, User, Settings, ShieldCheck, Users, Wand2, BarChartBig, SendHorizonal, Sparkles, MailQuestion, Edit, Loader2, Eye, Filter } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isValid } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 
 type FeedbackStatusType = FeedbackItem['status'];
 

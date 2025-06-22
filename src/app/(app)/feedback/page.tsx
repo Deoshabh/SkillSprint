@@ -3,7 +3,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquarePlus, Send, Loader2 } from 'lucide-react';
-import { submitFeedback as submitFeedbackData, type FeedbackItem } from '@/lib/placeholder-data';
+import type { FeedbackItem } from '@/lib/types';
 
 type FeedbackType = FeedbackItem['type'];
 
@@ -40,7 +40,7 @@ export default function FeedbackPage() {
     return null;
   }
   
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) {
         toast({ title: "Error", description: "You must be logged in to submit feedback.", variant: "destructive" });
@@ -68,14 +68,24 @@ export default function FeedbackPage() {
 
     if (feedbackType === 'course') {
         feedbackPayload.courseTitle = courseIdentifier; // Assuming identifier is title for simplicity
-    }
+    }    try {
+        const response = await fetch('/api/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(feedbackPayload)
+        });
 
-    try {
-        submitFeedbackData(feedbackPayload);
+        if (!response.ok) {
+            throw new Error('Failed to submit feedback');
+        }
+
         toast({
             title: "Feedback Submitted!",
             description: "Thank you for your valuable input. We'll review it shortly.",
         });
+        
         // Reset form
         setFeedbackType('general');
         setCourseIdentifier('');

@@ -1,16 +1,21 @@
 
+"use client";
 
 import Image from 'next/image';
-import { getCourseById, placeholderUserProgress, getProgressForCourse } from '@/lib/placeholder-data';
+import { use, useEffect, useState } from 'react';
+import { useCourseStore } from '@/lib/course-store';
+import { useAuth } from '@/context/auth-context';
+import { useProgressTracker } from '@/hooks/useProgressTracker';
 import { ModuleItem } from '@/components/module-item';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, Clock, Users, Star, ArrowLeft, Share2, Bookmark, Award, Code, Sigma, Zap, Mic, Palette, Brain, type LucideIcon } from 'lucide-react';
+import { CheckCircle, Clock, Users, Star, ArrowLeft, Share2, Bookmark, Award, Code, Sigma, Zap, Mic, Palette, Brain, type LucideIcon, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import type { UserProgress } from '@/lib/types';
 
 const iconMap: { [key: string]: LucideIcon } = {
   Code,
@@ -21,9 +26,18 @@ const iconMap: { [key: string]: LucideIcon } = {
   Brain,
 };
 
-export default function CourseDetailPage({ params }: { params: { courseId: string } }) {
-  const course = getCourseById(params.courseId);
-  const userProgress = getProgressForCourse(params.courseId);
+export default function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = use(params);
+  const { getCourseById } = useCourseStore();
+  const { markCourseStarted } = useProgressTracker();
+  const course = getCourseById(courseId);
+  const userProgress = getProgressForCourse(courseId);
+
+  const handleStartCourse = async () => {
+    if (course) {
+      await markCourseStarted(course.id, course.title);
+    }
+  };
 
   if (!course) {
     return (
@@ -106,11 +120,18 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card className="shadow-lg">
+        <div className="space-y-6">          <Card className="shadow-lg">
             <CardContent className="p-6 space-y-4">
-               <Button size="lg" className="w-full text-lg" aria-label={userProgress && userProgress.completedModules.length > 0 ? `Continue learning ${course.title}` : `Start course ${course.title}`}>
-                {userProgress && userProgress.completedModules.length > 0 ? 'Continue Learning' : 'Start Course'}
+               <Button 
+                 size="lg" 
+                 className="w-full text-lg" 
+                 onClick={handleStartCourse}
+                 asChild
+                 aria-label={userProgress && userProgress.completedModules.length > 0 ? `Continue learning ${course.title}` : `Start course ${course.title}`}
+               >
+                <Link href={`/courses/${course.id}/module/${course.modules[0]?.id || ''}`}>
+                  {userProgress && userProgress.completedModules.length > 0 ? 'Continue Learning' : 'Start Course'}
+                </Link>
               </Button>
               <div className="flex space-x-2">
                 <Button variant="outline" className="flex-1" aria-label={`Share course: ${course.title}`}>

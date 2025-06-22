@@ -1,19 +1,65 @@
 
-import { placeholderUserProgress, placeholderCourses, placeholderUserProfile } from '@/lib/placeholder-data';
+"use client";
+
+import { useAuth } from '@/context/auth-context';
+import { useCourseStore } from '@/lib/course-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { BarChart3, CheckCircle, Clock, TrendingUp, Zap } from 'lucide-react';
+import { BarChart3, CheckCircle, Clock, TrendingUp, Zap, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import type { UserProgress } from '@/lib/types';
 
 export default function ProgressPage() {
-  const user = placeholderUserProfile;
+  const { user, loading } = useAuth();
+  const { courses } = useCourseStore();
+  const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProgress();
+    }
+  }, [user]);
+
+  const fetchUserProgress = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/progress');
+      if (response.ok) {
+        const data = await response.json();
+        setUserProgress(data.progress || []);
+      }
+    } catch (error) {
+      console.error('Error fetching user progress:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (loading || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Please sign in to view your progress.</p>
+      </div>
+    );
+  }
+
   const overallProgressStats = {
-    coursesCompleted: user.earnedBadges.filter(b => b.name.includes("Completer")).length,
-    modulesCompleted: placeholderUserProgress.reduce((sum, p) => sum + p.completedModules.length, 0),
-    hoursLearned: placeholderUserProgress.reduce((sum, p) => {
-      const course = placeholderCourses.find(c => c.id === p.courseId);
+    coursesCompleted: user.earnedBadges.filter((b: any) => b.name.includes("Completer")).length,
+    modulesCompleted: userProgress.reduce((sum, p) => sum + p.completedModules.length, 0),
+    hoursLearned: userProgress.reduce((sum, p) => {
+      const course = courses.find(c => c.id === p.courseId);
       if (!course) return sum;
       return sum + p.completedModules.reduce((moduleSum, modId) => {
         const module = course.modules.find(m => m.id === modId);
@@ -76,11 +122,10 @@ export default function ProgressPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Enrolled Courses</CardTitle>
           <CardDescription>Detailed progress for each course you are enrolled in.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {placeholderUserProgress.length > 0 ? (
-            placeholderUserProgress.map(progress => {
-              const course = placeholderCourses.find(c => c.id === progress.courseId);
+        </CardHeader>        <CardContent className="space-y-6">
+          {userProgress.length > 0 ? (
+            userProgress.map((progress: UserProgress) => {
+              const course = courses.find(c => c.id === progress.courseId);
               if (!course) return null;
               const percentage = (progress.completedModules.length / progress.totalModules) * 100;
               return (
@@ -109,7 +154,7 @@ export default function ProgressPage() {
                         <Progress value={percentage} className="h-3 w-full" aria-label={`Progress for ${course.title}: ${percentage.toFixed(0)}%`} />
                       </div>
                        <p className="text-xs text-muted-foreground mb-3">
-                        Next module: {course.modules.find(m => m.id === progress.currentModuleId)?.title || "Start course!"}
+                        Next module: {course.modules.find((m: any) => m.id === progress.currentModuleId)?.title || "Start course!"}
                       </p>
                       <Button asChild variant="default" size="sm">
                         <Link href={`/courses/${course.id}`} aria-label={`Go to course: ${course.title}`}>

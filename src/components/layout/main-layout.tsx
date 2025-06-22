@@ -16,10 +16,10 @@ import { SidebarNav } from './sidebar-nav';
 import { UserNav } from './user-nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users, BarChartBig, SendHorizonal, Sparkles, MessageSquarePlus, Archive } from 'lucide-react';
+import { BookOpen, CalendarDays, BarChart3, Trophy, Settings, ShieldCheck, Gem, LayoutDashboard, UserCircle2, FilePlus2, SquarePen, Wand2, Users, BarChartBig, SendHorizonal, Sparkles, MessageSquarePlus, Archive, Brain } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth } from '@/context/auth-context';
-import { FloatingChatbot } from '@/components/chatbot/floating-chatbot'; 
+import { useUser } from '@clerk/nextjs';
+import { FloatingChatbot } from '@/components/chatbot/floating-chatbot';
 
 const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -40,6 +40,7 @@ const accountNavItems: NavItem[] = [
 const adminNavItems: NavItem[] = [
    { title: 'Course Moderation', href: '/admin/course-designer', icon: ShieldCheck }, 
    { title: 'AI Course Generator', href: '/admin/ai-course-generator', icon: Sparkles },
+   { title: 'AI Course Designer v2', href: '/admin/ai-course-designer-v2', icon: Brain, label: 'New' },
    { title: 'AI Content Scout', href: '/admin/content-scout', icon: Wand2 },
    { title: 'User Management', href: '/admin/user-management', icon: Users },
    { title: 'Analytics', href: '/admin/analytics', icon: BarChartBig },
@@ -48,7 +49,11 @@ const adminNavItems: NavItem[] = [
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoaded } = useUser();
+  // For now, we'll assume any authenticated user is a regular user
+  // You can extend this by adding custom metadata to Clerk user profiles
+  // or using organizations/roles in Clerk
+  const isAdmin = user?.unsafeMetadata?.role === 'admin';
 
   return (
     <SidebarProvider defaultOpen>
@@ -73,9 +78,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <p className="px-4 py-1 text-xs font-medium text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden">Account</p>
                 <SidebarNav items={accountNavItems} />
               </>
-            )}
-
-            {user && (user.role === 'admin') && ( 
+            )}            {isAdmin && ( 
               <>
                 <div className="my-2 px-4 group-data-[collapsible=icon]:px-2">
                   <hr className="border-sidebar-border group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-4/5" />
