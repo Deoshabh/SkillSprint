@@ -29,8 +29,7 @@ model User {
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  // Relations
+    // Relations
   createdCourses Course[] @relation("CourseAuthor")
   enrollments    Enrollment[]
   userProgress   UserProgress[]
@@ -42,6 +41,11 @@ model User {
   moduleVideos   ModuleVideo[]
   feedback       Feedback[]
   xapiStatements XAPIStatement[]
+  
+  // Messaging relations
+  sentMessages       Message[] @relation("SentMessages")
+  receivedMessages   MessageRecipient[] @relation("ReceivedMessages")
+  createdTemplates   MessageTemplate[] @relation("CreatedTemplates")
 }
 
 model Course {
@@ -344,6 +348,90 @@ model XAPIStatement {
   user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Message {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  subject      String
+  body         String
+  
+  // Targeting information
+  targetSegment String?  // For predefined segments
+  targetFilters Json?    // For advanced targeting filters
+  
+  // Message metadata
+  senderUserId String    @db.ObjectId
+  sender       User      @relation("SentMessages", fields: [senderUserId], references: [id])
+  
+  // Statistics
+  totalRecipients   Int      @default(0)
+  deliveredCount    Int      @default(0)
+  failedCount       Int      @default(0)
+  
+  // Template information
+  templateId String?   @db.ObjectId
+  template   MessageTemplate? @relation(fields: [templateId], references: [id])
+  
+  // Status and timestamps
+  status       MessageStatus @default(DRAFT)
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relations
+  recipients MessageRecipient[]
+}
+
+model MessageTemplate {
+  id          String                @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  subject     String
+  body        String
+  category    MessageTemplateCategory
+  description String?
+  
+  // Template metadata
+  isActive    Boolean @default(true)
+  createdBy   String  @db.ObjectId
+  creator     User    @relation("CreatedTemplates", fields: [createdBy], references: [id])
+  
+  // Usage statistics
+  usageCount  Int     @default(0)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  messages    Message[]
+}
+
+model MessageRecipient {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  messageId String   @db.ObjectId
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  userId    String   @db.ObjectId
+  user      User     @relation("ReceivedMessages", fields: [userId], references: [id])
+  
+  // Delivery status
+  status       RecipientStatus @default(PENDING)
+  deliveredAt  DateTime?
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  errorMessage String?
+  
+  // Personalized content (after variable replacement)
+  personalizedSubject String?
+  personalizedBody    String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([messageId, userId])
+}
+
 // Enums
 enum UserRole {
   LEARNER
@@ -386,4 +474,33 @@ enum FeedbackStatus {
   IN_PROGRESS
   RESOLVED
   CLOSED
+}
+
+enum MessageStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum MessageTemplateCategory {
+  WELCOME
+  COURSE
+  ACHIEVEMENT
+  ANNOUNCEMENT
+  REMINDER
+  PROMOTIONAL
+  SYSTEM
+}
+
+enum RecipientStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  OPENED
+  CLICKED
+  BOUNCED
+  UNSUBSCRIBED
 }

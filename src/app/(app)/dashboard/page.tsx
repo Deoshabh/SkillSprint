@@ -12,18 +12,24 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowRight, BookMarked, CalendarCheck, CheckCircle, Gem, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { UserProfile as UserProfileType, DailyTask, UserProgress } from '@/lib/types';
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
-  const { courses: allCourses } = useCourseStore();
+  const { user, loading } = useAuth();  const { courses: allCourses } = useCourseStore();
+    // Ensure allCourses is always an array with additional safety checks
+  const safeAllCourses = useMemo(() => {
+    if (!allCourses || typeof allCourses !== 'object') return [];
+    if (!Array.isArray(allCourses)) return [];
+    return allCourses;
+  }, [allCourses]);
+  
   const [dailyPlan, setDailyPlan] = useState<DailyTask[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Filter to only show visible courses in dashboard
-  const courses = allCourses.filter(course => 
+  const courses = safeAllCourses.filter(course => 
     course.visibility === 'shared' || 
     course.visibility === 'public' || 
     course.status === 'published'

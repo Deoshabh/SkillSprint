@@ -240,3 +240,83 @@ export interface ModuleWithQuiz extends Module {
     minimumQuizScore?: number;
   };
 }
+
+// ===== MESSAGING SYSTEM TYPES =====
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  category: 'welcome' | 'course' | 'achievement' | 'announcement' | 'reminder' | 'promotional' | 'system';
+  description?: string;
+  isActive: boolean;
+  createdBy: string;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Message {
+  id: string;
+  subject: string;
+  body: string;
+  targetSegment?: string;
+  targetFilters?: any;
+  senderUserId: string;
+  totalRecipients: number;
+  deliveredCount: number;
+  failedCount: number;
+  templateId?: string;
+  template?: MessageTemplate;
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
+  scheduledFor?: string;
+  sentAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  recipients?: MessageRecipient[];
+}
+
+export interface MessageRecipient {
+  id: string;
+  messageId: string;
+  userId: string;
+  user?: UserProfile;
+  status: 'pending' | 'delivered' | 'failed' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed';
+  deliveredAt?: string;
+  openedAt?: string;
+  clickedAt?: string;
+  errorMessage?: string;
+  personalizedSubject?: string;
+  personalizedBody?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SendMessageRequest {
+  subject: string;
+  body: string;
+  targetSegment?: string;
+  targetFilters?: UserSearchFilters;
+  templateId?: string;
+  scheduledFor?: string;
+}
+
+export interface MessageStats {
+  totalSent: number;
+  deliveryRate: number;
+  openRate: number;
+  clickRate: number;
+  bounceRate: number;
+  unsubscribeRate: number;
+}
+
+export interface UserSearchFilters {
+  role?: UserRole;
+  createdAfter?: Date;
+  createdBefore?: Date;
+  search?: string;
+  hasCompletedCourses?: boolean;
+  minPoints?: number;
+  maxPoints?: number;
+}

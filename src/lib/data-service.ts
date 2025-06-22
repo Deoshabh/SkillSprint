@@ -56,44 +56,45 @@ export class UserService {
       console.error('Error finding user with relations:', error);
       return null;
     }
-  }
-  static async createUser(data: {
+  }  static async createUser(data: {
     clerkId: string;
     email: string;
     name?: string;
     avatarUrl?: string;
     role?: UserRole;
   }): Promise<User> {
-    // Temporarily return a mock user to avoid MongoDB replica set requirement
-    // TODO: Enable when MongoDB is configured as replica set
-    console.log('Skipping user creation due to MongoDB replica set requirement');
-    return {
-      id: `mock_${data.clerkId}`,
-      clerkId: data.clerkId,
-      email: data.email,
-      name: data.name || null,
-      avatarUrl: data.avatarUrl || null,
-      role: data.role || 'LEARNER',
-      points: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      learningTracks: [],
-      language: 'English',
-      profileSetupComplete: false
-    };
-    
-    /* Original implementation - enable when replica set is available
-    return await db.user.create({
-      data: {
+    try {
+      return await db.user.create({
+        data: {
+          clerkId: data.clerkId,
+          email: data.email,
+          name: data.name || null,
+          avatarUrl: data.avatarUrl || null,
+          role: data.role || 'LEARNER',
+          points: 0,
+          learningTracks: [],
+          language: 'English',
+          profileSetupComplete: false
+        }
+      });
+    } catch (error) {
+      console.error('Error creating user, using fallback:', error);
+      // Fallback for development without replica set
+      return {
+        id: `fallback_${data.clerkId}`,
         clerkId: data.clerkId,
         email: data.email,
         name: data.name || null,
         avatarUrl: data.avatarUrl || null,
         role: data.role || 'LEARNER',
-        points: 0
-      }
-    });
-    */
+        points: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        learningTracks: [],
+        language: 'English',
+        profileSetupComplete: false
+      };
+    }
   }
 
   static async updateUser(clerkId: string, data: {
@@ -442,6 +443,137 @@ export class CourseService {  static async createCourse(data: {
       return null;
     }
   }
+
+  static async searchCourses(params: {
+    search?: string;
+    category?: string;
+    status?: string;
+    instructor?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    courses: CourseWithModules[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  }> {
+    const {
+      search = '',
+      category = '',
+      status = '',
+      instructor = '',
+      sortBy = 'lastModified',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 10
+    } = params;
+
+    const skip = (page - 1) * limit;
+
+    // Build where clause for filtering
+    const where: any = {
+      AND: []
+    };
+
+    // Search filter (search in title, description, instructor)
+    if (search) {
+      where.AND.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { instructor: { contains: search, mode: 'insensitive' } }
+        ]
+      });
+    }
+
+    // Category filter
+    if (category) {
+      where.AND.push({ category });
+    }
+
+    // Status filter
+    if (status) {
+      where.AND.push({ status: status.toUpperCase() });
+    }
+
+    // Instructor filter
+    if (instructor) {
+      where.AND.push({ instructor: { contains: instructor, mode: 'insensitive' } });
+    }
+
+    // If no filters applied, return visible courses
+    if (where.AND.length === 0) {
+      where.OR = [
+        { status: 'PUBLISHED' },
+        { visibility: 'PUBLIC' },
+        { visibility: 'SHARED' }
+      ];
+      delete where.AND;
+    }
+
+    // Build orderBy clause
+    const orderBy: any = {};
+    if (sortBy === 'title') {
+      orderBy.title = sortOrder;
+    } else if (sortBy === 'instructor') {
+      orderBy.instructor = sortOrder;
+    } else if (sortBy === 'category') {
+      orderBy.category = sortOrder;
+    } else if (sortBy === 'status') {
+      orderBy.status = sortOrder;
+    } else if (sortBy === 'enrollmentCount') {
+      orderBy.enrollments = { _count: sortOrder };
+    } else {
+      orderBy.lastModified = sortOrder;
+    }
+
+    try {
+      // Get total count for pagination
+      const totalCount = await db.course.count({ where });
+
+      // Get courses with pagination
+      const courses = await db.course.findMany({
+        where,
+        include: {
+          modules: {
+            include: { videoLinks: true },
+            orderBy: { order: 'asc' }
+          },
+          author: true,
+          enrollments: true,
+          userProgress: true
+        },
+        orderBy,
+        skip,
+        take: limit
+      });
+
+      const totalPages = Math.ceil(totalCount / limit);
+
+      return {
+        courses,
+        totalCount,
+        totalPages,
+        currentPage: page,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      };
+    } catch (error) {
+      console.error('Error searching courses:', error);
+      return {
+        courses: [],
+        totalCount: 0,
+        totalPages: 0,
+        currentPage: page,
+        hasNextPage: false,
+        hasPreviousPage: false
+      };
+    }
+  }
 }
 
 // Progress Management
@@ -764,6 +896,436 @@ export class EnrollmentService {
     await db.enrollment.delete({
       where: { userId_courseId: { userId, courseId } }
     });
+  }
+}
+
+// Messaging System Management
+export class MessagingService {
+  // Template Management
+  static async createTemplate(userId: string, data: {
+    name: string;
+    subject: string;
+    body: string;
+    category: string;
+    description?: string;
+  }): Promise<MessageTemplate> {
+    return await db.messageTemplate.create({
+      data: {
+        ...data,
+        createdBy: userId,
+        category: data.category as any
+      }
+    });
+  }
+
+  static async updateTemplate(id: string, data: {
+    name?: string;
+    subject?: string;
+    body?: string;
+    category?: string;
+    description?: string;
+    isActive?: boolean;
+  }): Promise<MessageTemplate> {
+    return await db.messageTemplate.update({
+      where: { id },
+      data: {
+        ...data,
+        category: data.category as any
+      }
+    });
+  }
+
+  static async deleteTemplate(id: string): Promise<void> {
+    await db.messageTemplate.delete({
+      where: { id }
+    });
+  }
+
+  static async getTemplate(id: string): Promise<MessageTemplate | null> {
+    return await db.messageTemplate.findUnique({
+      where: { id }
+    });
+  }
+
+  static async getAllTemplates(): Promise<MessageTemplate[]> {
+    return await db.messageTemplate.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  // Message Management
+  static async createMessage(senderUserId: string, data: {
+    subject: string;
+    body: string;
+    targetSegment?: string;
+    targetFilters?: any;
+    templateId?: string;
+    scheduledFor?: Date;
+  }): Promise<Message> {
+    return await db.message.create({
+      data: {
+        ...data,
+        senderUserId,
+        status: data.scheduledFor ? 'SCHEDULED' : 'DRAFT'
+      }
+    });
+  }
+
+  static async updateMessage(id: string, data: {
+    subject?: string;
+    body?: string;
+    targetSegment?: string;
+    targetFilters?: any;
+    status?: string;
+    scheduledFor?: Date;
+  }): Promise<Message> {
+    return await db.message.update({
+      where: { id },
+      data: {
+        ...data,
+        status: data.status as any
+      }
+    });
+  }
+
+  static async deleteMessage(id: string): Promise<void> {
+    await db.message.delete({
+      where: { id }
+    });
+  }
+
+  static async getMessage(id: string): Promise<(Message & { 
+    template?: MessageTemplate; 
+    recipients: (MessageRecipient & { user: User })[] 
+  }) | null> {
+    return await db.message.findUnique({
+      where: { id },
+      include: {
+        template: true,
+        recipients: {
+          include: { user: true }
+        }
+      }
+    });
+  }
+
+  static async getAllMessages(senderUserId?: string): Promise<Message[]> {
+    return await db.message.findMany({
+      where: senderUserId ? { senderUserId } : undefined,
+      include: {
+        template: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  // Target User Selection
+  static async getTargetUsers(filters: {
+    targetSegment?: string;
+    targetFilters?: any;
+  }): Promise<User[]> {
+    let whereClause: any = {};
+
+    // Handle predefined segments
+    if (filters.targetSegment) {
+      switch (filters.targetSegment) {
+        case 'all-users':
+          whereClause = {};
+          break;
+        case 'new-users':
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          whereClause = { createdAt: { gte: thirtyDaysAgo } };
+          break;
+        case 'active-learners':
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          whereClause = {
+            userProgress: {
+              some: {
+                lastActivity: { gte: oneWeekAgo }
+              }
+            }
+          };
+          break;
+        case 'inactive-users':
+          const fourWeeksAgo = new Date();
+          fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+          whereClause = {
+            userProgress: {
+              none: {
+                lastActivity: { gte: fourWeeksAgo }
+              }
+            }
+          };
+          break;
+        case 'course-completers':
+          whereClause = {
+            userProgress: {
+              some: {
+                isCompleted: true
+              }
+            }
+          };
+          break;
+        case 'admins':
+          whereClause = { role: 'ADMIN' };
+          break;
+        case 'educators':
+          whereClause = { role: 'EDUCATOR' };
+          break;
+        case 'learners':
+          whereClause = { role: 'LEARNER' };
+          break;
+      }
+    }
+
+    // Handle advanced filters
+    if (filters.targetFilters) {
+      const advFilters = filters.targetFilters;
+      
+      if (advFilters.role) {
+        whereClause.role = advFilters.role;
+      }
+      
+      if (advFilters.minPoints) {
+        whereClause.points = { ...whereClause.points, gte: advFilters.minPoints };
+      }
+      
+      if (advFilters.search) {
+        whereClause.OR = [
+          { name: { contains: advFilters.search, mode: 'insensitive' } },
+          { email: { contains: advFilters.search, mode: 'insensitive' } }
+        ];
+      }
+    }
+
+    return await db.user.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  static async getTargetUserCount(filters: {
+    targetSegment?: string;
+    targetFilters?: any;
+  }): Promise<number> {
+    const users = await this.getTargetUsers(filters);
+    return users.length;
+  }
+
+  // Message Sending
+  static async sendMessage(messageId: string): Promise<{
+    success: boolean;
+    sentCount: number;
+    failedCount: number;
+    errors?: string[];
+  }> {
+    const message = await this.getMessage(messageId);
+    if (!message) {
+      throw new Error('Message not found');
+    }
+
+    // Get target users
+    const targetUsers = await this.getTargetUsers({
+      targetSegment: message.targetSegment,
+      targetFilters: message.targetFilters
+    });
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    // Update message status
+    await this.updateMessage(messageId, {
+      status: 'SENDING',
+      totalRecipients: targetUsers.length
+    });
+
+    // Create recipient records and send emails
+    for (const user of targetUsers) {
+      try {
+        // Personalize message content
+        const personalizedSubject = this.personalizeContent(message.subject, user);
+        const personalizedBody = this.personalizeContent(message.body, user);
+
+        // Create recipient record
+        const recipient = await db.messageRecipient.create({
+          data: {
+            messageId: message.id,
+            userId: user.id,
+            personalizedSubject,
+            personalizedBody,
+            status: 'PENDING'
+          }
+        });
+
+        // Send email (mock implementation for now)
+        const emailSent = await this.sendEmail({
+          to: user.email,
+          subject: personalizedSubject,
+          body: personalizedBody,
+          recipientId: recipient.id
+        });
+
+        if (emailSent) {
+          await db.messageRecipient.update({
+            where: { id: recipient.id },
+            data: {
+              status: 'DELIVERED',
+              deliveredAt: new Date()
+            }
+          });
+          sentCount++;
+        } else {
+          throw new Error('Email delivery failed');
+        }
+
+      } catch (error) {
+        failedCount++;
+        errors.push(`Failed to send to ${user.email}: ${error}`);
+        
+        // Update recipient status if record exists
+        const recipient = await db.messageRecipient.findFirst({
+          where: { messageId: message.id, userId: user.id }
+        });
+        
+        if (recipient) {
+          await db.messageRecipient.update({
+            where: { id: recipient.id },
+            data: {
+              status: 'FAILED',
+              errorMessage: String(error)
+            }
+          });
+        }
+      }
+    }
+
+    // Update message with final status
+    await this.updateMessage(messageId, {
+      status: sentCount > 0 ? 'SENT' : 'FAILED'
+    });
+
+    await db.message.update({
+      where: { id: messageId },
+      data: {
+        deliveredCount: sentCount,
+        failedCount: failedCount,
+        sentAt: new Date()
+      }
+    });
+
+    return {
+      success: sentCount > 0,
+      sentCount,
+      failedCount,
+      errors: errors.length > 0 ? errors : undefined
+    };
+  }
+
+  // Content Personalization
+  private static personalizeContent(content: string, user: User): string {
+    return content
+      .replace(/\{\{name\}\}/g, user.name || 'User')
+      .replace(/\{\{email\}\}/g, user.email)
+      .replace(/\{\{points\}\}/g, user.points.toString())
+      .replace(/\{\{firstName\}\}/g, user.name?.split(' ')[0] || 'User');
+  }
+
+  // Email Service (Mock Implementation)
+  private static async sendEmail(data: {
+    to: string;
+    subject: string;
+    body: string;
+    recipientId: string;
+  }): Promise<boolean> {
+    // This is a mock implementation
+    // In production, integrate with SendGrid, Nodemailer, AWS SES, etc.
+    
+    console.log(`📧 Sending email to ${data.to}`);
+    console.log(`📧 Subject: ${data.subject}`);
+    console.log(`📧 Body: ${data.body.substring(0, 100)}...`);
+    
+    // Simulate email sending delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Simulate 95% success rate
+    return Math.random() > 0.05;
+  }
+
+  // Analytics
+  static async getMessageStats(messageId: string): Promise<{
+    totalRecipients: number;
+    delivered: number;
+    failed: number;
+    opened: number;
+    clicked: number;
+    deliveryRate: number;
+    openRate: number;
+    clickRate: number;
+  }> {
+    const message = await db.message.findUnique({
+      where: { id: messageId },
+      include: {
+        recipients: true
+      }
+    });
+
+    if (!message) {
+      throw new Error('Message not found');
+    }
+
+    const totalRecipients = message.recipients.length;
+    const delivered = message.recipients.filter(r => r.status === 'DELIVERED' || r.status === 'OPENED' || r.status === 'CLICKED').length;
+    const failed = message.recipients.filter(r => r.status === 'FAILED').length;
+    const opened = message.recipients.filter(r => r.status === 'OPENED' || r.status === 'CLICKED').length;
+    const clicked = message.recipients.filter(r => r.status === 'CLICKED').length;
+
+    return {
+      totalRecipients,
+      delivered,
+      failed,
+      opened,
+      clicked,
+      deliveryRate: totalRecipients > 0 ? (delivered / totalRecipients) * 100 : 0,
+      openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+      clickRate: opened > 0 ? (clicked / opened) * 100 : 0
+    };
+  }
+
+  // Track Email Opens and Clicks
+  static async trackEmailOpen(recipientId: string): Promise<void> {
+    const recipient = await db.messageRecipient.findUnique({
+      where: { id: recipientId }
+    });
+
+    if (recipient && recipient.status === 'DELIVERED') {
+      await db.messageRecipient.update({
+        where: { id: recipientId },
+        data: {
+          status: 'OPENED',
+          openedAt: new Date()
+        }
+      });
+    }
+  }
+
+  static async trackEmailClick(recipientId: string): Promise<void> {
+    const recipient = await db.messageRecipient.findUnique({
+      where: { id: recipientId }
+    });
+
+    if (recipient && (recipient.status === 'DELIVERED' || recipient.status === 'OPENED')) {
+      await db.messageRecipient.update({
+        where: { id: recipientId },
+        data: {
+          status: 'CLICKED',
+          clickedAt: new Date()
+        }
+      });
+    }
   }
 }
 

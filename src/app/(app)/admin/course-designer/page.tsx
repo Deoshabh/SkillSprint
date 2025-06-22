@@ -23,10 +23,9 @@ export default function AdminCourseManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("pending");
   const { toast } = useToast();
-
-  const pendingCourses = courses.filter(course => course.status === 'pending_review');
-  const publishedCourses = courses.filter(course => course.status === 'published');
-  const rejectedCourses = courses.filter(course => course.status === 'rejected');
+  const pendingCourses = Array.isArray(courses) ? courses.filter(course => course.status === 'pending_review') : [];
+  const publishedCourses = Array.isArray(courses) ? courses.filter(course => course.status === 'published') : [];
+  const rejectedCourses = Array.isArray(courses) ? courses.filter(course => course.status === 'rejected') : [];
 
   const fetchAllCoursesByStatus = useCallback(async () => {
     setIsLoading(true);

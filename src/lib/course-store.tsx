@@ -29,21 +29,24 @@ export function CourseProvider({ children }: CourseProviderProps) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const refreshCourses = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/courses');
+      const response = await fetch('/api/courses?limit=1000'); // Get all courses for the store
       if (response.ok) {
-        const fetchedCourses = await response.json();
-        setCourses(fetchedCourses);
+        const data = await response.json();
+        // Handle the new API response format
+        const fetchedCourses = data.courses || data || [];
+        setCourses(Array.isArray(fetchedCourses) ? fetchedCourses : []);
       } else {
         throw new Error('Failed to fetch courses');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
       console.error('Error fetching courses:', err);
+      // Set empty array as fallback
+      setCourses([]);
     } finally {
       setLoading(false);
     }

@@ -37,7 +37,7 @@ export default function UserProfilePage() {
     );
   }
 
-  const myCreatedCourses = courses.filter(course => course.authorId === user.id);
+  const myCreatedCourses = Array.isArray(courses) ? courses.filter(course => course.authorId === user.id) : [];
   // Get user data from profile or set defaults
   const userRole = user.role || 'learner';
   const learningTracks = user.learningPreferences?.tracks || [];

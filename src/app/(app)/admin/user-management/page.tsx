@@ -1,62 +1,262 @@
-
 "use client";
 
 import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import type { UserProfile, UserRole } from '@/lib/types';
+import { 
+  getAllUsers, 
+  updateUserRole, 
+  bulkUpdateUserRoles, 
+  exportUserData, 
+  type UserWithStats, 
+  type UserSearchFilters, 
+  type PaginationOptions,
+  type ExportFormat 
+} from '@/lib/advanced-data-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users as UsersIcon, Save, Briefcase, ShieldCheck, Settings, BarChartBig, SendHorizonal, Wand2, Sparkles, Archive } from 'lucide-react'; 
+import { 
+  Loader2, 
+  Users as UsersIcon, 
+  Save, 
+  Search, 
+  Filter, 
+  Download, 
+  RefreshCw, 
+  ChevronLeft, 
+  ChevronRight,
+  MoreHorizontal,
+  Shield,
+  UserCheck,
+  UserX,
+  Calendar,
+  Trophy,
+  BookOpen
+} from 'lucide-react'; 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Link from 'next/link'; 
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function UserManagementPage() {
-  const { user: currentUser, updateUserProfile, loading: authLoading } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [selectedRole, setSelectedRole] = useState<UserRole | undefined>(undefined);
-  const [isSaving, setIsSaving] = useState(false);
+  // State for user data
+  const [users, setUsers] = useState<UserWithStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  
+  // Pagination state
+  const [pagination, setPagination] = useState<PaginationOptions>({
+    page: 1,
+    limit: 20,
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  });
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
 
-  useEffect(() => {
-    if (currentUser) {
-      setSelectedUser(currentUser);
-      setSelectedRole(currentUser.role);
+  // Filter state
+  const [filters, setFilters] = useState<UserSearchFilters>({});
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Bulk operations state
+  const [bulkRole, setBulkRole] = useState<UserRole>('learner');
+  const [isBulkOperation, setIsBulkOperation] = useState(false);
+
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>({ format: 'csv', includePersonalData: false });
+
+  // Load users data
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const result = await getAllUsers(filters, pagination);
+      setUsers(result.data);
+      setTotalPages(result.totalPages);
+      setTotalUsers(result.total);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load users. Using mock data for development.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [currentUser]);
-
-  const handleRoleChange = (newRole: UserRole) => {
-    setSelectedRole(newRole);
   };
 
-  const handleSaveChanges = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser || !selectedRole) {
-      toast({ title: "Error", description: "No user or role selected.", variant: "destructive" });
-      return;
+  useEffect(() => {
+    if (currentUser?.role === 'admin') {
+      loadUsers();
     }
-    if (selectedUser.id !== currentUser?.id) {
-      toast({ title: "Error", description: "For this simulation, you can only manage your own role.", variant: "destructive" });
+  }, [currentUser, filters, pagination]);
+
+  // Handle user role update
+  const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
+    try {
+      const success = await updateUserRole(userId, newRole);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "User role updated successfully."
+        });
+        loadUsers(); // Refresh the data
+      } else {
+        throw new Error('Update failed');
+      }
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user role.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle bulk role update
+  const handleBulkRoleUpdate = async () => {
+    if (selectedUsers.length === 0) {
+      toast({
+        title: "No Users Selected",
+        description: "Please select users to update their roles.",
+        variant: "destructive"
+      });
       return;
     }
 
-    setIsSaving(true);
+    setIsBulkOperation(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 700)); // Simulate API call
-      updateUserProfile({ role: selectedRole });
+      const updatedCount = await bulkUpdateUserRoles(selectedUsers, bulkRole);
       toast({
-        title: "Role Updated Successfully",
-        description: `${selectedUser.name}'s role has been changed to ${selectedRole}. Changes may apply on next login/refresh.`,
+        title: "Bulk Update Complete",
+        description: `Updated role for ${updatedCount} users.`
+      });
+      setSelectedUsers([]);
+      loadUsers();
+    } catch (error) {
+      console.error('Error in bulk update:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user roles.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBulkOperation(false);
+    }
+  };
+
+  // Handle export
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const data = await exportUserData(filters, exportFormat);
+      
+      // Create and download file
+      const blob = new Blob([data], { 
+        type: exportFormat.format === 'json' ? 'application/json' : 'text/csv' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-export-${new Date().toISOString().split('T')[0]}.${exportFormat.format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export Complete",
+        description: `User data exported successfully as ${exportFormat.format.toUpperCase()}.`
       });
     } catch (error) {
-      console.error("Failed to update role:", error);
-      toast({ title: "Error", description: "Failed to update user role.", variant: "destructive" });
+      console.error('Error exporting data:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export user data.",
+        variant: "destructive"
+      });
     } finally {
-      setIsSaving(false);
+      setIsExporting(false);
+    }
+  };
+
+  // Handle search
+  const handleSearch = (searchTerm: string) => {
+    setFilters(prev => ({ ...prev, search: searchTerm }));
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (key: keyof UserSearchFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+  };
+
+  // Clear filters
+  const clearFilters = () => {
+    setFilters({});
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  // Handle sort change
+  const handleSortChange = (sortBy: string, sortOrder: 'asc' | 'desc') => {
+    setPagination(prev => ({ ...prev, sortBy: sortBy as any, sortOrder }));
+  };
+
+  // Handle user selection
+  const handleUserSelection = (userId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedUsers(prev => [...prev, userId]);
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+    }
+  };
+
+  // Select all users on current page
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedUsers(users.map(user => user.id));
+    } else {
+      setSelectedUsers([]);
     }
   };
 
@@ -80,106 +280,381 @@ export default function UserManagementPage() {
       </Card>
     );
   }
-  
-  const usersToManage = selectedUser ? [selectedUser] : [];
 
+  const getRoleBadgeVariant = (role: UserRole) => {
+    switch (role) {
+      case 'admin': return 'destructive';
+      case 'educator': return 'default';
+      case 'learner': return 'secondary';
+      default: return 'outline';
+    }
+  };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
       <header className="space-y-2">
         <h1 className="text-4xl font-bold font-headline tracking-tight flex items-center">
           <UsersIcon className="h-10 w-10 mr-3 text-primary" aria-hidden="true" />
           User Management
         </h1>
         <p className="text-xl text-muted-foreground">
-          View and manage user roles on the platform. (Simulated: Manages current admin user's role)
+          Manage user accounts, roles, and permissions across the platform.
         </p>
       </header>
 
-      <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">User List</CardTitle>
-          <CardDescription>
-            Currently managing the role for: {currentUser.name} ({currentUser.email}).
-            In a full system, this would list all users.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {usersToManage.length > 0 ? (
-            usersToManage.map(user => (
-              <form key={user.id} onSubmit={handleSaveChanges} className="space-y-6 border p-6 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16 border">
-                        <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint={user.dataAiHint || "profile person"} />
-                        <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
+      {/* Actions Bar */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search users by name or email..."
+                  className="pl-10"
+                  value={filters.search || ''}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {Object.keys(filters).length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {Object.keys(filters).length}
+                  </Badge>
+                )}
+              </Button>
+              {Object.keys(filters).length > 0 && (
+                <Button variant="ghost" onClick={clearFilters}>
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={loadUsers}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+
+              {/* Export Dialog */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Export User Data</DialogTitle>
+                    <DialogDescription>
+                      Choose the format and options for exporting user data.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
                     <div>
-                        <h3 className="text-xl font-semibold">{user.name}</h3>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">ID: {user.id}</p>
+                      <Label>Format</Label>
+                      <Select 
+                        value={exportFormat.format} 
+                        onValueChange={(value) => setExportFormat(prev => ({ ...prev, format: value as any }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="csv">CSV</SelectItem>
+                          <SelectItem value="json">JSON</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor={`role-${user.id}`}>Current Role</Label>
-                     <Input id={`current-role-${user.id}`} value={user.role || 'N/A'} readOnly disabled className="capitalize"/>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="include-personal"
+                        checked={exportFormat.includePersonalData}
+                        onCheckedChange={(checked) => 
+                          setExportFormat(prev => ({ ...prev, includePersonalData: !!checked }))
+                        }
+                      />
+                      <Label htmlFor="include-personal">Include personal data (emails)</Label>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`role-select-${user.id}`}>Change Role To</Label>
-                    <Select value={selectedRole} onValueChange={(value: UserRole) => handleRoleChange(value)}>
-                      <SelectTrigger id={`role-select-${user.id}`}>
-                        <SelectValue placeholder="Select new role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="learner">Learner</SelectItem>
-                        <SelectItem value="educator">Educator</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleExport} disabled={isExporting}>
+                      {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Export
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="mt-4 p-4 border rounded-lg bg-muted/30">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Role</Label>
+                  <Select 
+                    value={filters.role || ''} 
+                    onValueChange={(value) => handleFilterChange('role', value || undefined)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All roles</SelectItem>
+                      <SelectItem value="learner">Learner</SelectItem>
+                      <SelectItem value="educator">Educator</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={isSaving || selectedRole === user.role} aria-label="Save role change">
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="mr-2 h-4 w-4" aria-hidden="true" />}
-                    Save Role Change
+                <div>
+                  <Label>Min Points</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={filters.minPoints || ''}
+                    onChange={(e) => handleFilterChange('minPoints', e.target.value ? parseInt(e.target.value) : undefined)}
+                  />
+                </div>
+                <div>
+                  <Label>Max Points</Label>
+                  <Input
+                    type="number"
+                    placeholder="1000"
+                    value={filters.maxPoints || ''}
+                    onChange={(e) => handleFilterChange('maxPoints', e.target.value ? parseInt(e.target.value) : undefined)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bulk Operations */}
+          {selectedUsers.length > 0 && (
+            <div className="mt-4 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedUsers.length} user(s) selected
+                </span>
+                <div className="flex items-center gap-3">
+                  <Select value={bulkRole} onValueChange={(value) => setBulkRole(value as UserRole)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="learner">Learner</SelectItem>
+                      <SelectItem value="educator">Educator</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    onClick={handleBulkRoleUpdate}
+                    disabled={isBulkOperation}
+                    size="sm"
+                  >
+                    {isBulkOperation && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Update Roles
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedUsers([])}
+                  >
+                    Cancel
                   </Button>
                 </div>
-              </form>
-            ))
-          ) : (
-            <p className="text-muted-foreground text-center">No user data available to manage.</p>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
-      
-      <Card className="mt-8 shadow-md">
+
+      {/* Users Table */}
+      <Card>
         <CardHeader>
-            <CardTitle className="text-xl flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
-                Admin Capabilities Overview
-            </CardTitle>
-            <CardDescription>Current and planned features for administrators.</CardDescription>
+          <CardTitle className="flex items-center justify-between">
+            <span>Users ({totalUsers})</span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              Page {pagination.page} of {totalPages}
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-            <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                <li><strong className="text-foreground">Review and approve/reject courses. (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
-                <li><strong className="text-foreground">Manage published/rejected courses (Unpublish, Move to Draft). (Implemented)</strong> <Link href="/admin/course-designer" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
-                <li><strong className="text-foreground">Edit content for any course on the platform using the Course Designer. (Implemented)</strong> <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Open Designer)</Link></li>
-                 <li><strong className="text-foreground">Advanced AI-powered tools: (Implemented)</strong>
-                    <ul className="list-disc pl-5">
-                        <li>Syllabus & Full Module Structure Generation. <Link href="/admin/ai-course-generator" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
-                        <li>Module-level content suggestions (subtopics, tasks, videos) within Course Designer. <Link href="/course-designer" className="text-xs text-primary hover:underline ml-1">(Use in Designer)</Link></li>
-                    </ul>
-                </li>
-                <li><strong className="text-foreground">Utilize AI tools to find and suggest updated content (AI Content Scout). (Implemented)</strong> <Link href="/admin/content-scout" className="text-xs text-primary hover:underline ml-1">(Use Tool)</Link></li>
-                <li><strong className="text-foreground">Set platform-wide limits (Initial: Limit visible, enforcement in place).</strong></li>
-                <li><strong className="text-foreground">Manage user roles and permissions (Initial Simulation Implemented: Can change current admin's role).</strong> <Link href="/admin/user-management" className="text-xs text-primary hover:underline ml-1">(Manage)</Link></li>
-                <li><strong className="text-foreground">View platform analytics and reports (Placeholder UI Implemented).</strong> <Link href="/admin/analytics" className="text-xs text-primary hover:underline ml-1">(View)</Link></li>
-                <li><strong className="text-foreground">Broadcast messaging to user segments (Placeholder UI Implemented).</strong> <Link href="/admin/messaging" className="text-xs text-primary hover:underline ml-1">(Compose)</Link></li>
-                <li><strong className="text-foreground">Manage User Feedback. (Implemented)</strong> <Link href="/admin/feedback-management" className="text-xs text-primary hover:underline ml-1">(Review Feedback)</Link></li>
-            </ul>
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found matching your criteria.
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedUsers.length === users.length && users.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Points</TableHead>
+                    <TableHead>Progress</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Activity</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedUsers.includes(user.id)}
+                          onCheckedChange={(checked) => handleUserSelection(user.id, !!checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.avatarUrl} alt={user.name} />
+                            <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>                        <Badge variant={getRoleBadgeVariant(user.role || 'learner')}>
+                          {user.role || 'learner'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Trophy className="h-4 w-4 text-yellow-500" />
+                          {user.points}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="text-sm">
+                            {user.coursesCompleted} courses completed
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {user.averageProgress.toFixed(1)}% avg progress
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Calendar className="h-4 w-4" />
+                          {user.createdAt.toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
+                          {user.lastActivity 
+                            ? `${Math.floor((Date.now() - user.lastActivity.getTime()) / (1000 * 60 * 60 * 24))}d ago`
+                            : 'Never'
+                          }
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleUpdateUserRole(user.id, 'learner')}>
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              Set as Learner
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateUserRole(user.id, 'educator')}>
+                              <BookOpen className="mr-2 h-4 w-4" />
+                              Set as Educator
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateUserRole(user.id, 'admin')}>
+                              <Shield className="mr-2 h-4 w-4" />
+                              Set as Admin
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, totalUsers)} of {totalUsers} users
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const page = i + 1;
+                        return (
+                          <Button
+                            key={page}
+                            variant={page === pagination.page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page >= totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
