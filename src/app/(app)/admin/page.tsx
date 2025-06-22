@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { getPlatformAnalytics, type PlatformAnalytics } from '@/lib/advanced-data-service';
+import { getPlatformAnalytics, type PlatformAnalytics } from '@/lib/data-service-simple';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

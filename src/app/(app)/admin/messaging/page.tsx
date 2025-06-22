@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { getAllUsers, type UserSearchFilters } from '@/lib/advanced-data-service';
+import { getAllUsers, type UserSearchFilters } from '@/lib/data-service-simple';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';

@@ -12,7 +12,7 @@ import {
   type UserSearchFilters, 
   type PaginationOptions,
   type ExportFormat 
-} from '@/lib/advanced-data-service';
+} from '@/lib/data-service-simple';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';

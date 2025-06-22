@@ -586,22 +586,16 @@ export class ProgressService {
 
     if (!course) {
       throw new Error('Course not found');
-    }
-
-    return await db.userProgress.upsert({
+    }    return await db.userProgress.upsert({
       where: {
         userId_courseId: { userId, courseId }
       },
-      update: {
-        lastActivity: new Date()
-      },
+      update: {},
       create: {
         userId,
         courseId,
         totalModules: course.modules.length,
-        completedModules: [],
-        currentModuleId: course.modules[0]?.id || null,
-        lastActivity: new Date()
+        currentModuleId: course.modules[0]?.id || null
       }
     });
   }
@@ -1329,122 +1323,380 @@ export class MessagingService {
   }
 }
 
-// Helper Functions
-export class DatabaseHelpers {
-  static async getMongoUserIdFromClerkId(clerkId: string): Promise<string | null> {
+// Admin Service for analytics and user management
+export class AdminService {  // Get platform analytics
+  static async getPlatformAnalytics(): Promise<PlatformAnalytics> {
     try {
-      const user = await db.user.findUnique({
-        where: { clerkId },
-        select: { id: true }
+      const [
+        totalUsers,
+        totalCourses,
+        totalEnrollments,
+        activeUsers,
+        completedCourses,
+        feedbackItems,
+        newUsersToday,
+        newUsersThisWeek,
+        newUsersThisMonth,
+        coursesCompletedThisWeek,
+        coursesCompletedThisMonth,
+        pendingReviews
+      ] = await Promise.all([
+        db.user.count(),
+        db.course.count({ where: { status: 'PUBLISHED' } }),
+        db.enrollment.count(),
+        db.user.count({
+          where: {
+            userProgress: {
+              some: {
+                updatedAt: {
+                  gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+                }
+              }
+            }
+          }
+        }),
+        db.userProgress.count({ where: { isCompleted: true } }),
+        db.feedback.count({ where: { status: 'NEW' } }),
+        db.user.count({
+          where: {
+            createdAt: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+            }
+          }
+        }),
+        db.user.count({
+          where: {
+            createdAt: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+            }
+          }
+        }),
+        db.user.count({
+          where: {
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+            }
+          }
+        }),
+        db.userProgress.count({
+          where: {
+            isCompleted: true,
+            completedAt: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            }
+          }
+        }),
+        db.userProgress.count({
+          where: {
+            isCompleted: true,
+            completedAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            }
+          }
+        }),
+        db.course.count({ where: { status: 'PENDING_REVIEW' } })
+      ]);
+
+      // Get top performing courses
+      const topCourses = await db.course.findMany({
+        where: { status: 'PUBLISHED' },
+        include: {
+          enrollments: true,
+          _count: {
+            select: { enrollments: true }
+          }
+        },
+        orderBy: {
+          enrollments: {
+            _count: 'desc'
+          }
+        },
+        take: 5
       });
-      return user?.id || null;
+
+      const completionRate = totalEnrollments > 0 ? (completedCourses / totalEnrollments) * 100 : 0;
+      
+      // Calculate growth rate (comparing this month to last month)
+      const lastMonthUsers = await db.user.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
+            lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)   // 30 days ago
+          }
+        }
+      });
+      
+      const growthRate = lastMonthUsers > 0 ? ((newUsersThisMonth - lastMonthUsers) / lastMonthUsers) * 100 : 0;
+
+      return {
+        overview: {
+          totalUsers,
+          publishedCourses: totalCourses,
+          completionRate
+        },
+        users: {
+          total: totalUsers,
+          active: activeUsers,
+          newThisWeek: newUsersThisWeek
+        },
+        courses: {
+          total: totalCourses,
+          published: totalCourses,
+          draft: await db.course.count({ where: { status: 'DRAFT' } })
+        },
+        enrollments: {
+          total: totalEnrollments,
+          completed: completedCourses,
+          active: totalEnrollments - completedCourses
+        },
+        engagement: {
+          averageProgress: completionRate,
+          totalSessions: await db.userProgress.count(),
+          feedbackItems: feedbackItems
+        },
+        userGrowth: {
+          newUsersToday,
+          newUsersThisWeek,
+          newUsersThisMonth,
+          growthRate
+        },
+        content: {
+          pendingReviews,
+          topPerformingCourses: topCourses.map(course => ({
+            id: course.id,
+            title: course.title,
+            enrollments: course._count.enrollments,
+            rating: 4.5 // Default rating since we don't have ratings in the schema
+          }))
+        },
+        learning: {
+          coursesCompletedThisMonth,
+          coursesCompletedThisWeek
+        }
+      };
     } catch (error) {
-      console.error('Error finding user by Clerk ID:', error);
-      return null;
+      console.error('Error getting platform analytics:', error);
+      throw error;
     }
   }
 
-  static async ensureUserExists(clerkId: string, userData?: {
-    email: string;
-    name?: string;
-    avatarUrl?: string;
-  }): Promise<string | null> {
+  // Get all users with search and filtering
+  static async getAllUsers(filters?: UserSearchFilters, pagination?: PaginationOptions): Promise<UserWithStats[]> {
     try {
-      let user = await db.user.findUnique({
-        where: { clerkId },
-        select: { id: true }
-      });
-
-      if (!user && userData) {
-        // Create user if it doesn't exist
-        user = await db.user.create({
-          data: {
-            clerkId,
-            email: userData.email,
-            name: userData.name || null,
-            avatarUrl: userData.avatarUrl || null,
-            role: 'LEARNER',
-            points: 0
-          },
-          select: { id: true }
-        });
+      const where: any = {};
+      
+      if (filters?.search) {
+        where.OR = [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search, mode: 'insensitive' } }
+        ];
+      }
+      
+      if (filters?.role) {
+        where.role = filters.role;
+      }
+      
+      if (filters?.isActive !== undefined) {
+        if (filters.isActive) {
+          where.userProgress = {
+            some: {
+              lastActivity: {
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+              }
+            }
+          };
+        }
       }
 
-      return user?.id || null;
+      const users = await db.user.findMany({
+        where,
+        include: {
+          enrollments: {
+            include: { course: true }
+          },
+          userProgress: true,
+          earnedBadges: {
+            include: { badge: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: pagination?.skip || 0,
+        take: pagination?.take || 50
+      });      return users.map(user => ({
+        ...user,
+        stats: {
+          totalEnrollments: user.enrollments.length,
+          completedCourses: user.userProgress.filter(p => p.isCompleted).length,
+          totalPoints: user.points || 0,
+          badgesEarned: user.earnedBadges.length,
+          lastActivity: user.userProgress.length > 0 
+            ? user.userProgress.reduce((latest, p) => 
+                p.updatedAt > latest ? p.updatedAt : latest, 
+                user.userProgress[0].updatedAt
+              )
+            : user.createdAt
+        }
+      }));
     } catch (error) {
-      console.error('Error ensuring user exists:', error);
-      return null;
+      console.error('Error getting all users:', error);
+      throw error;
+    }
+  }
+
+  // Update user role
+  static async updateUserRole(userId: string, role: UserRole): Promise<User> {
+    try {
+      return await db.user.update({
+        where: { id: userId },
+        data: { role }
+      });
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      throw error;
+    }
+  }
+
+  // Bulk update user roles
+  static async bulkUpdateUserRoles(userIds: string[], role: UserRole): Promise<{ count: number }> {
+    try {
+      const result = await db.user.updateMany({
+        where: { id: { in: userIds } },
+        data: { role }
+      });
+      return { count: result.count };
+    } catch (error) {
+      console.error('Error bulk updating user roles:', error);
+      throw error;
+    }
+  }
+
+  // Export user data
+  static async exportUserData(format: ExportFormat = 'CSV'): Promise<string> {
+    try {
+      const users = await db.user.findMany({
+        include: {
+          enrollments: {
+            include: { course: true }
+          },
+          userProgress: true,
+          earnedBadges: {
+            include: { badge: true }
+          }
+        }
+      });
+
+      if (format === 'JSON') {
+        return JSON.stringify(users, null, 2);
+      }
+
+      // CSV format
+      const headers = [
+        'ID', 'Name', 'Email', 'Role', 'Points', 'Created', 'Last Activity',
+        'Enrollments', 'Completed Courses', 'Badges Earned'
+      ];      const rows = users.map(user => {
+        const lastActivity = user.userProgress.length > 0 
+          ? user.userProgress.reduce((latest, p) => 
+              p.updatedAt > latest ? p.updatedAt : latest, 
+              user.userProgress[0].updatedAt
+            ).toISOString()
+          : user.createdAt.toISOString();
+
+        return [
+          user.id,
+          user.name || '',
+          user.email || '',
+          user.role,
+          user.points || 0,
+          user.createdAt.toISOString(),
+          lastActivity,
+          user.enrollments.length,
+          user.userProgress.filter(p => p.isCompleted).length,
+          user.earnedBadges.length
+        ];
+      });
+
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${cell}"`).join(','))
+        .join('\n');
+
+      return csvContent;
+    } catch (error) {
+      console.error('Error exporting user data:', error);
+      throw error;
     }
   }
 }
 
-// Type Converters for API responses
-export class TypeConverter {  static userToUserProfile(user: UserWithBadges): UserProfile {
-    return {
-      id: user.id,
-      name: user.name || '',
-      email: user.email,
-      avatarUrl: user.avatarUrl || undefined,
-      points: user.points,
-      earnedBadges: user.earnedBadges.map((ub: any) => ({
-        id: ub.badge.id,
-        name: ub.badge.name,
-        description: ub.badge.description,
-        icon: ub.badge.icon,
-        color: ub.badge.color
-      })),
-      enrolledCourses: [],
-      role: user.role.toLowerCase() as 'learner' | 'educator' | 'admin',
-      learningPreferences: {
-        tracks: [],
-        language: 'English'
-      },
-      profileSetupComplete: true
-    };
-  }
-
-  static courseToApiCourse(course: CourseWithModules): CourseType {
-    return {
-      id: course.id,
-      title: course.title,
-      description: course.description,
-      instructor: course.instructor,
-      category: course.category,
-      icon: course.icon,
-      modules: course.modules.map((module: any) => ({
-        id: module.id,
-        title: module.title,
-        description: module.description,
-        contentType: module.contentType.toLowerCase() as any,
-        contentUrl: module.contentUrl || undefined,
-        estimatedTime: module.estimatedTime,
-        order: module.order,
-        videoLinks: module.videoLinks.map((vl: any) => ({
-          id: vl.id,
-          title: vl.title,
-          url: vl.url,
-          language: vl.language,
-          creator: vl.creator || '',
-          notes: vl.notes || '',
-          isPlaylist: vl.isPlaylist
-        }))
-      })),
-      authorId: course.authorId,
-      status: course.status.toLowerCase() as any,
-      visibility: course.visibility.toLowerCase() as any,
-      imageUrl: course.imageUrl || undefined,
-      dataAiHint: course.dataAiHint || undefined,
-      lastModified: course.lastModified.toISOString(),
-      submittedDate: course.submittedDate?.toISOString(),
-      suggestedSchedule: course.suggestedSchedule || '',
-      duration: course.duration || undefined
-    };
-  }
-
-  static courseToLegacyCourse(course: CourseWithModules): CourseType {
-    return this.courseToApiCourse(course);
-  }
+// Additional type definitions needed by admin pages
+export interface PlatformAnalytics {
+  overview: {
+    totalUsers: number;
+    publishedCourses: number;
+    completionRate: number;
+  };
+  users: {
+    total: number;
+    active: number;
+    newThisWeek: number;
+  };
+  courses: {
+    total: number;
+    published: number;
+    draft: number;
+  };
+  enrollments: {
+    total: number;
+    completed: number;
+    active: number;
+  };
+  engagement: {
+    averageProgress: number;
+    totalSessions: number;
+    feedbackItems: number;
+  };
+  userGrowth: {
+    newUsersToday: number;
+    newUsersThisWeek: number;
+    newUsersThisMonth: number;
+    growthRate: number;
+  };
+  content: {
+    pendingReviews: number;
+    topPerformingCourses: Array<{
+      id: string;
+      title: string;
+      enrollments: number;
+      rating: number;
+    }>;
+  };
+  learning: {
+    coursesCompletedThisMonth: number;
+    coursesCompletedThisWeek: number;
+  };
 }
+
+export interface UserWithStats extends User {
+  stats: {
+    totalEnrollments: number;
+    completedCourses: number;
+    totalPoints: number;
+    badgesEarned: number;
+    lastActivity: Date;
+  };
+}
+
+export interface UserSearchFilters {
+  search?: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+export interface PaginationOptions {
+  skip?: number;
+  take?: number;
+}
+
+export type ExportFormat = 'CSV' | 'JSON';
 
 // Function exports for convenience
 export const getAllBadges = BadgeService.getAllBadges;
@@ -1455,3 +1707,10 @@ export const getUserProgress = ProgressService.getUserProgress;
 export const markModuleComplete = ProgressService.markModuleComplete;
 export const markCourseStarted = ProgressService.markCourseStarted;
 export const getUserProgressForCourse = ProgressService.getUserProgressForCourse;
+
+// Admin function exports
+export const getPlatformAnalytics = AdminService.getPlatformAnalytics;
+export const getAllUsers = AdminService.getAllUsers;
+export const updateUserRole = AdminService.updateUserRole;
+export const bulkUpdateUserRoles = AdminService.bulkUpdateUserRoles;
+export const exportUserData = AdminService.exportUserData;
