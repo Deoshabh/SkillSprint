@@ -10,6 +10,111 @@ import type {
   TextNote as TextNoteType, Sketch as SketchType, DailyTask
 } from '@/lib/types';
 
+// Missing type definitions for messaging and admin features
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Message {
+  id: string;
+  subject: string;
+  body: string;
+  senderUserId: string;
+  status: string;
+  scheduledFor?: Date;
+  sentAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  recipients?: any[];
+}
+
+export interface MessageRecipient {
+  id: string;
+  messageId: string;
+  userId: string;
+  status: string;
+  sentAt?: Date;
+  openedAt?: Date;
+  clickedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PlatformAnalytics {
+  overview: {
+    totalUsers: number;
+    publishedCourses: number;
+    completionRate: number;
+  };
+  users: {
+    total: number;
+    active: number;
+    newThisWeek: number;
+  };
+  courses: {
+    total: number;
+    published: number;
+    draft: number;
+  };
+  enrollments: {
+    total: number;
+    completed: number;
+    active: number;
+  };
+  engagement: {
+    averageProgress: number;
+    totalSessions: number;
+    feedbackItems: number;
+  };
+  userGrowth: {
+    newUsersToday: number;
+    newUsersThisWeek: number;
+    newUsersThisMonth: number;
+    growthRate: number;
+  };
+  content: {
+    pendingReviews: number;
+    topPerformingCourses: Array<{
+      id: string;
+      title: string;
+      enrollments: number;
+      rating: number;
+    }>;
+  };
+  learning: {
+    coursesCompletedThisMonth: number;
+    coursesCompletedThisWeek: number;
+  };
+}
+
+export interface UserSearchFilters {
+  search?: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+export interface PaginationOptions {
+  skip?: number;
+  take?: number;
+}
+
+export interface UserWithStats extends User {
+  stats: {
+    totalEnrollments: number;
+    completedCourses: number;
+    totalPoints: number;
+    badgesEarned: number;
+    lastActivity: Date;
+  };
+}
+
+export type ExportFormat = 'CSV' | 'JSON';
+
 // Type definitions for API responses
 export type CourseWithModules = Course & {
   modules: (Module & { videoLinks: VideoLink[] })[];
@@ -903,32 +1008,14 @@ export class MessagingService {
     category: string;
     description?: string;
   }): Promise<MessageTemplate> {
-    return await db.messageTemplate.create({
-      data: {
-        ...data,
-        createdBy: userId,
-        category: data.category as any
-      }
-    });
+    // TODO: Implement when messaging models are ready
+    throw new Error('Messaging service not yet implemented');
   }
-
-  static async updateTemplate(id: string, data: {
-    name?: string;
-    subject?: string;
-    body?: string;
-    category?: string;
-    description?: string;
-    isActive?: boolean;
-  }): Promise<MessageTemplate> {
-    return await db.messageTemplate.update({
-      where: { id },
-      data: {
-        ...data,
-        category: data.category as any
-      }
-    });
+  static async updateTemplate(): Promise<MessageTemplate> {
+    throw new Error('Messaging service not implemented');
   }
-
+  /*
+  // DISABLED - TO BE IMPLEMENTED WHEN MESSAGING MODELS ARE READY  
   static async deleteTemplate(id: string): Promise<void> {
     await db.messageTemplate.delete({
       where: { id }
@@ -1319,8 +1406,8 @@ export class MessagingService {
           clickedAt: new Date()
         }
       });
-    }
-  }
+    }  }
+  */
 }
 
 // Admin Service for analytics and user management
@@ -1627,76 +1714,139 @@ export class AdminService {  // Get platform analytics
   }
 }
 
-// Additional type definitions needed by admin pages
-export interface PlatformAnalytics {
-  overview: {
-    totalUsers: number;
-    publishedCourses: number;
-    completionRate: number;
-  };
-  users: {
-    total: number;
-    active: number;
-    newThisWeek: number;
-  };
-  courses: {
-    total: number;
-    published: number;
-    draft: number;
-  };
-  enrollments: {
-    total: number;
-    completed: number;
-    active: number;
-  };
-  engagement: {
-    averageProgress: number;
-    totalSessions: number;
-    feedbackItems: number;
-  };
-  userGrowth: {
-    newUsersToday: number;
-    newUsersThisWeek: number;
-    newUsersThisMonth: number;
-    growthRate: number;
-  };
-  content: {
-    pendingReviews: number;
-    topPerformingCourses: Array<{
-      id: string;
-      title: string;
-      enrollments: number;
-      rating: number;
-    }>;
-  };
-  learning: {
-    coursesCompletedThisMonth: number;
-    coursesCompletedThisWeek: number;
-  };
+// Helper Functions
+export class DatabaseHelpers {
+  static async getMongoUserIdFromClerkId(clerkId: string): Promise<string | null> {
+    try {
+      const user = await db.user.findUnique({
+        where: { clerkId },
+        select: { id: true }
+      });
+      return user?.id || null;
+    } catch (error) {
+      console.error('Error finding user by Clerk ID:', error);
+      return null;
+    }
+  }
+
+  static async ensureUserExists(clerkId: string, userData?: {
+    email: string;
+    name?: string;
+    avatarUrl?: string;
+  }): Promise<string | null> {
+    try {
+      let user = await db.user.findUnique({
+        where: { clerkId },
+        select: { id: true }
+      });
+
+      if (!user && userData) {
+        // Create user if it doesn't exist
+        user = await db.user.create({
+          data: {
+            clerkId,
+            email: userData.email,
+            name: userData.name || null,
+            avatarUrl: userData.avatarUrl || null,
+            role: 'LEARNER',
+            points: 0
+          },
+          select: { id: true }
+        });
+      }
+
+      return user?.id || null;
+    } catch (error) {
+      console.error('Error ensuring user exists:', error);
+      return null;
+    }
+  }
 }
 
-export interface UserWithStats extends User {
-  stats: {
-    totalEnrollments: number;
-    completedCourses: number;
-    totalPoints: number;
-    badgesEarned: number;
-    lastActivity: Date;
-  };
-}
+// Type Converters for API responses
+export class TypeConverter {
+  static userToUserProfile(user: UserWithBadges): any {
+    return {
+      id: user.id,
+      name: user.name || '',
+      email: user.email,
+      avatarUrl: user.avatarUrl || undefined,
+      points: user.points,
+      earnedBadges: user.earnedBadges.map((ub: any) => ({
+        id: ub.badge.id,
+        name: ub.badge.name,
+        description: ub.badge.description,
+        icon: ub.badge.icon,
+        color: ub.badge.color
+      })),
+      enrolledCourses: [],
+      role: user.role.toLowerCase() as 'learner' | 'educator' | 'admin',
+      learningPreferences: {
+        tracks: [],
+        language: 'English'
+      },
+      profileSetupComplete: true
+    };
+  }
 
-export interface UserSearchFilters {
-  search?: string;
-  role?: UserRole;
-  isActive?: boolean;
-}
+  static courseToApiCourse(course: CourseWithModules): any {
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      instructor: course.instructor,
+      category: course.category,
+      icon: course.icon,
+      modules: course.modules.map((module: any) => ({
+        id: module.id,
+        title: module.title,
+        description: module.description,
+        contentType: module.contentType.toLowerCase() as any,
+        contentUrl: module.contentUrl || undefined,
+        estimatedTime: module.estimatedTime,
+        order: module.order,
+        videoLinks: module.videoLinks.map((vl: any) => ({
+          id: vl.id,
+          title: vl.title,
+          url: vl.url,
+          language: vl.language,
+          creator: vl.creator || '',
+          notes: vl.notes || '',
+          isPlaylist: vl.isPlaylist
+        }))
+      })),
+      authorId: course.authorId,
+      status: course.status.toLowerCase() as any,
+      visibility: course.visibility.toLowerCase() as any,
+      imageUrl: course.imageUrl || undefined,
+      dataAiHint: course.dataAiHint || undefined,
+      lastModified: course.lastModified.toISOString(),
+      submittedDate: course.submittedDate?.toISOString(),
+      suggestedSchedule: course.suggestedSchedule || '',
+      duration: course.duration || undefined
+    };
+  }
+  static courseToLegacyCourse(course: CourseWithModules): any {
+    return this.courseToApiCourse(course);
+  }
 
-export interface PaginationOptions {
-  skip?: number;
-  take?: number;
-}
+  // Additional methods for API compatibility
+  static toLegacyUser(user: any): any {
+    return this.userToUserProfile(user);
+  }
 
-export type ExportFormat = 'CSV' | 'JSON';
+  static toLegacyCourse(course: any): any {
+    return this.courseToLegacyCourse(course);
+  }
+
+  static toApiUser(user: any): any {
+    return this.userToUserProfile(user);
+  }
+
+  static toApiCourse(course: any): any {
+    return this.courseToApiCourse(course);
+  }
+}
 
 // Function exports for convenience
 export const getAllBadges = BadgeService.getAllBadges;
@@ -1714,3 +1864,13 @@ export const getAllUsers = AdminService.getAllUsers;
 export const updateUserRole = AdminService.updateUserRole;
 export const bulkUpdateUserRoles = AdminService.bulkUpdateUserRoles;
 export const exportUserData = AdminService.exportUserData;
+
+// Database utility class for API compatibility - additional methods
+export const DatabaseHelpersLegacy = {
+  findUserByClerkId: UserService.findByClerkId,
+  findUserByClerkIdWithRelations: UserService.findByClerkIdWithRelations,
+  createUser: UserService.createUser,
+  updateUser: UserService.updateUser,
+  getAllCourses: CourseService.getAllCourses,
+  getCourseById: CourseService.getCourseById
+};
