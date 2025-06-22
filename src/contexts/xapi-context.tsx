@@ -22,12 +22,27 @@ interface XAPIProviderProps {
 }
 
 export function XAPIProvider({ children }: XAPIProviderProps) {
-  const { user, isLoaded: userLoaded } = useUser();
+  // Check if we're in a build-time environment where Clerk isn't available
+  const isBuildTime = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_build_time_placeholder' || 
+                     typeof window === 'undefined';
+  
+  // Use hooks conditionally
+  const clerkUser = isBuildTime ? null : useUser();
+  const { user, isLoaded: userLoaded } = clerkUser || { user: null, isLoaded: true };
+  
   const [xapiClient, setXapiClient] = useState<XAPIClient | null>(null);
   const [actor, setActor] = useState<XAPIActor | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(isBuildTime); // If build time, mark as ready immediately
 
   useEffect(() => {
+    if (isBuildTime) {
+      // During build time, just set up a basic client without user info
+      const client = getXAPIClient();
+      setXapiClient(client);
+      setIsReady(true);
+      return;
+    }
+
     if (userLoaded) {
       // Initialize xAPI client
       const client = getXAPIClient();
@@ -44,7 +59,7 @@ export function XAPIProvider({ children }: XAPIProviderProps) {
 
       setIsReady(true);
     }
-  }, [user, userLoaded]);
+  }, [user, userLoaded, isBuildTime]);
 
   return (
     <XAPIContext.Provider value={{ xapiClient, actor, isReady }}>

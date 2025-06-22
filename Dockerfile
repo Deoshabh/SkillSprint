@@ -24,6 +24,14 @@ COPY . .
 ENV NODE_ENV=production
 ENV RUNTIME=build
 
+# Build arguments for Clerk keys
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG CLERK_SECRET_KEY
+
+# Set environment variables from build args
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+ENV CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+
 # Generate Prisma client
 RUN npx prisma generate
 
@@ -34,7 +42,7 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
@@ -63,8 +71,8 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Run the application
 CMD ["node", "server.js"]

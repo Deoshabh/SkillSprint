@@ -50,6 +50,18 @@ const adminNavItems: NavItem[] = [
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
+  
+  // Handle build time or when Clerk is not loaded
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen">
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
+          {children}
+        </div>
+      </div>
+    );
+  }
+  
   // For now, we'll assume any authenticated user is a regular user
   // You can extend this by adding custom metadata to Clerk user profiles
   // or using organizations/roles in Clerk

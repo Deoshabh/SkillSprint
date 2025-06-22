@@ -16,7 +16,12 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {  return (
+}>) {
+  // Get Clerk publishable key and handle build-time scenarios
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const isBuildTime = !publishableKey || publishableKey === 'pk_build_time_placeholder';
+  
+  return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,7 +30,8 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="font-body antialiased">
-        <ClerkProvider>
+        {isBuildTime ? (
+          // During build time, render without Clerk
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -39,7 +45,24 @@ export default function RootLayout({
               </XAPIProvider>
             </CourseProvider>
           </ThemeProvider>
-        </ClerkProvider>
+        ) : (
+          // During runtime, render with Clerk
+          <ClerkProvider publishableKey={publishableKey!}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <CourseProvider>
+                <XAPIProvider>
+                  {children}
+                  <Toaster />
+                </XAPIProvider>
+              </CourseProvider>
+            </ThemeProvider>
+          </ClerkProvider>
+        )}
       </body>
     </html>
   );

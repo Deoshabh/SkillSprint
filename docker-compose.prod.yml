@@ -2,7 +2,11 @@ version: '3.8'
 
 services:
   skillsprint:
-    build: .
+    build: 
+      context: .
+      args:
+        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_Y2VydGFpbi1mbGVhLTU0LmNsZXJrLmFjY291bnRzLmRldiQ
+        - CLERK_SECRET_KEY=sk_test_TyFAC2don2XZ5kmhppIoTKPxpOY2D93VCfHrjk9eOE
     ports:
       - "3000:3000"
     environment:
