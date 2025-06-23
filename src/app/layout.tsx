@@ -16,10 +16,13 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
-  // Get Clerk publishable key and handle build-time scenarios
+}>) {  // Get Clerk publishable key and handle build-time scenarios
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const isBuildTime = !publishableKey || publishableKey === 'pk_build_time_placeholder';
+  const isBuildTime = !publishableKey || 
+    publishableKey === 'pk_build_time_placeholder' ||
+    publishableKey === 'your_clerk_publishable_key' ||
+    publishableKey.includes('c3BlZWR5LWNsYW0tNzAuY2xlcmsuYWNjb3VudHMuZGV2') ||
+    process.env.NODE_ENV === 'production' && process.env.RUNTIME === 'build';
   
   return (
     <html lang="en" suppressHydrationWarning>

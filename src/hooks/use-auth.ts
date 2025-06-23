@@ -35,9 +35,7 @@ export function useAuth() {
     user?.primaryEmailAddress?.emailAddress,
     user?.imageUrl,
     user?.unsafeMetadata
-  ]);
-
-  const updateUserProfile = async (profileData: Partial<UserProfile>) => {
+  ]);  const updateUserProfile = async (profileData: Partial<UserProfile>) => {
     if (!user) return;
     
     try {

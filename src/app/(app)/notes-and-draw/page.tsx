@@ -17,6 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+// Force dynamic rendering for this page since it requires authentication
+export const dynamic = 'force-dynamic';
+
 export default function NotesAndDrawPage() {
   const { user, updateUserProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();

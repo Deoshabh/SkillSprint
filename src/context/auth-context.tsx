@@ -11,8 +11,22 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+// Safe wrapper for useUser that handles build-time scenarios
+function useSafeUser() {
+  try {
+    return useUser();
+  } catch (error) {
+    // During build time or when Clerk is not available, return safe defaults
+    return {
+      user: null,
+      isLoaded: true,
+      isSignedIn: false
+    };
+  }
+}
+
 export function useAuth(): AuthContextType {
-  const { user: clerkUser, isLoaded } = useUser();
+  const { user: clerkUser, isLoaded } = useSafeUser();
   const [dbUser, setDbUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
